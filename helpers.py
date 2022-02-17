@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import os
+import pygame
 
 # Clears the console screen
 def cls():
@@ -19,11 +20,13 @@ def _input(message, input_type=str):
         except Exception: pass
 
 # Generates a matrix of the specified height and width. Randomizes each cell as either 0 or 1.
-def generateArray(height, width):
+def generateArray(height, width, likelihood):
     array = np.zeros((height, width))
+    chanceArray = np.zeros(likelihood - 1)
+    chanceArray = np.append(chanceArray, 255)
     for SubArray in array:
         for i, cell in enumerate(SubArray):
-            SubArray[i] = random.choice([0, 0, 0, 0, 1])
+            SubArray[i] = random.choice(chanceArray)
 
     return array
 
@@ -32,53 +35,52 @@ def applyRules(ogArray):
     array = ogArray
     for subi, SubArray in enumerate(ogArray):
         for i, cell in enumerate(SubArray):
+            ArrayHeight = ogArray.shape[0]
+            ArrayWidth = ogArray.shape[1]
+
             AliveCount = 0
 
-            try:
-                AliveCount = AliveCount + int(ogArray[subi - 1][i - 1])
-                print(1)
-            except Exception: pass
+            if (subi - 1 >= 0) and (i - 1 >= 0):
+                AliveCount = AliveCount + int(ogArray[subi - 1][i - 1]) / 255
 
-            try:
-                AliveCount = AliveCount + int(ogArray[subi - 1][i])
-                print(2)
-            except Exception: pass
+            if (subi - 1 >= 0):
+                AliveCount = AliveCount + int(ogArray[subi - 1][i]) / 255
 
-            try:
-                AliveCount = AliveCount + int(ogArray[subi - 1][i + 1])
-                print(3)
-            except Exception: pass
+            if (subi - 1 >= 0) and (i + 1 < ArrayWidth):
+                AliveCount = AliveCount + int(ogArray[subi - 1][i + 1]) / 255
 
-            try:
-                AliveCount = AliveCount + int(ogArray[subi][i - 1])
-                print(4)
-            except Exception: pass
+            if (i - 1 >= 0):
+                AliveCount = AliveCount + int(ogArray[subi][i - 1]) / 255
 
-            try:
-                AliveCount = AliveCount + int(ogArray[subi][i + 1])
-                print(5)
-            except Exception: pass
+            if (i + 1 < ArrayWidth):
+                AliveCount = AliveCount + int(ogArray[subi][i + 1]) / 255
 
-            try:
-                AliveCount = AliveCount + int(ogArray[subi + 1][i - 1])
-                print(6)
-            except Exception: pass
+            if (subi + 1 < ArrayHeight) and (i - 1 >= 0):
+                AliveCount = AliveCount + int(ogArray[subi + 1][i - 1]) / 255
 
-            try:
-                AliveCount = AliveCount + int(ogArray[subi + 1][i])
-                print(7)
-            except Exception: pass
+            if (subi + 1 < ArrayHeight):
+                AliveCount = AliveCount + int(ogArray[subi + 1][i]) / 255
 
-            try:
-                AliveCount = AliveCount + int(ogArray[subi + 1][i + 1])
-                print(8)
-            except Exception: pass
+            if (subi + 1 < ArrayHeight) and (i + 1 < ArrayWidth):
+                AliveCount = AliveCount + int(ogArray[subi + 1][i + 1]) / 255
 
-            print(subi, i, AliveCount)
+            # print(subi, i, AliveCount)
 
-            if (cell == 1) and ((AliveCount <= 1) or (AliveCount > 3)):
+            if (cell == 255) and ((AliveCount <= 1) or (AliveCount > 3)):
                 array[subi][i] = 0
             elif (cell == 0) and (AliveCount == 3):
-                array[subi][i] = 1
+                array[subi][i] = 255
+
+    return array
+
+# Returns an array with the on characters in the place of the 1's and the off characters in the place of the 0's
+def interpretArray(ogArray, onChar, offChar):
+    array = np.empty_like(ogArray, dtype=str)
+    for subi, SubArray in enumerate(ogArray):
+        for i, cell in enumerate(SubArray):
+            if int(cell) == 1:
+                array[subi][i] = onChar
+            else:
+                array[subi][i] = offChar
 
     return array
