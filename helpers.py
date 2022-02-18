@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import os
+import pygame
 from scipy import signal
 
 # Clears the console screen
@@ -60,3 +61,10 @@ def interpretArray(ogArray, onChar, offChar):
                 array[subi][i] = offChar
 
     return array
+
+def updateGOL(Board, surf, infoObject):
+    Board = applyRules(Board)
+    boardSurf = pygame.surfarray.make_surface(Board)
+    boardSurf = pygame.transform.scale(boardSurf, (infoObject.current_w, infoObject.current_h))
+    surf.blit(boardSurf, (0, 0))
+    pygame.display.update()

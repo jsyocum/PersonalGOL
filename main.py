@@ -15,27 +15,43 @@ def main():
 
     # Generate array which is a fraction of the user's monitor size according to scale. There is a liklihood
     # of 1 / Likelihood that any given cell will start alive
-    Scale = 10
+    Scale = 20
     Likelihood = 5
     Board = h.generateArray(int(infoObject.current_h / Scale), int(infoObject.current_w / Scale), Likelihood)
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     Board = np.rot90(Board)
 
+    Continuous = True
+    Step = False
+    NewBoard = False
+
+    LEFT = 1
+    MIDDLE = 2
+    RIGHT = 3
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == LEFT:
+                Continuous = not Continuous
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == RIGHT:
+                Step = True
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == MIDDLE:
+                NewBoard = True
 
-        # Allow the game of life to commence
-        Board = h.applyRules(Board)
-        boardSurf = pygame.surfarray.make_surface(Board)
-        boardSurf = pygame.transform.scale(boardSurf, (infoObject.current_w, infoObject.current_h))
-        surf.blit(boardSurf, (0, 0))
-        pygame.display.update()
+        if (Continuous is False) and (Step is True):
+            h.updateGOL(Board, surf, infoObject)
+            Step = False
+        elif Continuous is True:
+            h.updateGOL(Board, surf, infoObject)
 
-        # time.sleep(0.05)
-        # input("Enter")
-        # h.cls()
+        if NewBoard is True:
+            Board = h.generateArray(int(infoObject.current_h / Scale), int(infoObject.current_w / Scale), Likelihood)
+            Board = np.rot90(Board)
+            h.updateGOL(Board, surf, infoObject)
+            NewBoard = False
+
 
 
 if __name__ == "__main__":
