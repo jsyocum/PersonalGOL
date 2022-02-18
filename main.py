@@ -1,6 +1,7 @@
 import helpers as h
 import pygame
 import numpy as np
+import time
 
 def main():
     # Set up pygame
@@ -14,8 +15,8 @@ def main():
 
     # Generate array which is a fraction of the user's monitor size according to scale. There is a liklihood
     # of 1 / Likelihood that any given cell will start alive
-    Scale = 6
-    Likelihood = 10
+    Scale = 10
+    Likelihood = 5
     Board = h.generateArray(int(infoObject.current_h / Scale), int(infoObject.current_w / Scale), Likelihood)
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     Board = np.rot90(Board)
@@ -31,6 +32,10 @@ def main():
         boardSurf = pygame.transform.scale(boardSurf, (infoObject.current_w, infoObject.current_h))
         surf.blit(boardSurf, (0, 0))
         pygame.display.update()
+
+        # time.sleep(0.05)
+        # input("Enter")
+        # h.cls()
 
 
 if __name__ == "__main__":

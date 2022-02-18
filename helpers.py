@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import os
-import pygame
+from scipy import signal
 
 # Clears the console screen
 def cls():
@@ -30,45 +30,21 @@ def generateArray(height, width, likelihood):
 
     return array
 
+def sumOfNeighbors(array):
+    kernel = np.ones((3, 3), dtype=int)
+    kernel[1, 1] = 0
+    return signal.convolve2d(array, kernel, mode="same")
+
 # Modifies existing 2D array using specified rules
 def applyRules(ogArray):
     array = ogArray
+    AliveCountArray = sumOfNeighbors(ogArray) / 255
+
     for subi, SubArray in enumerate(ogArray):
         for i, cell in enumerate(SubArray):
-            ArrayHeight = ogArray.shape[0]
-            ArrayWidth = ogArray.shape[1]
-
-            AliveCount = 0
-
-            if (subi - 1 >= 0) and (i - 1 >= 0):
-                AliveCount = AliveCount + int(ogArray[subi - 1][i - 1]) / 255
-
-            if (subi - 1 >= 0):
-                AliveCount = AliveCount + int(ogArray[subi - 1][i]) / 255
-
-            if (subi - 1 >= 0) and (i + 1 < ArrayWidth):
-                AliveCount = AliveCount + int(ogArray[subi - 1][i + 1]) / 255
-
-            if (i - 1 >= 0):
-                AliveCount = AliveCount + int(ogArray[subi][i - 1]) / 255
-
-            if (i + 1 < ArrayWidth):
-                AliveCount = AliveCount + int(ogArray[subi][i + 1]) / 255
-
-            if (subi + 1 < ArrayHeight) and (i - 1 >= 0):
-                AliveCount = AliveCount + int(ogArray[subi + 1][i - 1]) / 255
-
-            if (subi + 1 < ArrayHeight):
-                AliveCount = AliveCount + int(ogArray[subi + 1][i]) / 255
-
-            if (subi + 1 < ArrayHeight) and (i + 1 < ArrayWidth):
-                AliveCount = AliveCount + int(ogArray[subi + 1][i + 1]) / 255
-
-            # print(subi, i, AliveCount)
-
-            if (cell == 255) and ((AliveCount <= 1) or (AliveCount > 3)):
+            if (cell == 255) and ((AliveCountArray[subi][i] <= 1) or (AliveCountArray[subi][i] > 3)):
                 array[subi][i] = 0
-            elif (cell == 0) and (AliveCount == 3):
+            elif (cell == 0) and (AliveCountArray[subi][i] == 3):
                 array[subi][i] = 255
 
     return array
