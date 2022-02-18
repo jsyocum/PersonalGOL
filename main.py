@@ -58,6 +58,7 @@ def main():
                 if MenuOpen is False:
                     WasContinuous = Continuous
                     Continuous = False
+                    helpers.updateScreenWithBoard(Board, surf, infoObject, True)
                     MenuOpen = OpenMenu([back_to_game_button, quit_game_button])
                 else:
                     Continuous = WasContinuous

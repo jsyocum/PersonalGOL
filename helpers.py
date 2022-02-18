@@ -66,7 +66,10 @@ def updateGOL(Board, surf, infoObject):
     Board = applyRules(Board)
     updateScreenWithBoard(Board, surf, infoObject)
 
-def updateScreenWithBoard(Board, surf, infoObject):
-    boardSurf = pygame.surfarray.make_surface(Board)
+def updateScreenWithBoard(Board, surf, infoObject, darken=False):
+    if darken is False:
+        boardSurf = pygame.surfarray.make_surface(Board)
+    else:
+        boardSurf = pygame.surfarray.make_surface(Board / 255 * random.randint(0, 255))
     boardSurf = pygame.transform.scale(boardSurf, (infoObject.current_w, infoObject.current_h))
     surf.blit(boardSurf, (0, 0))
