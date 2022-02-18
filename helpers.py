@@ -64,7 +64,9 @@ def interpretArray(ogArray, onChar, offChar):
 
 def updateGOL(Board, surf, infoObject):
     Board = applyRules(Board)
+    updateScreenWithBoard(Board, surf, infoObject)
+
+def updateScreenWithBoard(Board, surf, infoObject):
     boardSurf = pygame.surfarray.make_surface(Board)
     boardSurf = pygame.transform.scale(boardSurf, (infoObject.current_w, infoObject.current_h))
     surf.blit(boardSurf, (0, 0))
-    pygame.display.update()
