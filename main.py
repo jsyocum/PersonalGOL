@@ -41,18 +41,27 @@ def main():
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
-    quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 100), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
-    all_buttons = [back_to_game_button, show_controls_button, quit_game_button]
+    show_parameters_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 100), (400, 50)), text='Show parameters', manager=manager, visible=0)
+    quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
+    all_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
 
-    controls_header_font = pygame.font.SysFont('arial', size=30, bold=True)
-    controls_font = pygame.font.SysFont('arial', size=18)
+    sidebar_header_font = pygame.font.SysFont('arial', size=30, bold=True)
+    sidebar_font = pygame.font.SysFont('arial', size=18)
+    sidebar_font_bold = pygame.font.SysFont('arial', size=18, bold=True)
 
-    controls_header_text = controls_header_font.render("Controls", True, (190, 190, 190))
-    controls_pause_text = controls_font.render("Pause: SPACEBAR", True, (152, 152, 152))
-    controls_step_forward_text = controls_font.render("Step forward: W", True, (152, 152, 152))
-    controls_step_backward_text = controls_font.render("Step backwards: S", True, (152, 152, 152))
-    controls_reset_text = controls_font.render("Reset: R", True, (152, 152, 152))
+    controls_header_text = sidebar_header_font.render("Controls", True, (190, 190, 190))
+    controls_pause_text = sidebar_font.render("Pause: SPACEBAR", True, (152, 152, 152))
+    controls_step_forward_text = sidebar_font.render("Step forward: W", True, (152, 152, 152))
+    controls_step_backward_text = sidebar_font.render("Step backwards: S", True, (152, 152, 152))
+    controls_reset_text = sidebar_font.render("Reset: R", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
+
+    paramaters_header_text = sidebar_header_font.render("Parameters", True, (190, 190, 190))
+    paramters_warning1_text = sidebar_font_bold.render("Changing any of these", True, (152, 152, 152))
+    paramters_warning2_text = sidebar_font_bold.render("will reset the board.", True, (152, 152, 152))
+    parameters_scale_text = sidebar_font.render("Scale:", True, (152, 152, 152))
+    parameters_max_fps_text = sidebar_font.render("Max fps:", True, (152, 152, 152))
+    parameters_likelihood_text = sidebar_font.render("Likelihood:", True, (152, 152, 152))
 
     while running:
         time_delta = clock.tick(StepsPerSecond)/1000.0
@@ -95,8 +104,24 @@ def main():
                 surf.blit(controls_header_text, (w / 2 - 500, h / 4 + 12))
                 helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])
                 pygame.display.update(controls_rect)
+
+                if show_parameters_button.text == 'Hide parameters':
+                    show_parameters_button.set_text('Show parameters')
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button:
                 show_controls_button.set_text('Show controls')
+                surf.blit(CurrentBoardSurf, (0, 0))
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button and show_parameters_button.text == 'Show parameters':
+                show_parameters_button.set_text('Hide parameters')
+                pygame.draw.rect(surf, (76, 80, 82), controls_rect)
+                surf.blit(paramaters_header_text, (w / 2 - 500, h / 4 + 12))
+                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [paramters_warning1_text, paramters_warning2_text])
+                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 100, 75, [parameters_scale_text, parameters_max_fps_text, parameters_likelihood_text])
+
+                if show_controls_button.text == 'Hide controls':
+                    show_controls_button.set_text('Show controls')
+            elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button:
+                show_parameters_button.set_text('Show parameters')
                 surf.blit(CurrentBoardSurf, (0, 0))
 
             manager.process_events(event)
@@ -126,17 +151,14 @@ def main():
         pygame.display.update()
 
 
-
 def OpenMenu(ButtonsArray):
     for button in ButtonsArray:
-        # button.visible = 1
         button.show()
 
     return True
 
 def CloseMenu(ButtonsArray):
     for button in ButtonsArray:
-        # button.visible = 0
         button.hide()
 
     return False

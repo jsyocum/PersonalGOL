@@ -94,8 +94,6 @@ def appendToStepStack(Board, step_stack):
     if totalsize.total_size(step_stack) > 1e+9:
         step_stack.popleft()
 
-    print("LENGTH:", len(step_stack), "SIZE:", totalsize.total_size(step_stack))
-
 def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):
         surf.blit(line, (left, top + (spacing * i)))
