@@ -2,6 +2,7 @@ import numpy as np
 import random
 import os
 import pygame
+import totalsize
 from scipy import signal
 
 # Clears the console screen
@@ -90,8 +91,10 @@ def appendToStepStack(Board, step_stack):
     else:
         step_stack.append(Board.copy())
 
-    if len(step_stack) > 100:
+    if totalsize.total_size(step_stack) > 1e+9:
         step_stack.popleft()
+
+    print("LENGTH:", len(step_stack), "SIZE:", totalsize.total_size(step_stack))
 
 def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):

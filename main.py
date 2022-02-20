@@ -2,7 +2,6 @@ import helpers
 import pygame
 import pygame_gui
 import numpy as np
-import time
 from collections import deque
 
 def main():
@@ -24,9 +23,9 @@ def main():
 
     # Generate array which is a fraction of the user's monitor size according to scale. There is a liklihood
     # of 1 / Likelihood that any given cell will start alive
-    Scale = 200
-    Likelihood = 3
-    StepsPerSecond = 10
+    Scale = 20
+    Likelihood = 15
+    StepsPerSecond = 18
     Board = helpers.generateArray(int(h / Scale), int(w / Scale), Likelihood)
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     Board = np.rot90(Board)
@@ -39,10 +38,6 @@ def main():
     NewBoard = False
     MenuOpen = False
     CurrentBoardSurf = None
-
-    LEFT = 1
-    MIDDLE = 2
-    RIGHT = 3
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
