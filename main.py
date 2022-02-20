@@ -110,7 +110,6 @@ def main():
                 pygame.draw.rect(surf, (76, 80, 82), controls_rect)
                 surf.blit(controls_header_text, (w / 2 - 500, h / 4 + 12))
                 helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])
-                pygame.display.update(controls_rect)
 
                 if show_parameters_button.text == 'Hide parameters':
                     show_parameters_button.set_text('Show parameters')
