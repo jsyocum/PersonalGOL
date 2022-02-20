@@ -24,7 +24,7 @@ def main():
     # Generate array which is a fraction of the user's monitor size according to scale. There is a liklihood
     # of 1 / Likelihood that any given cell will start alive
     Scale = 20
-    Likelihood = 15
+    Likelihood = 5
     StepsPerSecond = 18
     Board = helpers.generateArray(int(h / Scale), int(w / Scale), Likelihood)
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
@@ -43,7 +43,12 @@ def main():
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
     show_parameters_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 100), (400, 50)), text='Show parameters', manager=manager, visible=0)
     quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
-    all_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
+    all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
+
+    parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 125), (225, 25)), start_value=20, value_range=(1, 200), manager=manager, visible=0, click_increment=5)
+    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 185), (225, 25)), start_value=18, value_range=(0.1, 1000), manager=manager, visible=0, click_increment=10)
+    parameters_likelihood_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 245), (225, 25)), start_value=5, value_range=(1, 100), manager=manager, visible=0, click_increment=5)
+    all_parameters_elements = [parameters_scale_slider, parameters_max_fps_slider, parameters_likelihood_slider]
 
     sidebar_header_font = pygame.font.SysFont('arial', size=30, bold=True)
     sidebar_font = pygame.font.SysFont('arial', size=18)
@@ -89,10 +94,12 @@ def main():
                     Continuous = False
                     CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, True)
                     show_controls_button.set_text('Show controls')
-                    MenuOpen = OpenMenu(all_buttons)
+                    show_parameters_button.set_text('Show parameters')
+                    MenuOpen = OpenUIElements(all_menu_buttons)
                 else:
                     Continuous = WasContinuous
-                    MenuOpen = CloseMenu(all_buttons)
+                    MenuOpen = CloseUIElements(all_menu_buttons)
+                    CloseUIElements(all_parameters_elements)
                     CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
@@ -107,6 +114,8 @@ def main():
 
                 if show_parameters_button.text == 'Hide parameters':
                     show_parameters_button.set_text('Show parameters')
+                    CloseUIElements(all_parameters_elements)
+
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button:
                 show_controls_button.set_text('Show controls')
                 surf.blit(CurrentBoardSurf, (0, 0))
@@ -116,13 +125,16 @@ def main():
                 pygame.draw.rect(surf, (76, 80, 82), controls_rect)
                 surf.blit(paramaters_header_text, (w / 2 - 500, h / 4 + 12))
                 helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [paramters_warning1_text, paramters_warning2_text])
-                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 100, 75, [parameters_scale_text, parameters_max_fps_text, parameters_likelihood_text])
+                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 100, 60, [parameters_scale_text, parameters_max_fps_text, parameters_likelihood_text])
+                OpenUIElements(all_parameters_elements)
 
                 if show_controls_button.text == 'Hide controls':
                     show_controls_button.set_text('Show controls')
+
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button:
                 show_parameters_button.set_text('Show parameters')
                 surf.blit(CurrentBoardSurf, (0, 0))
+                CloseUIElements(all_parameters_elements)
 
             manager.process_events(event)
 
@@ -151,13 +163,13 @@ def main():
         pygame.display.update()
 
 
-def OpenMenu(ButtonsArray):
+def OpenUIElements(ButtonsArray):
     for button in ButtonsArray:
         button.show()
 
     return True
 
-def CloseMenu(ButtonsArray):
+def CloseUIElements(ButtonsArray):
     for button in ButtonsArray:
         button.hide()
 
