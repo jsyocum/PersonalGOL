@@ -2,6 +2,7 @@ import numpy as np
 import random
 import os
 import pygame
+import pygame_gui
 import totalsize
 from scipy import signal
 
@@ -97,3 +98,21 @@ def appendToStepStack(Board, step_stack):
 def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):
         surf.blit(line, (left, top + (spacing * i)))
+
+def manageSliderAndEntryWithArray(array):
+    for tuple in array:
+        manageSliderAndEntry(tuple[0], tuple[1], tuple[2], tuple[3])
+
+def manageSliderAndEntry(slider, entry, previousSliderValue, PreviousEntryValue):
+    if PreviousEntryValue is not None:
+        if (entry.get_text() == '') or (slider.value_range[0] > int(entry.get_text())):
+            entry.set_text(str(slider.value_range[0]))
+
+        elif (int(entry.get_text()) > slider.value_range[1]):
+            entry.set_text(str(slider.value_range[1]))
+
+    if previousSliderValue != slider.get_current_value():
+        entry.set_text(str(slider.get_current_value()))
+
+    elif PreviousEntryValue != entry.get_text():
+        slider.set_current_value(int(entry.get_text()))

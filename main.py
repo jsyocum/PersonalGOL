@@ -23,32 +23,59 @@ def main():
 
     # Generate array which is a fraction of the user's monitor size according to scale. There is a liklihood
     # of 1 / Likelihood that any given cell will start alive
-    Scale = 20
-    Likelihood = 5
-    StepsPerSecond = 18
-    Board = helpers.generateArray(int(h / Scale), int(w / Scale), Likelihood)
+    DefaultScale = 20
+    DefaultMaxFps = 18
+    DefaultLikelihood = 5
+    Board = helpers.generateArray(int(h / DefaultScale), int(w / DefaultScale), DefaultLikelihood)
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     Board = np.rot90(Board)
     step_stack.append(Board.copy())
 
     Continuous = True
     WasContinuous = True
+    Update = True
     Step = False
     StepBack = False
     NewBoard = False
     MenuOpen = False
     CurrentBoardSurf = None
+    time_delta_added = 0
+
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
     show_parameters_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 100), (400, 50)), text='Show parameters', manager=manager, visible=0)
     quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
+
     all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
 
+
     parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 125), (225, 25)), start_value=20, value_range=(1, 200), manager=manager, visible=0, click_increment=5)
-    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 185), (225, 25)), start_value=18, value_range=(0.1, 1000), manager=manager, visible=0, click_increment=10)
+    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 185), (225, 25)), start_value=18, value_range=(1, 1000), manager=manager, visible=0, click_increment=10)
     parameters_likelihood_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 245), (225, 25)), start_value=5, value_range=(1, 100), manager=manager, visible=0, click_increment=5)
-    all_parameters_elements = [parameters_scale_slider, parameters_max_fps_slider, parameters_likelihood_slider]
+
+    parameters_scale_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 265, h / 4 + 125), (45, 25)), manager=manager, visible=0)
+    parameters_max_fps_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 265, h / 4 + 185), (45, 25)), manager=manager, visible=0)
+    parameters_likelihood_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 265, h / 4 + 245), (45, 25)), manager=manager, visible=0)
+
+    previousScaleSliderValue = None
+    previousScaleEntryValue = None
+    previousMaxFpsSliderValue = None
+    previousMaxFpsEntryValue = None
+    previousLikelihoodSliderValue = None
+    previousLikelihoodEntryValue = None
+
+    pausedScaleSliderValue = DefaultScale
+    pausedLikelihoodSliderValue = DefaultLikelihood
+
+    all_parameters_elements = [parameters_scale_slider, parameters_max_fps_slider, parameters_likelihood_slider, parameters_scale_entry, parameters_max_fps_entry, parameters_likelihood_entry]
+    all_paramaters_entries = [parameters_scale_entry, parameters_max_fps_entry, parameters_likelihood_entry]
+    all_paramaters_elements_matched = [[parameters_scale_slider, parameters_scale_entry, previousScaleSliderValue, previousScaleEntryValue],
+                                       [parameters_max_fps_slider, parameters_max_fps_entry, previousMaxFpsSliderValue, previousMaxFpsEntryValue],
+                                       [parameters_likelihood_slider, parameters_likelihood_entry, previousLikelihoodSliderValue, previousLikelihoodEntryValue]]
+
+    for entry in all_paramaters_entries: entry.set_allowed_characters('numbers')
+
 
     sidebar_header_font = pygame.font.SysFont('arial', size=30, bold=True)
     sidebar_font = pygame.font.SysFont('arial', size=18)
@@ -69,10 +96,15 @@ def main():
     parameters_likelihood_text = sidebar_font.render("Likelihood:", True, (152, 152, 152))
 
     while running:
-        time_delta = clock.tick(StepsPerSecond)/1000.0
+        time_delta = clock.tick(120)/1000.0
         time_delta_stack.append(time_delta)
         if len(time_delta_stack) > 2000:
             time_delta_stack.popleft()
+
+        time_delta_added = time_delta_added + time_delta
+        if time_delta_added >= (1 / parameters_max_fps_slider.get_current_value()):
+            Update = True
+            time_delta_added = 0
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -93,6 +125,10 @@ def main():
                     WasContinuous = Continuous
                     Continuous = False
                     CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, True)
+
+                    pausedScaleSliderValue = parameters_scale_slider.get_current_value()
+                    pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
+
                     show_controls_button.set_text('Show controls')
                     show_parameters_button.set_text('Show parameters')
                     MenuOpen = OpenUIElements(all_menu_buttons)
@@ -100,7 +136,11 @@ def main():
                     Continuous = WasContinuous
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     CloseUIElements(all_parameters_elements)
-                    CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
+
+                    if (pausedScaleSliderValue != parameters_scale_slider.get_current_value()) or (pausedLikelihoodSliderValue != parameters_likelihood_slider.get_current_value()):
+                        NewBoard = True
+                    else:
+                        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
                 running = False
@@ -145,18 +185,27 @@ def main():
         elif (Continuous is False) and (StepBack is True):
             CurrentBoardSurf = helpers.stepBack(step_stack, surf, infoObject)
             StepBack = False
-        elif Continuous is True:
+        elif (Continuous is True) and (Update is True):
             CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack)
             Step = False
             StepBack = False
+            Update = False
 
         if NewBoard is True:
-            Board = helpers.generateArray(int(infoObject.current_h / Scale), int(infoObject.current_w / Scale), Likelihood)
+            Board = helpers.generateArray(int(infoObject.current_h / parameters_scale_slider.get_current_value()), int(infoObject.current_w / parameters_scale_slider.get_current_value()), parameters_likelihood_slider.get_current_value())
             Board = np.rot90(Board)
             step_stack.clear()
             step_stack.append(Board)
             CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
             NewBoard = False
+
+        helpers.manageSliderAndEntryWithArray(all_paramaters_elements_matched)
+        all_paramaters_elements_matched[0][2] = parameters_scale_slider.get_current_value()
+        all_paramaters_elements_matched[0][3] = parameters_scale_entry.get_text()
+        all_paramaters_elements_matched[1][2] = parameters_max_fps_slider.get_current_value()
+        all_paramaters_elements_matched[1][3] = parameters_max_fps_entry.get_text()
+        all_paramaters_elements_matched[2][2] = parameters_likelihood_slider.get_current_value()
+        all_paramaters_elements_matched[2][3] = parameters_likelihood_entry.get_text()
 
         manager.draw_ui(surf)
         pygame.display.update()
