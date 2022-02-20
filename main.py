@@ -19,19 +19,23 @@ def main():
 
     clock = pygame.time.Clock()
     time_delta_stack = deque([])
+    step_stack = deque([])
     running = True
 
     # Generate array which is a fraction of the user's monitor size according to scale. There is a liklihood
     # of 1 / Likelihood that any given cell will start alive
-    Scale = 20
-    Likelihood = 5
+    Scale = 200
+    Likelihood = 3
+    StepsPerSecond = 10
     Board = helpers.generateArray(int(h / Scale), int(w / Scale), Likelihood)
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     Board = np.rot90(Board)
+    step_stack.append(Board.copy())
 
     Continuous = True
     WasContinuous = True
     Step = False
+    StepBack = False
     NewBoard = False
     MenuOpen = False
     CurrentBoardSurf = None
@@ -49,13 +53,14 @@ def main():
     controls_font = pygame.font.SysFont('arial', size=18)
 
     controls_header_text = controls_header_font.render("Controls", True, (190, 190, 190))
-    controls_pause_text = controls_font.render("Pause: spacebar", True, (152, 152, 152))
-    controls_step_text = controls_font.render("Step: w (only works while paused)", True, (152, 152, 152))
-    controls_reset_text = controls_font.render("Reset: r", True, (152, 152, 152))
+    controls_pause_text = controls_font.render("Pause: SPACEBAR", True, (152, 152, 152))
+    controls_step_forward_text = controls_font.render("Step forward: W", True, (152, 152, 152))
+    controls_step_backward_text = controls_font.render("Step backwards: S", True, (152, 152, 152))
+    controls_reset_text = controls_font.render("Reset: R", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
 
     while running:
-        time_delta = clock.tick(120)/1000.0
+        time_delta = clock.tick(StepsPerSecond)/1000.0
         time_delta_stack.append(time_delta)
         if len(time_delta_stack) > 2000:
             time_delta_stack.popleft()
@@ -69,6 +74,8 @@ def main():
                     Continuous = not Continuous
                 elif event.type == pygame.KEYUP and event.key == pygame.K_w:
                     Step = True
+                elif event.type == pygame.KEYUP and event.key == pygame.K_s:
+                    StepBack = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_r:
                     NewBoard = True
 
@@ -76,13 +83,13 @@ def main():
                 if MenuOpen is False:
                     WasContinuous = Continuous
                     Continuous = False
-                    CurrentBoardSurf = helpers.updateScreenWithBoard(Board, surf, infoObject, True)
+                    CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, True)
                     show_controls_button.set_text('Show controls')
                     MenuOpen = OpenMenu(all_buttons)
                 else:
                     Continuous = WasContinuous
                     MenuOpen = CloseMenu(all_buttons)
-                    CurrentBoardSurf = helpers.updateScreenWithBoard(Board, surf, infoObject)
+                    CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
                 running = False
@@ -91,9 +98,7 @@ def main():
                 show_controls_button.set_text('Hide controls')
                 pygame.draw.rect(surf, (76, 80, 82), controls_rect)
                 surf.blit(controls_header_text, (w / 2 - 500, h / 4 + 12))
-                surf.blit(controls_pause_text, (w / 2 - 500, h / 4 + 50))
-                surf.blit(controls_step_text, (w / 2 - 500, h / 4 + 75))
-                surf.blit(controls_reset_text, (w / 2 - 500, h / 4 + 100))
+                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])
                 pygame.display.update(controls_rect)
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button:
                 show_controls_button.set_text('Show controls')
@@ -104,15 +109,22 @@ def main():
         manager.update(time_delta)
 
         if (Continuous is False) and (Step is True):
-            CurrentBoardSurf = helpers.updateGOL(Board, surf, infoObject)
+            CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack)
             Step = False
+        elif (Continuous is False) and (StepBack is True):
+            CurrentBoardSurf = helpers.stepBack(step_stack, surf, infoObject)
+            StepBack = False
         elif Continuous is True:
-            CurrentBoardSurf = helpers.updateGOL(Board, surf, infoObject)
+            CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack)
+            Step = False
+            StepBack = False
 
         if NewBoard is True:
             Board = helpers.generateArray(int(infoObject.current_h / Scale), int(infoObject.current_w / Scale), Likelihood)
             Board = np.rot90(Board)
-            CurrentBoardSurf = helpers.updateGOL(Board, surf, infoObject)
+            step_stack.clear()
+            step_stack.append(Board)
+            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
             NewBoard = False
 
         manager.draw_ui(surf)

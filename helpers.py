@@ -37,7 +37,7 @@ def sumOfNeighbors(array):
     return signal.convolve2d(array, kernel, mode="same")
 
 # Modifies existing 2D array using specified rules
-def applyRules(ogArray):
+def applyRules(ogArray, step_stack):
     array = ogArray
     AliveCountArray = sumOfNeighbors(ogArray) / 255
 
@@ -48,7 +48,16 @@ def applyRules(ogArray):
             elif (cell == 0) and (AliveCountArray[subi][i] == 3):
                 array[subi][i] = 255
 
+    appendToStepStack(array, step_stack)
     return array
+
+def stepBack(step_stack, surf, infoObject):
+    if len(step_stack) > 1:
+        step_stack.pop()
+
+    PreviousBoard = step_stack[-1]
+
+    return updateScreenWithBoard(PreviousBoard, surf, infoObject)
 
 # Returns an array with the on characters in the place of the 1's and the off characters in the place of the 0's
 def interpretArray(ogArray, onChar, offChar):
@@ -62,8 +71,8 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateGOL(Board, surf, infoObject):
-    Board = applyRules(Board)
+def updateGOL(Board, surf, infoObject, step_stack):
+    Board = applyRules(Board.copy(), step_stack)
     return updateScreenWithBoard(Board, surf, infoObject)
 
 def updateScreenWithBoard(Board, surf, infoObject, darken=False):
@@ -74,3 +83,16 @@ def updateScreenWithBoard(Board, surf, infoObject, darken=False):
     boardSurf = pygame.transform.scale(boardSurf, (infoObject.current_w, infoObject.current_h))
     surf.blit(boardSurf, (0, 0))
     return boardSurf
+
+def appendToStepStack(Board, step_stack):
+    if np.array_equal(Board, step_stack[-1]):
+        pass
+    else:
+        step_stack.append(Board.copy())
+
+    if len(step_stack) > 100:
+        step_stack.popleft()
+
+def printLinesOfText(surf, left, top, spacing, lines):
+    for i, line in enumerate(lines):
+        surf.blit(line, (left, top + (spacing * i)))
