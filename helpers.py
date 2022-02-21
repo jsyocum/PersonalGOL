@@ -26,7 +26,7 @@ def _input(message, input_type=str):
 def generateArray(height, width, likelihood):
     array = np.zeros((height, width))
     chanceArray = np.zeros(likelihood - 1)
-    chanceArray = np.append(chanceArray, 255)
+    chanceArray = np.append(chanceArray, 1)
     for SubArray in array:
         for i, cell in enumerate(SubArray):
             SubArray[i] = random.choice(chanceArray)
@@ -41,14 +41,14 @@ def sumOfNeighbors(array):
 # Modifies existing 2D array using specified rules
 def applyRules(ogArray, step_stack):
     array = ogArray
-    AliveCountArray = sumOfNeighbors(ogArray) / 255
+    AliveCountArray = sumOfNeighbors(ogArray)
 
     for subi, SubArray in enumerate(ogArray):
         for i, cell in enumerate(SubArray):
-            if (cell == 255) and ((AliveCountArray[subi][i] <= 1) or (AliveCountArray[subi][i] > 3)):
+            if (cell == 1) and ((AliveCountArray[subi][i] <= 1) or (AliveCountArray[subi][i] > 3)):
                 array[subi][i] = 0
             elif (cell == 0) and (AliveCountArray[subi][i] == 3):
-                array[subi][i] = 255
+                array[subi][i] = 1
 
     appendToStepStack(array, step_stack)
     return array
@@ -79,9 +79,9 @@ def updateGOL(Board, surf, infoObject, step_stack):
 
 def updateScreenWithBoard(Board, surf, infoObject, darken=False):
     if darken is False:
-        boardSurf = pygame.surfarray.make_surface(Board)
+        boardSurf = pygame.surfarray.make_surface(Board * 255)
     else:
-        boardSurf = pygame.surfarray.make_surface(Board / 255 * random.randint(0, 255))
+        boardSurf = pygame.surfarray.make_surface(Board * random.randint(0, 255))
 
     ScreenRatio = infoObject.current_w / infoObject.current_h
     BoardSurfRatio = boardSurf.get_width() / boardSurf.get_height()
