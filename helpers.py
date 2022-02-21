@@ -99,6 +99,14 @@ def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):
         surf.blit(line, (left, top + (spacing * i)))
 
+def showParameters(surf, w, h, controls_rect, all_paramaters_texts):
+    pygame.draw.rect(surf, (76, 80, 82), controls_rect)
+    surf.blit(all_paramaters_texts[0], (w / 2 - 500, h / 4 + 12))
+    printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [all_paramaters_texts[1], all_paramaters_texts[2]])
+    printLinesOfText(surf, w / 2 - 500, h / 4 + 100, 60, [all_paramaters_texts[3], all_paramaters_texts[4], all_paramaters_texts[5], all_paramaters_texts[6]])
+    surf.blit(all_paramaters_texts[7], (w / 2 - 442, h / 4 + 305))
+    surf.blit(all_paramaters_texts[8], (w / 2 - 367, h / 4 + 305))
+
 def manageSliderAndEntryWithArray(array):
     for tuple in array:
         manageSliderAndEntry(tuple[0], tuple[1], tuple[2], tuple[3])
@@ -116,3 +124,10 @@ def manageSliderAndEntry(slider, entry, previousSliderValue, PreviousEntryValue)
 
     elif PreviousEntryValue != entry.get_text():
         slider.set_current_value(int(entry.get_text()))
+
+def manageNumberEntry(entry, min, max):
+    if (entry.get_text() == '') or (min > int(entry.get_text())):
+        entry.set_text(str(min))
+
+    elif (int(entry.get_text()) > max):
+        entry.set_text(str(max))

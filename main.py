@@ -50,13 +50,29 @@ def main():
     all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
 
 
-    parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 125), (225, 25)), start_value=20, value_range=(1, 200), manager=manager, visible=0, click_increment=5)
-    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 185), (225, 25)), start_value=18, value_range=(1, 1000), manager=manager, visible=0, click_increment=10)
-    parameters_likelihood_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 245), (225, 25)), start_value=5, value_range=(1, 100), manager=manager, visible=0, click_increment=5)
+    parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 125), (220, 25)), start_value=20, value_range=(1, 80), manager=manager, visible=0, click_increment=5)
+    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 185), (220, 25)), start_value=18, value_range=(1, 50), manager=manager, visible=0, click_increment=2)
+    parameters_likelihood_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 245), (220, 25)), start_value=5, value_range=(1, 30), manager=manager, visible=0, click_increment=2)
 
-    parameters_scale_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 265, h / 4 + 125), (45, 25)), manager=manager, visible=0)
-    parameters_max_fps_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 265, h / 4 + 185), (45, 25)), manager=manager, visible=0)
-    parameters_likelihood_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 265, h / 4 + 245), (45, 25)), manager=manager, visible=0)
+    parameters_scale_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 125), (50, 25)), manager=manager, visible=0)
+    parameters_max_fps_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 185), (50, 25)), manager=manager, visible=0)
+    parameters_likelihood_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 245), (50, 25)), manager=manager, visible=0)
+
+    paramters_scale_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 100), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Change slider maximum to 200', visible=0)
+    paramters_max_fps_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 160), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Change slider maximum to 1000', visible=0)
+    paramters_likelihood_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 220), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Change slider maximum to 100', visible=0)
+
+    parameters_scale_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 100), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default value: ' + str(DefaultScale), visible=0)
+    parameters_max_fps_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 160), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default value: ' + str(DefaultMaxFps), visible=0)
+    parameters_likelihood_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 220), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default value: ' + str(DefaultLikelihood), visible=0)
+
+    parameters_custom_board_size_enable_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 280), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Enable to enter a custom board size. Disables scale option.', visible=0)
+    paramaters_custom_board_size_width_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 305), (50, 25)), manager=manager, visible=0)
+    paramaters_custom_board_size_height_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 425, h / 4 + 305), (50, 25)), manager=manager, visible=0)
+    paramaters_custom_board_size_width_entry.set_text(str(int(w / DefaultScale)))
+    paramaters_custom_board_size_height_entry.set_text(str(int(h / DefaultScale)))
+    paramaters_custom_board_size_width_entry.disable()
+    paramaters_custom_board_size_height_entry.disable()
 
     previousScaleSliderValue = None
     previousScaleEntryValue = None
@@ -65,14 +81,31 @@ def main():
     previousLikelihoodSliderValue = None
     previousLikelihoodEntryValue = None
 
+    previousWidth = int(w / DefaultScale)
+    previousHeight = int(h / DefaultScale)
+
     pausedScaleSliderValue = DefaultScale
     pausedLikelihoodSliderValue = DefaultLikelihood
 
-    all_parameters_elements = [parameters_scale_slider, parameters_max_fps_slider, parameters_likelihood_slider, parameters_scale_entry, parameters_max_fps_entry, parameters_likelihood_entry]
-    all_paramaters_entries = [parameters_scale_entry, parameters_max_fps_entry, parameters_likelihood_entry]
+    pausedCustomBoardSizeWidthEntryValue = paramaters_custom_board_size_width_entry.get_text()
+    pausedCustomBoardSizeHeightEntryValue = paramaters_custom_board_size_height_entry.get_text()
+
+    all_parameters_elements = [parameters_scale_slider, parameters_max_fps_slider, parameters_likelihood_slider,
+                               parameters_scale_entry, parameters_max_fps_entry, parameters_likelihood_entry,
+                               parameters_scale_default_button, parameters_max_fps_default_button, parameters_likelihood_default_button,
+                               paramters_scale_slider_size_button, paramters_max_fps_slider_size_button, paramters_likelihood_slider_size_button,
+                               parameters_custom_board_size_enable_button, paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry]
+
+    all_paramaters_entries = [parameters_scale_entry, parameters_max_fps_entry, parameters_likelihood_entry,
+                              paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry]
+
     all_paramaters_elements_matched = [[parameters_scale_slider, parameters_scale_entry, previousScaleSliderValue, previousScaleEntryValue],
                                        [parameters_max_fps_slider, parameters_max_fps_entry, previousMaxFpsSliderValue, previousMaxFpsEntryValue],
                                        [parameters_likelihood_slider, parameters_likelihood_entry, previousLikelihoodSliderValue, previousLikelihoodEntryValue]]
+
+    all_buttons_with_tool_tips = {paramters_scale_slider_size_button, parameters_scale_default_button, parameters_max_fps_default_button,
+                                  parameters_likelihood_default_button, paramters_max_fps_slider_size_button, paramters_likelihood_slider_size_button,
+                                  parameters_custom_board_size_enable_button}
 
     for entry in all_paramaters_entries: entry.set_allowed_characters('numbers')
 
@@ -89,11 +122,18 @@ def main():
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
 
     paramaters_header_text = sidebar_header_font.render("Parameters", True, (190, 190, 190))
-    paramters_warning1_text = sidebar_font_bold.render("Changing any of these", True, (152, 152, 152))
-    paramters_warning2_text = sidebar_font_bold.render("will reset the board.", True, (152, 152, 152))
+    paramaters_warning1_text = sidebar_font_bold.render("Changing scale or likelihood", True, (152, 152, 152))
+    paramaters_warning2_text = sidebar_font_bold.render("will reset the board.", True, (152, 152, 152))
     parameters_scale_text = sidebar_font.render("Scale:", True, (152, 152, 152))
     parameters_max_fps_text = sidebar_font.render("Max fps:", True, (152, 152, 152))
     parameters_likelihood_text = sidebar_font.render("Likelihood:", True, (152, 152, 152))
+    paramaters_custom_board_size_text = sidebar_font.render("Set custom board size:", True, (152, 152, 152))
+    parameters_custom_board_size_x_text = sidebar_font.render("x", True, (152, 152, 152))
+    paramaters_custom_board_size_hint_text = sidebar_font.render("(Width x Height)", True, (152, 152, 152))
+
+    all_paramaters_texts = [paramaters_header_text, paramaters_warning1_text, paramaters_warning2_text,
+                            parameters_scale_text, parameters_max_fps_text, parameters_likelihood_text,
+                            paramaters_custom_board_size_text, parameters_custom_board_size_x_text, paramaters_custom_board_size_hint_text]
 
     while running:
         time_delta = clock.tick(120)/1000.0
@@ -129,6 +169,9 @@ def main():
                     pausedScaleSliderValue = parameters_scale_slider.get_current_value()
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
+                    pausedCustomBoardSizeWidthEntryValue = paramaters_custom_board_size_width_entry.get_text()
+                    pausedCustomBoardSizeHeightEntryValue = paramaters_custom_board_size_height_entry.get_text()
+
                     show_controls_button.set_text('Show controls')
                     show_parameters_button.set_text('Show parameters')
                     MenuOpen = OpenUIElements(all_menu_buttons)
@@ -137,10 +180,20 @@ def main():
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     CloseUIElements(all_parameters_elements)
 
-                    if (pausedScaleSliderValue != parameters_scale_slider.get_current_value()) or (pausedLikelihoodSliderValue != parameters_likelihood_slider.get_current_value()):
-                        NewBoard = True
+                    if parameters_custom_board_size_enable_button.text == '[ ]':
+                        if (w / previousWidth != parameters_scale_slider.get_current_value()) or (h / previousHeight != parameters_scale_slider.get_current_value()) or (pausedLikelihoodSliderValue != parameters_likelihood_slider.get_current_value()):
+                            previousWidth = int(w / parameters_scale_slider.get_current_value())
+                            previousHeight = int(h / parameters_scale_slider.get_current_value())
+                            NewBoard = True
+                        else:
+                            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
                     else:
-                        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
+                        if (previousWidth != int(paramaters_custom_board_size_width_entry.get_text())) or (previousHeight != int(paramaters_custom_board_size_height_entry.get_text())):
+                            previousWidth = int(paramaters_custom_board_size_width_entry.get_text())
+                            previousHeight = int(paramaters_custom_board_size_height_entry.get_text())
+                            NewBoard = True
+                        else:
+                            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
                 running = False
@@ -149,7 +202,7 @@ def main():
                 show_controls_button.set_text('Hide controls')
                 pygame.draw.rect(surf, (76, 80, 82), controls_rect)
                 surf.blit(controls_header_text, (w / 2 - 500, h / 4 + 12))
-                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])
+                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])\
 
                 if show_parameters_button.text == 'Hide parameters':
                     show_parameters_button.set_text('Show parameters')
@@ -161,10 +214,7 @@ def main():
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button and show_parameters_button.text == 'Show parameters':
                 show_parameters_button.set_text('Hide parameters')
-                pygame.draw.rect(surf, (76, 80, 82), controls_rect)
-                surf.blit(paramaters_header_text, (w / 2 - 500, h / 4 + 12))
-                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [paramters_warning1_text, paramters_warning2_text])
-                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 100, 60, [parameters_scale_text, parameters_max_fps_text, parameters_likelihood_text])
+                helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
                 OpenUIElements(all_parameters_elements)
 
                 if show_controls_button.text == 'Hide controls':
@@ -174,6 +224,71 @@ def main():
                 show_parameters_button.set_text('Show parameters')
                 surf.blit(CurrentBoardSurf, (0, 0))
                 CloseUIElements(all_parameters_elements)
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == paramters_scale_slider_size_button:
+                if paramters_scale_slider_size_button.text == '[ ]':
+                    paramters_scale_slider_size_button.text = '[X]'
+                    paramters_scale_slider_size_button.tool_tip_text = 'Change slider maximum to 80'
+                    parameters_scale_slider.value_range = (1, 200)
+                else:
+                    paramters_scale_slider_size_button.text = '[ ]'
+                    paramters_scale_slider_size_button.tool_tip_text = 'Change slider maximum to 200'
+                    paramters_scale_slider_size_button.rebuild()
+                    parameters_scale_slider.value_range = (1, 80)
+
+                paramters_scale_slider_size_button.rebuild()
+                parameters_scale_slider.rebuild()
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == paramters_max_fps_slider_size_button:
+                if paramters_max_fps_slider_size_button.text == '[ ]':
+                    paramters_max_fps_slider_size_button.text = '[X]'
+                    paramters_max_fps_slider_size_button.tool_tip_text = 'Change slider maximum to 50'
+                    parameters_max_fps_slider.value_range = (1, 1000)
+                else:
+                    paramters_max_fps_slider_size_button.text = '[ ]'
+                    paramters_max_fps_slider_size_button.tool_tip_text = 'Change slider maximum to 1000'
+                    parameters_max_fps_slider.value_range = (1, 50)
+
+                paramters_max_fps_slider_size_button.rebuild()
+                parameters_max_fps_slider.rebuild()
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == paramters_likelihood_slider_size_button:
+                if paramters_likelihood_slider_size_button.text == '[ ]':
+                    paramters_likelihood_slider_size_button.text = '[X]'
+                    paramters_likelihood_slider_size_button.tool_tip_text = 'Change slider maximum to 30'
+                    parameters_likelihood_slider.value_range = (1, 100)
+                else:
+                    paramters_likelihood_slider_size_button.text = '[ ]'
+                    paramters_likelihood_slider_size_button.tool_tip_text = 'Change slider maximum to 100'
+                    parameters_likelihood_slider.value_range = (1, 30)
+
+                paramters_likelihood_slider_size_button.rebuild()
+                parameters_likelihood_slider.rebuild()
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_custom_board_size_enable_button:
+                if parameters_custom_board_size_enable_button.text == '[ ]':
+                    parameters_custom_board_size_enable_button.text = '[X]'
+                    paramters_likelihood_slider_size_button.tool_tip_text = 'Disable to use the scale option instead.'
+                    for element in (parameters_scale_slider, parameters_scale_entry, paramters_scale_slider_size_button, parameters_scale_default_button): element.disable()
+                    for element in (paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry): element.enable()
+                else:
+                    parameters_custom_board_size_enable_button.text = '[ ]'
+                    paramters_likelihood_slider_size_button.tool_tip_text = 'Enable to enter a custom board size. Disables scale option.'
+                    for element in (parameters_scale_slider, parameters_scale_entry, paramters_scale_slider_size_button, parameters_scale_default_button): element.enable()
+                    for element in (paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry): element.disable()
+                    paramaters_custom_board_size_width_entry.rebuild()
+                    paramaters_custom_board_size_height_entry.rebuild()
+
+                parameters_custom_board_size_enable_button.rebuild()
+
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_scale_default_button: parameters_scale_slider.set_current_value(DefaultScale)
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_max_fps_default_button: parameters_max_fps_slider.set_current_value(DefaultMaxFps)
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_likelihood_default_button: parameters_likelihood_slider.set_current_value(DefaultLikelihood)
+
+            if (event.type == pygame_gui.UI_BUTTON_ON_UNHOVERED or event.type == pygame_gui.UI_BUTTON_PRESSED) and (event.ui_element in all_buttons_with_tool_tips) and (show_parameters_button.text == 'Hide parameters') and (MenuOpen is not False):
+                surf.blit(CurrentBoardSurf, (0, 0))
+                helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
 
             manager.process_events(event)
 
@@ -192,12 +307,14 @@ def main():
             Update = False
 
         if NewBoard is True:
-            Board = helpers.generateArray(int(infoObject.current_h / parameters_scale_slider.get_current_value()), int(infoObject.current_w / parameters_scale_slider.get_current_value()), parameters_likelihood_slider.get_current_value())
+            Board = helpers.generateArray(previousHeight, previousWidth, parameters_likelihood_slider.get_current_value())
             Board = np.rot90(Board)
             step_stack.clear()
             step_stack.append(Board)
             CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
             NewBoard = False
+
+
 
         helpers.manageSliderAndEntryWithArray(all_paramaters_elements_matched)
         all_paramaters_elements_matched[0][2] = parameters_scale_slider.get_current_value()
@@ -206,6 +323,10 @@ def main():
         all_paramaters_elements_matched[1][3] = parameters_max_fps_entry.get_text()
         all_paramaters_elements_matched[2][2] = parameters_likelihood_slider.get_current_value()
         all_paramaters_elements_matched[2][3] = parameters_likelihood_entry.get_text()
+
+        helpers.manageNumberEntry(paramaters_custom_board_size_width_entry, 1, w)
+        helpers.manageNumberEntry(paramaters_custom_board_size_height_entry, 1, h)
+
 
         manager.draw_ui(surf)
         pygame.display.update()
