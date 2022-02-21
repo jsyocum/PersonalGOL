@@ -133,7 +133,7 @@ def manageSliderAndEntryWithArray(array):
         manageSliderAndEntry(tuple[0], tuple[1], tuple[2], tuple[3])
 
 def manageSliderAndEntry(slider, entry, previousSliderValue, PreviousEntryValue):
-    if PreviousEntryValue is not None:
+    if (PreviousEntryValue is not None) and (entry.is_focused is not True):
         if (entry.get_text() == '') or (slider.value_range[0] > int(entry.get_text())):
             entry.set_text(str(slider.value_range[0]))
 
@@ -144,7 +144,14 @@ def manageSliderAndEntry(slider, entry, previousSliderValue, PreviousEntryValue)
         entry.set_text(str(slider.get_current_value()))
 
     elif PreviousEntryValue != entry.get_text():
-        slider.set_current_value(int(entry.get_text()))
+        if (entry.get_text() == '') or (slider.value_range[0] > int(entry.get_text())):
+            slider.set_current_value(slider.value_range[0])
+
+        elif (int(entry.get_text()) > slider.value_range[1]):
+            slider.set_current_value(slider.value_range[1])
+
+        else:
+            slider.set_current_value(int(entry.get_text()))
 
 def manageNumberEntry(entry, min, max):
     if (entry.get_text() == '') or (min > int(entry.get_text())):

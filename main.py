@@ -176,6 +176,9 @@ def main():
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     CloseUIElements(all_parameters_elements)
 
+                    helpers.manageNumberEntry(paramaters_custom_board_size_width_entry, 1, w)
+                    helpers.manageNumberEntry(paramaters_custom_board_size_height_entry, 1, h)
+
                     if parameters_custom_board_size_enable_button.text == '[ ]':
                         if (w / previousWidth != parameters_scale_slider.get_current_value()) or (h / previousHeight != parameters_scale_slider.get_current_value()) or (pausedLikelihoodSliderValue != parameters_likelihood_slider.get_current_value()):
                             previousWidth = int(w / parameters_scale_slider.get_current_value())
@@ -320,8 +323,12 @@ def main():
         all_paramaters_elements_matched[2][2] = parameters_likelihood_slider.get_current_value()
         all_paramaters_elements_matched[2][3] = parameters_likelihood_entry.get_text()
 
-        helpers.manageNumberEntry(paramaters_custom_board_size_width_entry, 1, w)
-        helpers.manageNumberEntry(paramaters_custom_board_size_height_entry, 1, h)
+
+        if paramaters_custom_board_size_width_entry.is_focused is not True:
+            helpers.manageNumberEntry(paramaters_custom_board_size_width_entry, 1, w)
+
+        if paramaters_custom_board_size_height_entry.is_focused is not True:
+            helpers.manageNumberEntry(paramaters_custom_board_size_height_entry, 1, h)
 
 
         manager.draw_ui(surf)
