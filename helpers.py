@@ -82,9 +82,30 @@ def updateScreenWithBoard(Board, surf, infoObject, darken=False):
         boardSurf = pygame.surfarray.make_surface(Board)
     else:
         boardSurf = pygame.surfarray.make_surface(Board / 255 * random.randint(0, 255))
-    boardSurf = pygame.transform.scale(boardSurf, (infoObject.current_w, infoObject.current_h))
-    surf.blit(boardSurf, (0, 0))
+
+    ScreenRatio = infoObject.current_w / infoObject.current_h
+    BoardSurfRatio = boardSurf.get_width() / boardSurf.get_height()
+    Scale = None
+
+    # If the ratio between width and height of the board surface is the same as the screen, scale it up directly
+    if ScreenRatio == BoardSurfRatio:
+        Scale = infoObject.current_w / boardSurf.get_width()
+
+    # If the ratio of the screen's size is greater, then the board surface's width is disproprotionately smaller
+    elif ScreenRatio > BoardSurfRatio:
+        Scale = infoObject.current_h / boardSurf.get_height()
+
+    else:
+        Scale = infoObject.current_w / boardSurf.get_width()
+
+    boardSurf = pygame.transform.scale(boardSurf, (boardSurf.get_width() * Scale, boardSurf.get_height() * Scale))
+
+    blitBoardOnScreenEvenly(surf, boardSurf, infoObject)
     return boardSurf
+
+def blitBoardOnScreenEvenly(surf, boardSurf, infoObject):
+    surf.fill((0, 0, 0))
+    surf.blit(boardSurf, (infoObject.current_w / 2 - boardSurf.get_width() / 2, infoObject.current_h / 2 - boardSurf.get_height() / 2))
 
 def appendToStepStack(Board, step_stack):
     if np.array_equal(Board, step_stack[-1]):

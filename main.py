@@ -166,11 +166,7 @@ def main():
                     Continuous = False
                     CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, True)
 
-                    pausedScaleSliderValue = parameters_scale_slider.get_current_value()
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
-
-                    pausedCustomBoardSizeWidthEntryValue = paramaters_custom_board_size_width_entry.get_text()
-                    pausedCustomBoardSizeHeightEntryValue = paramaters_custom_board_size_height_entry.get_text()
 
                     show_controls_button.set_text('Show controls')
                     show_parameters_button.set_text('Show parameters')
@@ -210,7 +206,7 @@ def main():
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button:
                 show_controls_button.set_text('Show controls')
-                surf.blit(CurrentBoardSurf, (0, 0))
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button and show_parameters_button.text == 'Show parameters':
                 show_parameters_button.set_text('Hide parameters')
@@ -222,7 +218,7 @@ def main():
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button:
                 show_parameters_button.set_text('Show parameters')
-                surf.blit(CurrentBoardSurf, (0, 0))
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
                 CloseUIElements(all_parameters_elements)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == paramters_scale_slider_size_button:
@@ -287,7 +283,7 @@ def main():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_likelihood_default_button: parameters_likelihood_slider.set_current_value(DefaultLikelihood)
 
             if (event.type == pygame_gui.UI_BUTTON_ON_UNHOVERED or event.type == pygame_gui.UI_BUTTON_PRESSED) and (event.ui_element in all_buttons_with_tool_tips) and (show_parameters_button.text == 'Hide parameters') and (MenuOpen is not False):
-                surf.blit(CurrentBoardSurf, (0, 0))
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
                 helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
 
             manager.process_events(event)
