@@ -41,6 +41,10 @@ def main():
     CurrentBoardSurf = None
     time_delta_added = 0
 
+    DefaultColorR = 255
+    DefaultColorG = 255
+    DefaultColorB = 255
+
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
@@ -74,6 +78,16 @@ def main():
     paramaters_custom_board_size_width_entry.disable()
     paramaters_custom_board_size_height_entry.disable()
 
+    parameters_color_R_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 480, h / 4 + 365), (50, 25)), manager=manager, visible=0)
+    parameters_color_G_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 405, h / 4 + 365), (50, 25)), manager=manager, visible=0)
+    parameters_color_B_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 365), (50, 25)), manager=manager, visible=0)
+    parameters_color_R_entry.set_text(str(DefaultColorR))
+    parameters_color_G_entry.set_text(str(DefaultColorG))
+    parameters_color_B_entry.set_text(str(DefaultColorB))
+    parameters_color_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 340), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default values: R: ' + str(DefaultColorR) + ' G: ' + str(DefaultColorG) + ' B: ' + str(DefaultColorB), visible=0)
+
+    color = pygame.Color(int(parameters_color_R_entry.get_text()), int(parameters_color_G_entry.get_text()), int(parameters_color_B_entry.get_text()))
+
     previousScaleSliderValue = None
     previousScaleEntryValue = None
     previousMaxFpsSliderValue = None
@@ -84,20 +98,18 @@ def main():
     previousWidth = int(w / DefaultScale)
     previousHeight = int(h / DefaultScale)
 
-    pausedScaleSliderValue = DefaultScale
     pausedLikelihoodSliderValue = DefaultLikelihood
-
-    pausedCustomBoardSizeWidthEntryValue = paramaters_custom_board_size_width_entry.get_text()
-    pausedCustomBoardSizeHeightEntryValue = paramaters_custom_board_size_height_entry.get_text()
 
     all_parameters_elements = [parameters_scale_slider, parameters_max_fps_slider, parameters_likelihood_slider,
                                parameters_scale_entry, parameters_max_fps_entry, parameters_likelihood_entry,
                                parameters_scale_default_button, parameters_max_fps_default_button, parameters_likelihood_default_button,
                                paramters_scale_slider_size_button, paramters_max_fps_slider_size_button, paramters_likelihood_slider_size_button,
-                               parameters_custom_board_size_enable_button, paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry]
+                               parameters_custom_board_size_enable_button, paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry,
+                               parameters_color_default_button, parameters_color_R_entry, parameters_color_G_entry, parameters_color_B_entry]
 
-    all_paramaters_entries = [parameters_scale_entry, parameters_max_fps_entry, parameters_likelihood_entry,
-                              paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry]
+    all_paramaters_entries = [[parameters_scale_entry, 1, 80], [parameters_max_fps_entry, 1, 50], [parameters_likelihood_entry, 1, 30],
+                              [paramaters_custom_board_size_width_entry, 1, w], [paramaters_custom_board_size_height_entry, 1, h],
+                              [parameters_color_R_entry, 0, 255], [parameters_color_G_entry, 0, 255], [parameters_color_B_entry, 0, 255]]
 
     all_paramaters_elements_matched = [[parameters_scale_slider, parameters_scale_entry, previousScaleSliderValue, previousScaleEntryValue],
                                        [parameters_max_fps_slider, parameters_max_fps_entry, previousMaxFpsSliderValue, previousMaxFpsEntryValue],
@@ -105,9 +117,10 @@ def main():
 
     all_buttons_with_tool_tips = {paramters_scale_slider_size_button, parameters_scale_default_button, parameters_max_fps_default_button,
                                   parameters_likelihood_default_button, paramters_max_fps_slider_size_button, paramters_likelihood_slider_size_button,
-                                  parameters_custom_board_size_enable_button}
+                                  parameters_custom_board_size_enable_button,
+                                  parameters_color_default_button}
 
-    for entry in all_paramaters_entries: entry.set_allowed_characters('numbers')
+    for entry in all_paramaters_entries: entry[0].set_allowed_characters('numbers')
 
 
     sidebar_header_font = pygame.font.SysFont('arial', size=30, bold=True)
@@ -130,10 +143,15 @@ def main():
     paramaters_custom_board_size_text = sidebar_font.render("Set custom board size:", True, (152, 152, 152))
     parameters_custom_board_size_x_text = sidebar_font.render("x", True, (152, 152, 152))
     paramaters_custom_board_size_hint_text = sidebar_font.render("(Width x Height)", True, (152, 152, 152))
+    paramaters_color_text = sidebar_font.render("Color:", True, (152, 152, 152))
+    paramaters_color_R_text = sidebar_font.render("R:", True, (152, 152, 152))
+    paramaters_color_G_text = sidebar_font.render("G:", True, (152, 152, 152))
+    paramaters_color_B_text = sidebar_font.render("B:", True, (152, 152, 152))
 
     all_paramaters_texts = [paramaters_header_text, paramaters_warning1_text, paramaters_warning2_text,
                             parameters_scale_text, parameters_max_fps_text, parameters_likelihood_text,
-                            paramaters_custom_board_size_text, parameters_custom_board_size_x_text, paramaters_custom_board_size_hint_text]
+                            paramaters_custom_board_size_text, parameters_custom_board_size_x_text, paramaters_custom_board_size_hint_text,
+                            paramaters_color_text, paramaters_color_R_text, paramaters_color_G_text, paramaters_color_B_text]
 
     while running:
         time_delta = clock.tick(120)/1000.0
@@ -164,7 +182,7 @@ def main():
                 if MenuOpen is False:
                     WasContinuous = Continuous
                     Continuous = False
-                    CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, True)
+                    CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, RandomColor=True)
 
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
@@ -176,23 +194,21 @@ def main():
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     CloseUIElements(all_parameters_elements)
 
-                    helpers.manageNumberEntry(paramaters_custom_board_size_width_entry, 1, w)
-                    helpers.manageNumberEntry(paramaters_custom_board_size_height_entry, 1, h)
+                    for entryArray in all_paramaters_entries[3:]:
+                        helpers.manageNumberEntry(entryArray)
 
                     if parameters_custom_board_size_enable_button.text == '[ ]':
                         if (w / previousWidth != parameters_scale_slider.get_current_value()) or (h / previousHeight != parameters_scale_slider.get_current_value()) or (pausedLikelihoodSliderValue != parameters_likelihood_slider.get_current_value()):
                             previousWidth = int(w / parameters_scale_slider.get_current_value())
                             previousHeight = int(h / parameters_scale_slider.get_current_value())
                             NewBoard = True
-                        else:
-                            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
-                    else:
-                        if (previousWidth != int(paramaters_custom_board_size_width_entry.get_text())) or (previousHeight != int(paramaters_custom_board_size_height_entry.get_text())):
-                            previousWidth = int(paramaters_custom_board_size_width_entry.get_text())
-                            previousHeight = int(paramaters_custom_board_size_height_entry.get_text())
-                            NewBoard = True
-                        else:
-                            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
+                    elif (previousWidth != int(paramaters_custom_board_size_width_entry.get_text())) or (previousHeight != int(paramaters_custom_board_size_height_entry.get_text())):
+                        previousWidth = int(paramaters_custom_board_size_width_entry.get_text())
+                        previousHeight = int(paramaters_custom_board_size_height_entry.get_text())
+                        NewBoard = True
+
+                    color = pygame.Color(int(parameters_color_R_entry.get_text()), int(parameters_color_G_entry.get_text()), int(parameters_color_B_entry.get_text()))
+                    CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
                 running = False
@@ -285,6 +301,11 @@ def main():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_max_fps_default_button: parameters_max_fps_slider.set_current_value(DefaultMaxFps)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_likelihood_default_button: parameters_likelihood_slider.set_current_value(DefaultLikelihood)
 
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_default_button:
+                parameters_color_R_entry.set_text(str(DefaultColorR))
+                parameters_color_G_entry.set_text(str(DefaultColorG))
+                parameters_color_B_entry.set_text(str(DefaultColorB))
+
             if (event.type == pygame_gui.UI_BUTTON_ON_UNHOVERED or event.type == pygame_gui.UI_BUTTON_PRESSED) and (event.ui_element in all_buttons_with_tool_tips) and (show_parameters_button.text == 'Hide parameters') and (MenuOpen is not False):
                 helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
                 helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
@@ -294,13 +315,13 @@ def main():
         manager.update(time_delta)
 
         if (Continuous is False) and (Step is True):
-            CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack)
+            CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack, color=color)
             Step = False
         elif (Continuous is False) and (StepBack is True):
-            CurrentBoardSurf = helpers.stepBack(step_stack, surf, infoObject)
+            CurrentBoardSurf = helpers.stepBack(step_stack, surf, infoObject, color=color)
             StepBack = False
         elif (Continuous is True) and (Update is True):
-            CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack)
+            CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack, color=color)
             Step = False
             StepBack = False
             Update = False
@@ -310,7 +331,7 @@ def main():
             Board = np.rot90(Board)
             step_stack.clear()
             step_stack.append(Board)
-            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject)
+            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
             NewBoard = False
 
 
@@ -323,12 +344,9 @@ def main():
         all_paramaters_elements_matched[2][2] = parameters_likelihood_slider.get_current_value()
         all_paramaters_elements_matched[2][3] = parameters_likelihood_entry.get_text()
 
-
-        if paramaters_custom_board_size_width_entry.is_focused is not True:
-            helpers.manageNumberEntry(paramaters_custom_board_size_width_entry, 1, w)
-
-        if paramaters_custom_board_size_height_entry.is_focused is not True:
-            helpers.manageNumberEntry(paramaters_custom_board_size_height_entry, 1, h)
+        for entryArray in all_paramaters_entries[3:]:
+            if entryArray[0].is_focused is not True:
+                helpers.manageNumberEntry(entryArray)
 
 
         manager.draw_ui(surf)

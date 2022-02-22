@@ -53,13 +53,13 @@ def applyRules(ogArray, step_stack):
     appendToStepStack(array, step_stack)
     return array
 
-def stepBack(step_stack, surf, infoObject):
+def stepBack(step_stack, surf, infoObject, color=pygame.Color('White')):
     if len(step_stack) > 1:
         step_stack.pop()
 
     PreviousBoard = step_stack[-1]
 
-    return updateScreenWithBoard(PreviousBoard, surf, infoObject)
+    return updateScreenWithBoard(PreviousBoard, surf, infoObject, color=color)
 
 # Returns an array with the on characters in the place of the 1's and the off characters in the place of the 0's
 def interpretArray(ogArray, onChar, offChar):
@@ -73,15 +73,18 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateGOL(Board, surf, infoObject, step_stack):
+def updateGOL(Board, surf, infoObject, step_stack, color=pygame.Color('White')):
     Board = applyRules(Board.copy(), step_stack)
-    return updateScreenWithBoard(Board, surf, infoObject)
+    return updateScreenWithBoard(Board, surf, infoObject, color=color)
 
-def updateScreenWithBoard(Board, surf, infoObject, darken=False):
-    if darken is False:
-        boardSurf = pygame.surfarray.make_surface(Board * 255)
-    else:
-        boardSurf = pygame.surfarray.make_surface(Board * random.randint(0, 255))
+def updateScreenWithBoard(Board, surf, infoObject, color=pygame.Color('White'), RandomColor=False):
+    if RandomColor is True:
+        color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
+
+    colorAsInt = surf.map_rgb(color)
+    coloredBoard = Board * colorAsInt
+
+    boardSurf = pygame.Surface(Board.shape)
 
     ScreenRatio = infoObject.current_w / infoObject.current_h
     BoardSurfRatio = boardSurf.get_width() / boardSurf.get_height()
@@ -98,9 +101,11 @@ def updateScreenWithBoard(Board, surf, infoObject, darken=False):
     else:
         Scale = infoObject.current_w / boardSurf.get_width()
 
+    pygame.surfarray.blit_array(boardSurf, coloredBoard)
     boardSurf = pygame.transform.scale(boardSurf, (boardSurf.get_width() * Scale, boardSurf.get_height() * Scale))
 
     blitBoardOnScreenEvenly(surf, boardSurf, infoObject)
+
     return boardSurf
 
 def blitBoardOnScreenEvenly(surf, boardSurf, infoObject):
@@ -124,9 +129,14 @@ def showParameters(surf, w, h, controls_rect, all_paramaters_texts):
     pygame.draw.rect(surf, (76, 80, 82), controls_rect)
     surf.blit(all_paramaters_texts[0], (w / 2 - 500, h / 4 + 12))
     printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [all_paramaters_texts[1], all_paramaters_texts[2]])
-    printLinesOfText(surf, w / 2 - 500, h / 4 + 100, 60, [all_paramaters_texts[3], all_paramaters_texts[4], all_paramaters_texts[5], all_paramaters_texts[6]])
+    printLinesOfText(surf, w / 2 - 500, h / 4 + 100, 60, [all_paramaters_texts[3], all_paramaters_texts[4], all_paramaters_texts[5], all_paramaters_texts[6], all_paramaters_texts[9]])
     surf.blit(all_paramaters_texts[7], (w / 2 - 442, h / 4 + 305))
     surf.blit(all_paramaters_texts[8], (w / 2 - 367, h / 4 + 305))
+
+    surf.blit(all_paramaters_texts[10], (w / 2 - 500, h / 4 + 365))
+    surf.blit(all_paramaters_texts[11], (w / 2 - 425, h / 4 + 365))
+    surf.blit(all_paramaters_texts[12], (w / 2 - 350, h / 4 + 365))
+
 
 def manageSliderAndEntryWithArray(array):
     for tuple in array:
@@ -153,7 +163,11 @@ def manageSliderAndEntry(slider, entry, previousSliderValue, PreviousEntryValue)
         else:
             slider.set_current_value(int(entry.get_text()))
 
-def manageNumberEntry(entry, min, max):
+def manageNumberEntry(entryArray):
+    entry = entryArray[0]
+    min = entryArray[1]
+    max = entryArray[2]
+
     if (entry.get_text() == '') or (min > int(entry.get_text())):
         entry.set_text(str(min))
 
