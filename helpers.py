@@ -125,6 +125,11 @@ def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):
         surf.blit(line, (left, top + (spacing * i)))
 
+def showControls(surf, w, h, controls_rect, controls_header_text, controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text):
+    pygame.draw.rect(surf, (76, 80, 82), controls_rect)
+    surf.blit(controls_header_text, (w / 2 - 500, h / 4 + 12))
+    printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])
+
 def showParameters(surf, w, h, controls_rect, all_paramaters_texts):
     pygame.draw.rect(surf, (76, 80, 82), controls_rect)
     surf.blit(all_paramaters_texts[0], (w / 2 - 500, h / 4 + 12))

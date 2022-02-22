@@ -78,14 +78,16 @@ def main():
     paramaters_custom_board_size_width_entry.disable()
     paramaters_custom_board_size_height_entry.disable()
 
+    parameters_color_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 340), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default values: R: ' + str(DefaultColorR) + ' G: ' + str(DefaultColorG) + ' B: ' + str(DefaultColorB), visible=0)
     parameters_color_R_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 480, h / 4 + 365), (50, 25)), manager=manager, visible=0)
     parameters_color_G_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 405, h / 4 + 365), (50, 25)), manager=manager, visible=0)
     parameters_color_B_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 365), (50, 25)), manager=manager, visible=0)
+    parameters_color_picker_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 365), (50, 25)), text='...', manager=manager, tool_tip_text='Use a color picker to choose a color.', visible=0)
+    paramaters_color_picker_dialog = None
+
     parameters_color_R_entry.set_text(str(DefaultColorR))
     parameters_color_G_entry.set_text(str(DefaultColorG))
     parameters_color_B_entry.set_text(str(DefaultColorB))
-    parameters_color_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 340), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default values: R: ' + str(DefaultColorR) + ' G: ' + str(DefaultColorG) + ' B: ' + str(DefaultColorB), visible=0)
-
     color = pygame.Color(int(parameters_color_R_entry.get_text()), int(parameters_color_G_entry.get_text()), int(parameters_color_B_entry.get_text()))
 
     previousScaleSliderValue = None
@@ -105,7 +107,7 @@ def main():
                                parameters_scale_default_button, parameters_max_fps_default_button, parameters_likelihood_default_button,
                                paramters_scale_slider_size_button, paramters_max_fps_slider_size_button, paramters_likelihood_slider_size_button,
                                parameters_custom_board_size_enable_button, paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry,
-                               parameters_color_default_button, parameters_color_R_entry, parameters_color_G_entry, parameters_color_B_entry]
+                               parameters_color_default_button, parameters_color_R_entry, parameters_color_G_entry, parameters_color_B_entry, parameters_color_picker_button]
 
     all_paramaters_entries = [[parameters_scale_entry, 1, 80], [parameters_max_fps_entry, 1, 50], [parameters_likelihood_entry, 1, 30],
                               [paramaters_custom_board_size_width_entry, 1, w], [paramaters_custom_board_size_height_entry, 1, h],
@@ -118,7 +120,7 @@ def main():
     all_buttons_with_tool_tips = {paramters_scale_slider_size_button, parameters_scale_default_button, parameters_max_fps_default_button,
                                   parameters_likelihood_default_button, paramters_max_fps_slider_size_button, paramters_likelihood_slider_size_button,
                                   parameters_custom_board_size_enable_button,
-                                  parameters_color_default_button}
+                                  parameters_color_default_button, parameters_color_picker_button}
 
     for entry in all_paramaters_entries: entry[0].set_allowed_characters('numbers')
 
@@ -182,7 +184,7 @@ def main():
                 if MenuOpen is False:
                     WasContinuous = Continuous
                     Continuous = False
-                    CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, RandomColor=True)
+                    # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, RandomColor=True)
 
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
@@ -193,6 +195,7 @@ def main():
                     Continuous = WasContinuous
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     CloseUIElements(all_parameters_elements)
+                    if paramaters_color_picker_dialog is not None: paramaters_color_picker_dialog.kill()
 
                     for entryArray in all_paramaters_entries[3:]:
                         helpers.manageNumberEntry(entryArray)
@@ -208,16 +211,14 @@ def main():
                         NewBoard = True
 
                     color = pygame.Color(int(parameters_color_R_entry.get_text()), int(parameters_color_G_entry.get_text()), int(parameters_color_B_entry.get_text()))
-                    CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
+                    # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
                 running = False
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button and show_controls_button.text == 'Show controls':
                 show_controls_button.set_text('Hide controls')
-                pygame.draw.rect(surf, (76, 80, 82), controls_rect)
-                surf.blit(controls_header_text, (w / 2 - 500, h / 4 + 12))
-                helpers.printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])\
+                helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text)
 
                 if show_parameters_button.text == 'Hide parameters':
                     show_parameters_button.set_text('Show parameters')
@@ -296,6 +297,18 @@ def main():
 
                 parameters_custom_board_size_enable_button.rebuild()
 
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_picker_button:
+                paramaters_color_picker_dialog = pygame_gui.windows.UIColourPickerDialog(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, initial_colour=color, window_title='Pick a color...')
+                parameters_color_picker_button.disable()
+
+            if event.type == pygame_gui.UI_COLOUR_PICKER_COLOUR_PICKED:
+                parameters_color_R_entry.set_text(str(event.colour[0]))
+                parameters_color_G_entry.set_text(str(event.colour[1]))
+                parameters_color_B_entry.set_text(str(event.colour[2]))
+                print('color picked')
+
+            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == paramaters_color_picker_dialog:
+                parameters_color_picker_button.enable()
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_scale_default_button: parameters_scale_slider.set_current_value(DefaultScale)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_max_fps_default_button: parameters_max_fps_slider.set_current_value(DefaultMaxFps)
@@ -334,6 +347,12 @@ def main():
             CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
             NewBoard = False
 
+        if MenuOpen is True:
+            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
+            if show_controls_button.text == 'Hide controls':
+                helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text)
+            elif show_parameters_button.text == 'Hide parameters':
+                helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
 
 
         helpers.manageSliderAndEntryWithArray(all_paramaters_elements_matched)
