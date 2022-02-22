@@ -1,6 +1,7 @@
 import helpers
 import pygame
 import pygame_gui
+import settings_window
 import numpy as np
 from collections import deque
 
@@ -49,7 +50,7 @@ def main():
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
-    show_parameters_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 100), (400, 50)), text='Show parameters', manager=manager, visible=0)
+    show_parameters_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 100), (400, 50)), text='Show settings', manager=manager, visible=0)
     quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
 
     all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
@@ -140,9 +141,9 @@ def main():
     controls_reset_text = sidebar_font.render("Reset: R", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
 
-    paramaters_header_text = sidebar_header_font.render("Parameters", True, (190, 190, 190))
-    paramaters_warning1_text = sidebar_font_bold.render("Changing scale or likelihood", True, (152, 152, 152))
-    paramaters_warning2_text = sidebar_font_bold.render("will reset the board.", True, (152, 152, 152))
+    paramaters_header_text = sidebar_header_font.render("Settings", True, (190, 190, 190))
+    paramaters_warning1_text = sidebar_font_bold.render("Changing scale, likelihood, or", True, (152, 152, 152))
+    paramaters_warning2_text = sidebar_font_bold.render("board size will reset the board.", True, (152, 152, 152))
     parameters_scale_text = sidebar_font.render("Scale:", True, (152, 152, 152))
     parameters_max_fps_text = sidebar_font.render("Max fps:", True, (152, 152, 152))
     parameters_likelihood_text = sidebar_font.render("Likelihood:", True, (152, 152, 152))
@@ -192,7 +193,7 @@ def main():
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
                     show_controls_button.set_text('Show controls')
-                    show_parameters_button.set_text('Show parameters')
+                    show_parameters_button.set_text('Show settings')
                     MenuOpen = OpenUIElements(all_menu_buttons)
                 else:
                     Continuous = WasContinuous
@@ -220,24 +221,25 @@ def main():
                 show_controls_button.set_text('Hide controls')
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text)
 
-                if show_parameters_button.text == 'Hide parameters':
-                    show_parameters_button.set_text('Show parameters')
+                if show_parameters_button.text == 'Hide settings':
+                    show_parameters_button.set_text('Show settings')
                     CloseUIElements(all_parameters_elements)
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button:
                 show_controls_button.set_text('Show controls')
                 helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
 
-            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button and show_parameters_button.text == 'Show parameters':
-                show_parameters_button.set_text('Hide parameters')
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button and show_parameters_button.text == 'Show settings':
+                show_parameters_button.set_text('Hide settings')
                 helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
                 OpenUIElements(all_parameters_elements)
+                settings_dialog = settings_window.SettingsDialog(rect=controls_rect, manager=manager)
 
                 if show_controls_button.text == 'Hide controls':
                     show_controls_button.set_text('Show controls')
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button:
-                show_parameters_button.set_text('Show parameters')
+                show_parameters_button.set_text('Show settings')
                 helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
                 CloseUIElements(all_parameters_elements)
 
@@ -384,7 +386,7 @@ def main():
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text)
-            elif show_parameters_button.text == 'Hide parameters':
+            elif show_parameters_button.text == 'Hide settings':
                 helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
 
 
