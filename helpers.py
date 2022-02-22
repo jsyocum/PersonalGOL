@@ -40,7 +40,7 @@ def sumOfNeighbors(array):
 
 # Modifies existing 2D array using specified rules
 def applyRules(ogArray, step_stack):
-    array = ogArray
+    array = ogArray.copy()
     AliveCountArray = sumOfNeighbors(ogArray)
 
     for subi, SubArray in enumerate(ogArray):
@@ -53,13 +53,19 @@ def applyRules(ogArray, step_stack):
     appendToStepStack(array, step_stack)
     return array
 
-def stepBack(step_stack, surf, infoObject, color=pygame.Color('White')):
+def appendToStepStack(Board, step_stack):
+    if np.array_equal(Board, step_stack[-1]):
+        pass
+        print("here")
+    else:
+        step_stack.append(Board.copy())
+
+    if totalsize.total_size(step_stack) > 1e+9:
+        step_stack.popleft()
+
+def stepBack(step_stack):
     if len(step_stack) > 1:
         step_stack.pop()
-
-    PreviousBoard = step_stack[-1]
-
-    return updateScreenWithBoard(PreviousBoard, surf, infoObject, color=color)
 
 # Returns an array with the on characters in the place of the 1's and the off characters in the place of the 0's
 def interpretArray(ogArray, onChar, offChar):
@@ -73,16 +79,18 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateGOL(Board, surf, infoObject, step_stack, color=pygame.Color('White')):
-    Board = applyRules(Board.copy(), step_stack)
-    return updateScreenWithBoard(Board, surf, infoObject, color=color)
+def updateScreenWithBoard(Board, surf, infoObject, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False):
+    if RandomColorByPixel is False:
+        if RandomColor is True:
+            color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
 
-def updateScreenWithBoard(Board, surf, infoObject, color=pygame.Color('White'), RandomColor=False):
-    if RandomColor is True:
-        color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
-
-    colorAsInt = surf.map_rgb(color)
-    coloredBoard = Board * colorAsInt
+        colorAsInt = surf.map_rgb(color)
+        coloredBoard = Board * colorAsInt
+    else:
+        coloredBoard = Board.copy()
+        for subi, SubArray in enumerate(coloredBoard):
+            for i, Pixel in enumerate(SubArray):
+                coloredBoard[subi][i] = coloredBoard[subi][i] * surf.map_rgb(pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)))
 
     boardSurf = pygame.Surface(Board.shape)
 
@@ -111,15 +119,6 @@ def updateScreenWithBoard(Board, surf, infoObject, color=pygame.Color('White'), 
 def blitBoardOnScreenEvenly(surf, boardSurf, infoObject):
     surf.fill((0, 0, 0))
     surf.blit(boardSurf, (infoObject.current_w / 2 - boardSurf.get_width() / 2, infoObject.current_h / 2 - boardSurf.get_height() / 2))
-
-def appendToStepStack(Board, step_stack):
-    if np.array_equal(Board, step_stack[-1]):
-        pass
-    else:
-        step_stack.append(Board.copy())
-
-    if totalsize.total_size(step_stack) > 1e+9:
-        step_stack.popleft()
 
 def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):

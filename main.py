@@ -44,6 +44,7 @@ def main():
     DefaultColorR = 255
     DefaultColorG = 255
     DefaultColorB = 255
+    RandomColorByPixel = False
 
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
@@ -78,6 +79,7 @@ def main():
     paramaters_custom_board_size_width_entry.disable()
     paramaters_custom_board_size_height_entry.disable()
 
+    parameters_color_random_cell_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 340), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Enable to randomize the color of each cell.', visible=0)
     parameters_color_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 340), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default values: R: ' + str(DefaultColorR) + ' G: ' + str(DefaultColorG) + ' B: ' + str(DefaultColorB), visible=0)
     parameters_color_R_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 480, h / 4 + 365), (50, 25)), manager=manager, visible=0)
     parameters_color_G_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 405, h / 4 + 365), (50, 25)), manager=manager, visible=0)
@@ -107,7 +109,9 @@ def main():
                                parameters_scale_default_button, parameters_max_fps_default_button, parameters_likelihood_default_button,
                                paramters_scale_slider_size_button, paramters_max_fps_slider_size_button, paramters_likelihood_slider_size_button,
                                parameters_custom_board_size_enable_button, paramaters_custom_board_size_width_entry, paramaters_custom_board_size_height_entry,
-                               parameters_color_default_button, parameters_color_R_entry, parameters_color_G_entry, parameters_color_B_entry, parameters_color_picker_button]
+                               parameters_color_random_cell_button, parameters_color_default_button, parameters_color_R_entry, parameters_color_G_entry, parameters_color_B_entry, parameters_color_picker_button]
+
+    all_parameters_color_elements = [parameters_color_random_cell_button, parameters_color_default_button, parameters_color_R_entry, parameters_color_G_entry, parameters_color_B_entry, parameters_color_picker_button]
 
     all_paramaters_entries = [[parameters_scale_entry, 1, 80], [parameters_max_fps_entry, 1, 50], [parameters_likelihood_entry, 1, 30],
                               [paramaters_custom_board_size_width_entry, 1, w], [paramaters_custom_board_size_height_entry, 1, h],
@@ -120,7 +124,7 @@ def main():
     all_buttons_with_tool_tips = {paramters_scale_slider_size_button, parameters_scale_default_button, parameters_max_fps_default_button,
                                   parameters_likelihood_default_button, paramters_max_fps_slider_size_button, paramters_likelihood_slider_size_button,
                                   parameters_custom_board_size_enable_button,
-                                  parameters_color_default_button, parameters_color_picker_button}
+                                  parameters_color_random_cell_button, parameters_color_default_button, parameters_color_picker_button}
 
     for entry in all_paramaters_entries: entry[0].set_allowed_characters('numbers')
 
@@ -156,7 +160,7 @@ def main():
                             paramaters_color_text, paramaters_color_R_text, paramaters_color_G_text, paramaters_color_B_text]
 
     while running:
-        time_delta = clock.tick(120)/1000.0
+        time_delta = clock.tick(120) / 1000.0
         time_delta_stack.append(time_delta)
         if len(time_delta_stack) > 2000:
             time_delta_stack.popleft()
@@ -184,7 +188,6 @@ def main():
                 if MenuOpen is False:
                     WasContinuous = Continuous
                     Continuous = False
-                    # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, RandomColor=True)
 
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
@@ -209,9 +212,6 @@ def main():
                         previousWidth = int(paramaters_custom_board_size_width_entry.get_text())
                         previousHeight = int(paramaters_custom_board_size_height_entry.get_text())
                         NewBoard = True
-
-                    color = pygame.Color(int(parameters_color_R_entry.get_text()), int(parameters_color_G_entry.get_text()), int(parameters_color_B_entry.get_text()))
-                    # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
                 running = False
@@ -297,18 +297,26 @@ def main():
 
                 parameters_custom_board_size_enable_button.rebuild()
 
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_random_cell_button:
+                if parameters_color_random_cell_button.text == '[ ]':
+                    parameters_color_random_cell_button.text = '[X]'
+                    parameters_color_random_cell_button.tool_tip_text = 'Disable to go back to using normal colors.'
+                    for element in all_parameters_color_elements[1:]: element.disable()
+                    RandomColorByPixel = True
+                else:
+                    parameters_color_random_cell_button.text = '[ ]'
+                    parameters_color_random_cell_button.tool_tip_text = 'Enable to randomize the color of each cell.'
+                    for element in all_parameters_color_elements[1:]: element.enable()
+                    RandomColorByPixel = False
+
+                parameters_color_random_cell_button.rebuild()
+
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_picker_button:
                 paramaters_color_picker_dialog = pygame_gui.windows.UIColourPickerDialog(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, initial_colour=color, window_title='Pick a color...')
-                parameters_color_picker_button.disable()
+                for element in all_parameters_color_elements: element.disable()
 
-            if event.type == pygame_gui.UI_COLOUR_PICKER_COLOUR_PICKED:
-                parameters_color_R_entry.set_text(str(event.colour[0]))
-                parameters_color_G_entry.set_text(str(event.colour[1]))
-                parameters_color_B_entry.set_text(str(event.colour[2]))
-                print('color picked')
-
-            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == paramaters_color_picker_dialog:
-                parameters_color_picker_button.enable()
+            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == paramaters_color_picker_dialog and RandomColorByPixel is False:
+                for element in all_parameters_color_elements: element.enable()
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_scale_default_button: parameters_scale_slider.set_current_value(DefaultScale)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_max_fps_default_button: parameters_max_fps_slider.set_current_value(DefaultMaxFps)
@@ -328,13 +336,13 @@ def main():
         manager.update(time_delta)
 
         if (Continuous is False) and (Step is True):
-            CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack, color=color)
+            helpers.applyRules(step_stack[-1], step_stack)
             Step = False
         elif (Continuous is False) and (StepBack is True):
-            CurrentBoardSurf = helpers.stepBack(step_stack, surf, infoObject, color=color)
+            helpers.stepBack(step_stack)
             StepBack = False
         elif (Continuous is True) and (Update is True):
-            CurrentBoardSurf = helpers.updateGOL(step_stack[-1], surf, infoObject, step_stack, color=color)
+            helpers.applyRules(step_stack[-1], step_stack)
             Step = False
             StepBack = False
             Update = False
@@ -347,8 +355,33 @@ def main():
             CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
             NewBoard = False
 
+        if paramaters_color_picker_dialog is not None and paramaters_color_picker_dialog.alive() is True:
+            parameters_color_R_entry.set_text(str(color[0]))
+            parameters_color_G_entry.set_text(str(color[1]))
+            parameters_color_B_entry.set_text(str(color[2]))
+            for entry in [parameters_color_R_entry, parameters_color_G_entry, parameters_color_B_entry]: entry.rebuild()
+
+        else:
+            try:
+                R = int(parameters_color_R_entry.get_text())
+            except:
+                R = 0
+
+            try:
+                G = int(parameters_color_G_entry.get_text())
+            except:
+                G = 0
+
+            try:
+                B = int(parameters_color_B_entry.get_text())
+            except:
+                B = 0
+
+            color = pygame.Color(R, G, B)
+
+
+        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color, RandomColorByPixel=RandomColorByPixel)
         if MenuOpen is True:
-            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text)
             elif show_parameters_button.text == 'Hide parameters':
