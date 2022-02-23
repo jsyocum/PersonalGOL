@@ -59,7 +59,11 @@ def main():
     all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
 
 
+    settings_window = SettingsWindow(rect=pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400)), manager=manager, resizable=True, window_display_title='Settings', visible=0)
+    settings_window.set_minimum_dimensions((300, 400))
 
+    parameters_scale_slider_window = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 123), (220, 25)), start_value=20, value_range=(1, 80), manager=manager, container=settings_window, click_increment=5)
+    parameters_color_R_entry_window = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((30, 363), (50, 25)), manager=manager, container=settings_window)
 
     parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 125), (220, 25)), start_value=20, value_range=(1, 80), manager=manager, visible=0, click_increment=5)
     parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 185), (220, 25)), start_value=18, value_range=(1, 50), manager=manager, visible=0, click_increment=2)
@@ -145,9 +149,6 @@ def main():
     controls_step_backward_text = sidebar_font.render("Step backwards: S", True, (152, 152, 152))
     controls_reset_text = sidebar_font.render("Reset: R", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
-
-    settings_window = SettingsWindow(rect=controls_rect, manager=manager, resizable=True, window_display_title='Settings', visible=0)
-    settings_window.set_minimum_dimensions((300, 400))
 
     paramaters_header_text = sidebar_header_font.render("Settings", True, (190, 190, 190))
     paramaters_warning1_text = sidebar_font_bold.render("Changing scale, likelihood, or", True, (152, 152, 152))
