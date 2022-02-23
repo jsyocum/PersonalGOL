@@ -1,9 +1,12 @@
 import helpers
 import pygame
 import pygame_gui
-import settings_window
 import numpy as np
 from collections import deque
+
+class SettingsWindow(pygame_gui.elements.UIWindow):
+    def on_close_window_button_pressed(self):
+        self.hide()
 
 def main():
     # Set up pygame
@@ -54,6 +57,8 @@ def main():
     quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
 
     all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
+
+
 
 
     parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 125), (220, 25)), start_value=20, value_range=(1, 80), manager=manager, visible=0, click_increment=5)
@@ -140,6 +145,9 @@ def main():
     controls_step_backward_text = sidebar_font.render("Step backwards: S", True, (152, 152, 152))
     controls_reset_text = sidebar_font.render("Reset: R", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
+
+    settings_window = SettingsWindow(rect=controls_rect, manager=manager, resizable=True, window_display_title='Settings', visible=0)
+    settings_window.set_minimum_dimensions((300, 400))
 
     paramaters_header_text = sidebar_header_font.render("Settings", True, (190, 190, 190))
     paramaters_warning1_text = sidebar_font_bold.render("Changing scale, likelihood, or", True, (152, 152, 152))
@@ -233,7 +241,7 @@ def main():
                 show_parameters_button.set_text('Hide settings')
                 helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
                 OpenUIElements(all_parameters_elements)
-                settings_dialog = settings_window.SettingsDialog(rect=controls_rect, manager=manager)
+                settings_window.show()
 
                 if show_controls_button.text == 'Hide controls':
                     show_controls_button.set_text('Show controls')
