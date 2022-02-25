@@ -59,8 +59,8 @@ def main():
     all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
 
 
-    settings_window = SettingsWindow(rect=pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400)), manager=manager, resizable=True, window_display_title='Settings', visible=0)
-    settings_window.set_minimum_dimensions((300, 400))
+    settings_window = SettingsWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 41), (330, 458)), manager=manager, resizable=True, window_display_title='Settings', visible=0)
+    settings_window.set_minimum_dimensions((330, 458))
 
     parameters_scale_slider_window = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 123), (settings_window.get_abs_rect().width, 25)), start_value=20, value_range=(1, 80), manager=manager, container=settings_window, click_increment=5)
     parameters_color_R_entry_window = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((30, 363), (50, 25)), manager=manager, container=settings_window)
@@ -396,6 +396,7 @@ def main():
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text)
             elif show_parameters_button.text == 'Hide settings':
+                # settings_window.set_position((settings_window.get_abs_rect().left, h / 4 - parameters_max_fps_slider.get_current_value()))
                 parameters_scale_slider_window.set_dimensions((settings_window.get_abs_rect().width - 41, 25))
                 helpers.showParameters(surf, w, h, controls_rect, all_paramaters_texts)
 
