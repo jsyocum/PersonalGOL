@@ -141,7 +141,6 @@ def showParameters(surf, w, h, controls_rect, all_paramaters_texts):
     surf.blit(all_paramaters_texts[11], (w / 2 - 425, h / 4 + 365))
     surf.blit(all_paramaters_texts[12], (w / 2 - 350, h / 4 + 365))
 
-
 def manageSliderAndEntryWithArray(array):
     for tuple in array:
         manageSliderAndEntry(tuple[0], tuple[1], tuple[2], tuple[3])
