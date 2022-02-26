@@ -81,23 +81,21 @@ def main():
                                                                         pygame.Rect((10, 10), (settings_window.get_real_width() - 10, -1)), manager=manager, container=settings_window)
 
     parameters_scale_text = pygame_gui.elements.ui_label.UILabel(text='Scale:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': paramaters_warning_text})
-
+    paramters_scale_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 100), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Change slider maximum to 200', visible=0)
+    parameters_scale_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 100), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default value: ' + str(DefaultScale), visible=0)
     parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 40, 25)), start_value=20, value_range=(1, 80), manager=manager, container=settings_window, click_increment=5, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': parameters_scale_text})
     parameters_scale_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((10, 5), (50, 25)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_scale_slider, 'top_target': parameters_scale_text})
 
-    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, h / 4 + 185), (220, 25)), start_value=18, value_range=(1, 50), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top'})
-    parameters_likelihood_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, h / 4 + 245), (220, 25)), start_value=5, value_range=(1, 30), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top'})
-
-    parameters_max_fps_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 185), (50, 25)), manager=manager, visible=0)
-    parameters_likelihood_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 245), (50, 25)), manager=manager, visible=0)
-
-    paramters_scale_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 100), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Change slider maximum to 200', visible=0)
+    parameters_max_fps_text = None
     paramters_max_fps_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 160), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Change slider maximum to 1000', visible=0)
-    paramters_likelihood_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 220), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Change slider maximum to 100', visible=0)
-
-    parameters_scale_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 100), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default value: ' + str(DefaultScale), visible=0)
     parameters_max_fps_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 160), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default value: ' + str(DefaultMaxFps), visible=0)
+    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, h / 4 + 185), (220, 25)), start_value=18, value_range=(1, 50), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top'})
+    parameters_max_fps_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 185), (50, 25)), manager=manager, visible=0)
+
+    paramters_likelihood_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 330, h / 4 + 220), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Change slider maximum to 100', visible=0)
     parameters_likelihood_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 220), (50, 25)), text='*', manager=manager, tool_tip_text='Reset to default value: ' + str(DefaultLikelihood), visible=0)
+    parameters_likelihood_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, h / 4 + 245), (220, 25)), start_value=5, value_range=(1, 30), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top'})
+    parameters_likelihood_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 245), (50, 25)), manager=manager, visible=0)
 
     parameters_custom_board_size_enable_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 270, h / 4 + 280), (50, 25)), text='[ ]', manager=manager, tool_tip_text='Enable to enter a custom board size. Disables scale option.', visible=0)
     paramaters_custom_board_size_width_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((w / 2 - 500, h / 4 + 305), (50, 25)), manager=manager, visible=0)
