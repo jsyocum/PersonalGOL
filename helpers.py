@@ -2,7 +2,6 @@ import numpy as np
 import random
 import os
 import pygame
-import pygame_gui
 import totalsize
 from scipy import signal
 
@@ -56,7 +55,6 @@ def applyRules(ogArray, step_stack):
 def appendToStepStack(Board, step_stack):
     if np.array_equal(Board, step_stack[-1]):
         pass
-        print("here")
     else:
         step_stack.append(Board.copy())
 
@@ -128,18 +126,6 @@ def showControls(surf, w, h, controls_rect, controls_header_text, controls_pause
     pygame.draw.rect(surf, (76, 80, 82), controls_rect)
     surf.blit(controls_header_text, (w / 2 - 500, h / 4 + 12))
     printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])
-
-def showParameters(surf, w, h, controls_rect, all_paramaters_texts):
-    pygame.draw.rect(surf, (76, 80, 82), controls_rect)
-    surf.blit(all_paramaters_texts[0], (w / 2 - 500, h / 4 + 12))
-    printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [all_paramaters_texts[1], all_paramaters_texts[2]])
-    printLinesOfText(surf, w / 2 - 500, h / 4 + 100, 60, [all_paramaters_texts[3], all_paramaters_texts[4], all_paramaters_texts[5], all_paramaters_texts[6], all_paramaters_texts[9]])
-    surf.blit(all_paramaters_texts[7], (w / 2 - 442, h / 4 + 305))
-    surf.blit(all_paramaters_texts[8], (w / 2 - 367, h / 4 + 305))
-
-    surf.blit(all_paramaters_texts[10], (w / 2 - 500, h / 4 + 365))
-    surf.blit(all_paramaters_texts[11], (w / 2 - 425, h / 4 + 365))
-    surf.blit(all_paramaters_texts[12], (w / 2 - 350, h / 4 + 365))
 
 def manageSliderAndEntryWithArray(array):
     for tuple in array:
