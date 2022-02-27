@@ -3,6 +3,7 @@ import random
 import os
 import pygame
 import totalsize
+import math
 from scipy import signal
 
 # Clears the console screen
@@ -90,29 +91,58 @@ def updateScreenWithBoard(Board, surf, infoObject, color=pygame.Color('White'), 
             for i, Pixel in enumerate(SubArray):
                 coloredBoard[subi][i] = coloredBoard[subi][i] * surf.map_rgb(pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)))
 
+    Scale = getScale(Board, infoObject.current_w, infoObject.current_h)[0]
     boardSurf = pygame.Surface(Board.shape)
-
-    ScreenRatio = infoObject.current_w / infoObject.current_h
-    BoardSurfRatio = boardSurf.get_width() / boardSurf.get_height()
-    Scale = None
-
-    # If the ratio between width and height of the board surface is the same as the screen, scale it up directly
-    if ScreenRatio == BoardSurfRatio:
-        Scale = infoObject.current_w / boardSurf.get_width()
-
-    # If the ratio of the screen's size is greater, then the board surface's width is disproprotionately smaller
-    elif ScreenRatio > BoardSurfRatio:
-        Scale = infoObject.current_h / boardSurf.get_height()
-
-    else:
-        Scale = infoObject.current_w / boardSurf.get_width()
-
     pygame.surfarray.blit_array(boardSurf, coloredBoard)
     boardSurf = pygame.transform.scale(boardSurf, (boardSurf.get_width() * Scale, boardSurf.get_height() * Scale))
 
     blitBoardOnScreenEvenly(surf, boardSurf, infoObject)
 
     return boardSurf
+
+def getScale(board, w, h):
+    board_w = board.shape[0]
+    board_h = board.shape[1]
+
+    ScreenRatio = w / h
+    BoardSurfRatio = board_w / board_h
+    Scale = None
+    Which = 0
+
+    # If the ratio between width and height of the board surface is the same as the screen, scale it up directly
+    if ScreenRatio == BoardSurfRatio:
+        Scale = w / board_w
+
+    # If the ratio of the screen's size is greater, then the board surface's width is disproprotionately smaller
+    elif ScreenRatio > BoardSurfRatio:
+        Scale = h / board_h
+        Which = 1
+
+    else:
+        Scale = w / board_w
+        Which = 2
+
+    return Scale, Which
+
+def isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h):
+    x_start = w / 2 - CurrentBoardSurf.get_width() / 2
+    x_stop = w / 2 + CurrentBoardSurf.get_width() / 2
+    y_start = h / 2 - CurrentBoardSurf.get_height() / 2
+    y_stop = h / 2 + CurrentBoardSurf.get_height() / 2
+
+    if (x_start <= mouse_pos[0] <= x_stop) and (y_start <= mouse_pos[1] <= y_stop):
+        rel_mouse_pos = (mouse_pos[0] - x_start, mouse_pos[1] - y_start)
+        return True, rel_mouse_pos
+    else:
+        return False, None
+
+def getBoardPosition(board, mouse_pos, w, h):
+    board_w = board.shape[0]
+    board_h = board.shape[1]
+    scale, which = getScale(board, w, h)
+    board_pos = (int(math.ceil(mouse_pos[0] / scale) - 1), int(math.ceil(mouse_pos[1] / scale) - 1))
+
+    return board_pos
 
 def blitBoardOnScreenEvenly(surf, boardSurf, infoObject):
     surf.fill((0, 0, 0))

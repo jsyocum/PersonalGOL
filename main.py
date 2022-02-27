@@ -55,6 +55,7 @@ def main():
     Step = False
     StepBack = False
     NewBoard = False
+    EditMode = False
     MenuOpen = False
     CurrentBoardSurf = None
     time_delta_added = 0
@@ -206,6 +207,9 @@ def main():
                     StepBack = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_r:
                     NewBoard = True
+                elif event.type == pygame.KEYUP and event.key == pygame.K_e:
+                    Continuous = not Continuous
+                    EditMode = not EditMode
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == back_to_game_button):
                 if MenuOpen is False:
@@ -284,6 +288,16 @@ def main():
                     parameters_max_fps_slider.set_current_value(min(current_max_fps + 1, max_fps_slider_range[1]))
                 elif event.button == 5:
                     parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
+
+                if EditMode is True and event.button == 1:
+                    mouse_pos = pygame.mouse.get_pos()
+                    IsColliding, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h)
+                    if IsColliding:
+                        board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
+                        if step_stack[-1][board_pos[0]][board_pos[1]] == 0:
+                            step_stack[-1][board_pos[0]][board_pos[1]] = 1
+                        else:
+                            step_stack[-1][board_pos[0]][board_pos[1]] = 0
 
             if event.type == pygame.MOUSEBUTTONUP and settings_window.vert_scroll_bar is not None:
                 mouse_pos = pygame.mouse.get_pos()
