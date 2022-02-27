@@ -122,10 +122,10 @@ def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):
         surf.blit(line, (left, top + (spacing * i)))
 
-def showControls(surf, w, h, controls_rect, controls_header_text, controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text):
+def showControls(surf, w, h, controls_rect, controls_header_text, text_array):
     pygame.draw.rect(surf, (76, 80, 82), controls_rect)
     surf.blit(controls_header_text, (w / 2 - 500, h / 4 + 12))
-    printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text])
+    printLinesOfText(surf, w / 2 - 500, h / 4 + 50, 25, text_array)
 
 def manageSliderAndEntryWithArray(array):
     for tuple in array:
@@ -162,3 +162,11 @@ def manageNumberEntry(entryArray):
 
     elif (int(entry.get_text()) > max):
         entry.set_text(str(max))
+
+def getHeightOfElements(array):
+    total_height = 0
+    for element in array:
+        rel_rect = element.get_relative_rect()
+        total_height += (rel_rect.height + rel_rect.top) * 1.145
+
+    return total_height
