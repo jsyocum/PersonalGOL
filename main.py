@@ -8,6 +8,8 @@ import numpy as np
 import os
 import re
 import math
+import appdirs
+from configparser import ConfigParser
 from pathvalidate import sanitize_filename, sanitize_filepath
 from pathlib import Path
 from collections import deque
@@ -194,6 +196,37 @@ def main():
     DefaultColorB = 255
     RandomColorByPixel = False
 
+    DefaultEditCheckerboardBrightness = 15
+    MaxEditCheckerboardBrightness = 200
+
+    config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
+    config_file_path = config_file_dir + '\\config.ini'
+    print('Config file path:', config_file_path)
+    if os.path.isfile(config_file_path) is not True:
+        Path(config_file_dir).mkdir(parents=True, exist_ok=True)
+        config = ConfigParser()
+
+        config.read(config_file_path)
+        config.add_section('main')
+        config.set('main', 'Scale', str(DefaultScale))
+        config.set('main', 'MaxFps', str(DefaultMaxFps))
+        config.set('main', 'Likelihood', str(DefaultLikelihood))
+        config.set('main', 'R', str(DefaultColorR))
+        config.set('main', 'G', str(DefaultColorG))
+        config.set('main', 'B', str(DefaultColorB))
+        config.set('main', 'EditCheckerboardBrightness', str(DefaultEditCheckerboardBrightness))
+
+        with open(config_file_path, 'w') as f:
+            config.write(f)
+
+    Scale = DefaultScale
+    MaxFps = DefaultMaxFps
+    Likelihood = DefaultLikelihood
+    R = DefaultColorR
+    G = DefaultColorG
+    B = DefaultColorB
+    EditCheckerboardBrightness = DefaultEditCheckerboardBrightness
+
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
@@ -216,19 +249,19 @@ def main():
                                                                         pygame.Rect((10, 10), (settings_window.get_real_width() - 10, -1)), manager=manager, container=settings_window)
 
     parameters_scale_text = pygame_gui.elements.ui_label.UILabel(text='Scale:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': parameters_warning_text})
-    parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 40, 25)), start_value=20, value_range=(1, 80), manager=manager, container=settings_window, click_increment=5, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': parameters_scale_text})
+    parameters_scale_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 40, 25)), start_value=Scale, value_range=(1, 80), manager=manager, container=settings_window, click_increment=5, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': parameters_scale_text})
     parameters_scale_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((-50, 10), (50, 25)), text='[ ]', manager=manager, container=settings_window, tool_tip_text='Change slider maximum to 200', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_scale_slider, 'top_target': parameters_warning_text})
     parameters_scale_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (50, 25)), text='*', manager=manager, container=settings_window, tool_tip_text='Reset to default value: ' + str(DefaultScale), anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_scale_slider, 'top_target': parameters_warning_text})
     parameters_scale_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((10, 5), (50, 25)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_scale_slider, 'top_target': parameters_scale_text})
 
     parameters_max_fps_text = pygame_gui.elements.ui_label.UILabel(text='Max fps:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': parameters_scale_slider})
-    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 40, 25)), start_value=18, value_range=(1, 50), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': parameters_max_fps_text})
+    parameters_max_fps_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 40, 25)), start_value=MaxFps, value_range=(1, 50), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': parameters_max_fps_text})
     parameters_max_fps_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((-50, 10), (50, 25)), text='[ ]', manager=manager, container=settings_window, tool_tip_text='Change slider maximum to 1000', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_max_fps_slider, 'top_target': parameters_scale_slider})
     parameters_max_fps_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (50, 25)), text='*', manager=manager, container=settings_window, tool_tip_text='Reset to default value: ' + str(DefaultMaxFps), anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_max_fps_slider, 'top_target': parameters_scale_slider})
     parameters_max_fps_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((10, 5), (50, 25)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_max_fps_slider, 'top_target': parameters_max_fps_text})
 
     parameters_likelihood_text = pygame_gui.elements.ui_label.UILabel(text='Likelihood:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': parameters_max_fps_slider})
-    parameters_likelihood_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 40, 25)), start_value=5, value_range=(1, 30), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': parameters_likelihood_text})
+    parameters_likelihood_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 40, 25)), start_value=Likelihood, value_range=(1, 30), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': parameters_likelihood_text})
     parameters_likelihood_slider_size_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((-50, 10), (50, 25)), text='[ ]', manager=manager, container=settings_window, tool_tip_text='Change slider maximum to 100', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_max_fps_slider})
     parameters_likelihood_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (50, 25)), text='*', manager=manager, container=settings_window, tool_tip_text='Reset to default value: ' + str(DefaultLikelihood), anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_max_fps_slider})
     parameters_likelihood_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((10, 5), (50, 25)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_likelihood_text})
@@ -238,7 +271,7 @@ def main():
     parameters_color_random_cell_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((-50, 10), (50, 25)), text='[ ]', manager=manager, container=settings_window, tool_tip_text='Enable to randomize the color of each cell.', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_likelihood_slider})
     parameters_color_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (50, 25)), text='*', manager=manager, container=settings_window, tool_tip_text='Reset to default: White', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_likelihood_slider})
     parameters_color_picker_dialog = None
-    color = pygame.Color(DefaultColorR, DefaultColorG, DefaultColorB)
+    color = pygame.Color(R, G, B)
 
     parameters_custom_board_size_text = pygame_gui.elements.ui_label.UILabel(text='Set custom board size:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': parameters_color_text})
     parameters_custom_board_size_enable_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (50, 25)), text='[ ]', manager=manager, container=settings_window, tool_tip_text='Enable to enter a custom board size. Disables scale option.', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_color_text})
@@ -314,10 +347,13 @@ def main():
     controls_edit_mode_text = sidebar_font.render("Toggle edit mode: E", True, (152, 152, 152))
     controls_clear_board_text = sidebar_font.render("Clear board: C", True, (152, 152, 152))
     controls_clear_history_text = sidebar_font.render("Clear history: V", True, (152, 152, 152))
+    controls_quick_save_text = sidebar_font.render("Quick save: F5", True, (152, 152, 152))
+    controls_quick_load_text = sidebar_font.render("Quick load: F6", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
 
     controls_text_array = [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text, controls_increase_max_fps_text,
-                           controls_decrease_max_fps_text, controls_edit_mode_text, controls_clear_board_text, controls_clear_history_text]
+                           controls_decrease_max_fps_text, controls_edit_mode_text, controls_clear_board_text, controls_clear_history_text,
+                           controls_quick_save_text, controls_quick_load_text]
 
     while running:
         time_delta = clock.tick(120) / 1000.0
@@ -477,14 +513,15 @@ def main():
                 parameters_scale_slider.rebuild()
 
             if event.type == pygame.MOUSEBUTTONUP and MenuOpen is False:
-                current_max_fps = parameters_max_fps_slider.get_current_value()
-                max_fps_slider_range = parameters_max_fps_slider.value_range
-                if event.button == 4:
-                    parameters_max_fps_slider.set_current_value(min(current_max_fps + 1, max_fps_slider_range[1]))
-                elif event.button == 5:
-                    parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
+                if EditMode is False:
+                    current_max_fps = parameters_max_fps_slider.get_current_value()
+                    max_fps_slider_range = parameters_max_fps_slider.value_range
+                    if event.button == 4:
+                        parameters_max_fps_slider.set_current_value(min(current_max_fps + 1, max_fps_slider_range[1]))
+                    elif event.button == 5:
+                        parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
 
-                if EditMode is True and event.button == 1:
+                elif event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
                     IsColliding, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h)
                     if IsColliding:
@@ -493,6 +530,11 @@ def main():
                             step_stack[-1][board_pos[0]][board_pos[1]] = 1
                         else:
                             step_stack[-1][board_pos[0]][board_pos[1]] = 0
+
+                elif event.button == 4:
+                    EditCheckerboardBrightness = min(EditCheckerboardBrightness + 1, MaxEditCheckerboardBrightness)
+                elif event.button == 5:
+                    EditCheckerboardBrightness = max(EditCheckerboardBrightness - 1, 0)
 
             if event.type == pygame.MOUSEBUTTONUP and settings_window.vert_scroll_bar is not None:
                 mouse_pos = pygame.mouse.get_pos()
@@ -636,7 +678,7 @@ def main():
             print(load_status_message)
             QuickLoad = False
 
-        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=RandomColorByPixel)
+        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=RandomColorByPixel, DefaultEditCheckerboardBrightness=EditCheckerboardBrightness)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)

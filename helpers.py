@@ -79,7 +79,7 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False):
+def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15):
     if RandomColorByPixel is False:
         if RandomColor is True:
             color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
@@ -98,10 +98,10 @@ def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color(
                 if coloredBoard[subi][i] == 0:
                     if (subi % 2) == 0:
                         if (i % 2) == 0:
-                            coloredBoard[subi][i] = surf.map_rgb(pygame.Color(15, 15, 15))
+                            coloredBoard[subi][i] = surf.map_rgb(pygame.Color(DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness))
                     else:
                         if (i % 2) != 0:
-                            coloredBoard[subi][i] = surf.map_rgb(pygame.Color(15, 15, 15))
+                            coloredBoard[subi][i] = surf.map_rgb(pygame.Color(DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness))
 
     Scale = getScale(Board, infoObject.current_w, infoObject.current_h)[0]
     boardSurf = pygame.Surface(Board.shape)
