@@ -174,12 +174,17 @@ def main():
     NewBoard = False
     EditMode = False
     MenuOpen = False
+    ClearBoard = False
+    ClearHistory = False
+    QuickSave = False
+    QuickLoad = False
     CurrentBoardSurf = None
     time_delta_added = 0
 
     save_location = None
     file_name_window = None
 
+    quick_save_path = os.getcwd() + '\\quick_save.png'
     DefaultSavePath = os.path.expanduser("~/Desktop")
     if os.path.exists(DefaultSavePath) is not True:
         DefaultSavePath = DefaultSavePath.removesuffix("/Desktop") + "\OneDrive\Desktop"
@@ -307,10 +312,12 @@ def main():
     controls_increase_max_fps_text = sidebar_font.render("+ max fps: MWHEELUP", True, (152, 152, 152))
     controls_decrease_max_fps_text = sidebar_font.render("-  max fps: MWHEELDOWN", True, (152, 152, 152))
     controls_edit_mode_text = sidebar_font.render("Toggle edit mode: E", True, (152, 152, 152))
+    controls_clear_board_text = sidebar_font.render("Clear board: C", True, (152, 152, 152))
+    controls_clear_history_text = sidebar_font.render("Clear history: V", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
 
     controls_text_array = [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text, controls_increase_max_fps_text,
-                           controls_decrease_max_fps_text, controls_edit_mode_text]
+                           controls_decrease_max_fps_text, controls_edit_mode_text, controls_clear_board_text, controls_clear_history_text]
 
     while running:
         time_delta = clock.tick(120) / 1000.0
@@ -340,6 +347,15 @@ def main():
                     StepBack = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_r:
                     NewBoard = True
+                elif event.type == pygame.KEYUP and event.key == pygame.K_c:
+                    if EditMode is True:
+                        ClearBoard = True
+                elif event.type == pygame.KEYUP and event.key == pygame.K_v:
+                    ClearHistory = True
+                elif event.type == pygame.KEYUP and event.key == pygame.K_F5:
+                    QuickSave = True
+                elif event.type == pygame.KEYUP and event.key == pygame.K_F6:
+                    QuickLoad = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_e:
                     if Continuous is True and EditMode is False:
                         WasContinuous = True
@@ -435,7 +451,8 @@ def main():
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == file_name_window:
                 save_path = event.text
-                helpers.savePNGWithBoardInfo(save_path, CurrentBoardSurf, step_stack[-1])
+                boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, infoObject, EditMode=True, color=color, RandomColorByPixel=RandomColorByPixel, Saving=True)
+                helpers.savePNGWithBoardInfo(save_path, boardsurf_to_save, step_stack[-1])
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
                 save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=DefaultSavePath, allow_picking_directories=False)
@@ -594,6 +611,30 @@ def main():
             CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color)
             NewBoard = False
 
+        if ClearBoard is True:
+            step_stack.append(np.zeros_like(step_stack[-1]))
+            ClearBoard = False
+
+        if ClearHistory is True:
+            current_board = step_stack[-1]
+            step_stack.clear()
+            step_stack.append(current_board)
+            ClearHistory = False
+
+        if QuickSave is True:
+            boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, infoObject, EditMode=True, color=color, RandomColorByPixel=RandomColorByPixel, Saving=True)
+            helpers.savePNGWithBoardInfo(quick_save_path, boardsurf_to_save, step_stack[-1])
+            QuickSave = False
+
+        if QuickLoad is True:
+            load_status_message = None
+            if os.path.exists(quick_save_path):
+                WasContinuous, load_status_message = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, WasContinuous)
+            else:
+                load_status_message = 'No quicksave exists to be loaded!'
+
+            print(load_status_message)
+            QuickLoad = False
 
         CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=RandomColorByPixel)
         if MenuOpen is True:

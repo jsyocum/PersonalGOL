@@ -79,7 +79,7 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False):
+def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False):
     if RandomColorByPixel is False:
         if RandomColor is True:
             color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
@@ -108,7 +108,8 @@ def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color(
     pygame.surfarray.blit_array(boardSurf, coloredBoard)
     boardSurf = pygame.transform.scale(boardSurf, (boardSurf.get_width() * Scale, boardSurf.get_height() * Scale))
 
-    blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode)
+    if Saving is False:
+        blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode)
 
     return boardSurf
 
