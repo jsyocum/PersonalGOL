@@ -1,8 +1,15 @@
 import helpers
 import pygame
 import pygame_gui
+from pygame_gui.core import ObjectID
+from pygame_gui.core.interfaces import IUIManagerInterface
+from typing import Union
 import numpy as np
+import os
+import re
 import math
+from pathvalidate import sanitize_filename, sanitize_filepath
+from pathlib import Path
 from collections import deque
 
 class SettingsWindow(pygame_gui.elements.UIWindow):
@@ -16,6 +23,116 @@ class SettingsWindow(pygame_gui.elements.UIWindow):
         return self.get_relative_rect().height - 58
 
 class SettingsWindowScrollContainer(pygame_gui.elements.ui_scrolling_container.UIScrollingContainer):
+    def get_real_width(self):
+        return self.get_relative_rect().width - 30
+
+    def get_real_height(self):
+        return self.get_relative_rect().height - 58
+
+class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
+    def update_current_file_list(self):
+        """
+        Updates the currently displayed list of files and directories. Usually called when the
+        directory path has changed.
+        """
+        try:
+            directories_on_path = [f.name for f in Path(self.current_directory_path).iterdir()
+                                   if not f.is_file()]
+            directories_on_path = sorted(directories_on_path, key=str.casefold)
+            directories_on_path_tuples = [(f, '#directory_list_item') for f in directories_on_path]
+
+            files_on_path = [f.name for f in Path(self.current_directory_path).iterdir()
+                             if f.is_file() and f.name.lower().endswith('.png')]
+            files_on_path = sorted(files_on_path, key=str.casefold)
+            files_on_path_tuples = [(f, '#file_list_item') for f in files_on_path]
+
+            self.current_file_list = directories_on_path_tuples + files_on_path_tuples
+        except (PermissionError, FileNotFoundError):
+            self.current_directory_path = self.last_valid_directory_path
+            self.update_current_file_list()
+        else:
+            self.last_valid_directory_path = self.current_directory_path
+
+class ChooseFileNameWindow(pygame_gui.elements.UIWindow):
+    def __init__(self,
+                 rect: pygame.Rect,
+                 manager: IUIManagerInterface,
+                 window_title: str = 'Choose file name',
+                 object_id: Union[ObjectID, str] = ObjectID('#file_name_dialog', None),
+                 visible: int = 1,
+                 width: int = 500,
+                 height: int = 500,
+                 save_path: str = None):
+
+        super().__init__(rect, manager,
+                         window_display_title=window_title,
+                         object_id=object_id,
+                         resizable=True,
+                         visible=visible)
+
+        self.save_path = save_path
+        starting_w = self.get_abs_rect().width
+        self.set_dimensions((width, height))
+
+        self.message = pygame_gui.elements.ui_label.UILabel(text='Enter file name:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.file_name_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((10, 10), (self.get_real_width() - 20, 30)), manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': self.message})
+        self.ok_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='OK', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.file_name_entry, 'top_target': self.message})
+        self.cancel_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='Cancel', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.ok_button, 'top_target': self.message})
+
+        self.file_name_entry.set_dimensions((self.get_real_width() - self.ok_button.get_abs_rect().width - self.cancel_button.get_abs_rect().width - 40, 30))
+        self.ok_button.rebuild()
+        self.cancel_button.rebuild()
+
+        min_h = helpers.getHeightOfElements([self.message, self.file_name_entry]) + 65
+        self.set_dimensions((starting_w, min_h))
+        self.set_minimum_dimensions((250, min_h))
+
+        if self.save_path.lower().endswith('.png') is True:
+            default_filename = self.save_path.lower().removesuffix('.png').split('\\')[-1]
+            number_end = re.search(r'\d+$', default_filename)
+            if number_end is not None:
+                default_filename = default_filename.removesuffix(number_end.group())
+                number_end = int(number_end.group()) + 1
+                default_filename = default_filename + str(number_end) + '.png'
+
+            self.file_name_entry.set_text(default_filename)
+
+            self.save_path = save_path.split('\\')[:-1]
+            self.save_path = '\\'.join(self.save_path)
+
+    def process_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handles events that this UI element is interested in. There are a lot of buttons in the
+        file dialog.
+
+        :param event: The pygame Event to process.
+
+        :return: True if event is consumed by this element and should not be passed on to other
+                 elements.
+
+        """
+        handled = super().process_event(event)
+
+        if ((event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.ok_button) or (event.type == pygame.KEYUP and event.key == pygame.K_RETURN)) and self.file_name_entry.text != '':
+            filename = sanitize_filename(self.file_name_entry.get_text())
+            if filename.lower().endswith('.png') is not True:
+                filename = filename + '.png'
+
+            self.save_path = self.save_path + '\\' + filename
+            self.save_path = sanitize_filepath(self.save_path, platform='auto')
+
+            event_data = {'text': self.save_path,
+                          'ui_element': self,
+                          'ui_object_id': self.most_specific_combined_id}
+            pygame.event.post(pygame.event.Event(pygame_gui.UI_FILE_DIALOG_PATH_PICKED, event_data))
+
+            self.kill()
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.cancel_button:
+            self.kill()
+
+        return handled
+
     def get_real_width(self):
         return self.get_relative_rect().width - 30
 
@@ -60,6 +177,13 @@ def main():
     CurrentBoardSurf = None
     time_delta_added = 0
 
+    save_location = None
+    file_name_window = None
+
+    DefaultSavePath = os.path.expanduser("~/Desktop")
+    if os.path.exists(DefaultSavePath) is not True:
+        DefaultSavePath = DefaultSavePath.removesuffix("/Desktop") + "\OneDrive\Desktop"
+
     DefaultColorR = 255
     DefaultColorG = 255
     DefaultColorB = 255
@@ -69,9 +193,12 @@ def main():
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
     show_parameters_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 100), (400, 50)), text='Show settings', manager=manager, visible=0)
-    quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
+    edit_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Enable edit mode (E)', manager=manager, visible=0)
+    save_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 200), (400, 50)), text='Save board', manager=manager, visible=0)
+    load_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 250), (400, 50)), text='Load board', manager=manager, visible=0)
+    quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 300), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
 
-    all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, quit_game_button]
+    all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, edit_mode_button, save_button, load_button, quit_game_button]
 
 
     settings_window_actual = SettingsWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, resizable=True, window_display_title='Settings', visible=0)
@@ -179,9 +306,11 @@ def main():
     controls_reset_text = sidebar_font.render("Reset: R", True, (152, 152, 152))
     controls_increase_max_fps_text = sidebar_font.render("+ max fps: MWHEELUP", True, (152, 152, 152))
     controls_decrease_max_fps_text = sidebar_font.render("-  max fps: MWHEELDOWN", True, (152, 152, 152))
+    controls_edit_mode_text = sidebar_font.render("Toggle edit mode: E", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
 
-    controls_text_array = [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text, controls_increase_max_fps_text, controls_decrease_max_fps_text]
+    controls_text_array = [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text, controls_increase_max_fps_text,
+                           controls_decrease_max_fps_text, controls_edit_mode_text]
 
     while running:
         time_delta = clock.tick(120) / 1000.0
@@ -194,6 +323,8 @@ def main():
             Update = True
             time_delta_added = 0
 
+        save_load_windows = [save_location, file_name_window]
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -201,6 +332,8 @@ def main():
             if MenuOpen is False:
                 if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                     Continuous = not Continuous
+                    EditMode = False
+                    edit_mode_button.set_text('Enable edit mode (E)')
                 elif event.type == pygame.KEYUP and event.key == pygame.K_w:
                     Step = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_s:
@@ -208,13 +341,27 @@ def main():
                 elif event.type == pygame.KEYUP and event.key == pygame.K_r:
                     NewBoard = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_e:
-                    Continuous = not Continuous
-                    EditMode = not EditMode
+                    if Continuous is True and EditMode is False:
+                        WasContinuous = True
+                        Continuous = False
+                        EditMode = True
+                        edit_mode_button.set_text('Disable edit mode (E)')
+                    elif Continuous is False and EditMode is False:
+                        EditMode = True
+                        edit_mode_button.set_text('Disable edit mode (E)')
+                        print(WasContinuous)
+                    elif EditMode is True:
+                        Continuous = WasContinuous
+                        WasContinuous = False
+                        EditMode = False
+                        edit_mode_button.set_text('Enable edit mode (E)')
+
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == back_to_game_button):
                 if MenuOpen is False:
-                    WasContinuous = Continuous
-                    Continuous = False
+                    if EditMode is False:
+                        WasContinuous = Continuous
+                        Continuous = False
 
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
@@ -222,22 +369,26 @@ def main():
                     show_parameters_button.set_text('Show settings')
                     MenuOpen = OpenUIElements(all_menu_buttons)
                 else:
-                    Continuous = WasContinuous
+                    if EditMode is False:
+                        Continuous = WasContinuous
+
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     settings_window_actual.hide()
                     if parameters_color_picker_dialog is not None: parameters_color_picker_dialog.kill()
+                    if save_location is not None: save_location.kill()
+                    if file_name_window is not None: file_name_window.kill()
 
                     for entryArray in all_parameters_entries[3:]:
                         helpers.manageNumberEntry(entryArray)
 
                     if parameters_custom_board_size_enable_button.text == '[ ]':
-                        if (w / previousWidth != parameters_scale_slider.get_current_value()) or (h / previousHeight != parameters_scale_slider.get_current_value()) or (pausedLikelihoodSliderValue != parameters_likelihood_slider.get_current_value()):
-                            previousWidth = int(w / parameters_scale_slider.get_current_value())
-                            previousHeight = int(h / parameters_scale_slider.get_current_value())
+                        if ((int(w / previousWidth) != parameters_scale_slider.get_current_value()) and (int(h / previousHeight) != parameters_scale_slider.get_current_value())) or (pausedLikelihoodSliderValue != parameters_likelihood_slider.get_current_value()):
+                            previousWidth = math.floor(w / parameters_scale_slider.get_current_value())
+                            previousHeight = math.floor(h / parameters_scale_slider.get_current_value())
                             NewBoard = True
                     elif (previousWidth != int(parameters_custom_board_size_width_entry.get_text())) or (previousHeight != int(parameters_custom_board_size_height_entry.get_text())):
-                        previousWidth = int(parameters_custom_board_size_width_entry.get_text())
-                        previousHeight = int(parameters_custom_board_size_height_entry.get_text())
+                        previousWidth = math.floor(int(parameters_custom_board_size_width_entry.get_text()))
+                        previousHeight = math.floor(int(parameters_custom_board_size_height_entry.get_text()))
                         NewBoard = True
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
@@ -253,7 +404,7 @@ def main():
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button:
                 show_controls_button.set_text('Show controls')
-                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject, EditMode)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button and show_parameters_button.text == 'Show settings':
                 show_parameters_button.set_text('Hide settings')
@@ -264,8 +415,35 @@ def main():
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button:
                 show_parameters_button.set_text('Show settings')
-                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject, EditMode)
                 settings_window_actual.hide()
+
+            if ((event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == edit_mode_button) or (MenuOpen is True and event.type == pygame.KEYUP and event.key == pygame.K_e and helpers.anyAliveElements(save_load_windows) is False)) and edit_mode_button.text == 'Enable edit mode (E)':
+                edit_mode_button.set_text('Disable edit mode (E)')
+                EditMode = True
+
+            elif (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == edit_mode_button) or (MenuOpen is True and event.type == pygame.KEYUP and event.key == pygame.K_e and helpers.anyAliveElements(save_load_windows) is False):
+                edit_mode_button.set_text('Enable edit mode (E)')
+                EditMode = False
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == save_button and helpers.anyAliveElements(save_load_windows) is False:
+                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick save location', initial_file_path=DefaultSavePath, allow_picking_directories=True)
+
+            if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == save_location and save_location.window_display_title == 'Pick save location':
+                save_path = event.text
+                file_name_window = ChooseFileNameWindow(pygame.Rect((w / 2 - 80, h / 2 + 25), (600, 50)), manager=manager, window_title='Choose a filename to put in ' + save_path, width=w, height=h, save_path=save_path)
+
+            if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == file_name_window:
+                save_path = event.text
+                helpers.savePNGWithBoardInfo(save_path, CurrentBoardSurf, step_stack[-1])
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
+                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=DefaultSavePath, allow_picking_directories=False)
+
+            if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == save_location and save_location.window_display_title == 'Pick .PNG board file':
+                load_path = event.text
+                WasContinuous, load_status_message = helpers.loadPNGWithBoardInfo(load_path, step_stack, WasContinuous)
+                print(load_status_message)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_scale_slider_size_button:
                 if parameters_scale_slider_size_button.text == '[ ]':
@@ -390,7 +568,7 @@ def main():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_default_button: color = pygame.Color(DefaultColorR, DefaultColorG, DefaultColorB)
 
             if (event.type == pygame_gui.UI_BUTTON_ON_UNHOVERED or event.type == pygame_gui.UI_BUTTON_PRESSED) and (event.ui_element in all_buttons_with_tool_tips) and (show_parameters_button.text == 'Hide parameters') and (MenuOpen is not False):
-                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject)
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject, EditMode)
 
             manager.process_events(event)
 
@@ -413,11 +591,11 @@ def main():
             Board = np.rot90(Board)
             step_stack.clear()
             step_stack.append(Board)
-            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color)
+            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color)
             NewBoard = False
 
 
-        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, color=color, RandomColorByPixel=RandomColorByPixel)
+        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=RandomColorByPixel)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)

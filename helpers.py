@@ -5,6 +5,7 @@ import pygame
 import totalsize
 import math
 from scipy import signal
+from PIL.PngImagePlugin import PngImageFile, PngInfo
 
 # Clears the console screen
 def cls():
@@ -78,25 +79,36 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateScreenWithBoard(Board, surf, infoObject, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False):
+def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False):
     if RandomColorByPixel is False:
         if RandomColor is True:
             color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
 
         colorAsInt = surf.map_rgb(color)
-        coloredBoard = Board * colorAsInt
+        coloredBoard = Board.copy() * colorAsInt
     else:
         coloredBoard = Board.copy()
         for subi, SubArray in enumerate(coloredBoard):
             for i, Pixel in enumerate(SubArray):
                 coloredBoard[subi][i] = coloredBoard[subi][i] * surf.map_rgb(pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)))
 
+    if EditMode is True:
+        for subi, SubArray in enumerate(coloredBoard):
+            for i, Pixel in enumerate(SubArray):
+                if coloredBoard[subi][i] == 0:
+                    if (subi % 2) == 0:
+                        if (i % 2) == 0:
+                            coloredBoard[subi][i] = surf.map_rgb(pygame.Color(15, 15, 15))
+                    else:
+                        if (i % 2) != 0:
+                            coloredBoard[subi][i] = surf.map_rgb(pygame.Color(15, 15, 15))
+
     Scale = getScale(Board, infoObject.current_w, infoObject.current_h)[0]
     boardSurf = pygame.Surface(Board.shape)
     pygame.surfarray.blit_array(boardSurf, coloredBoard)
     boardSurf = pygame.transform.scale(boardSurf, (boardSurf.get_width() * Scale, boardSurf.get_height() * Scale))
 
-    blitBoardOnScreenEvenly(surf, boardSurf, infoObject)
+    blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode)
 
     return boardSurf
 
@@ -137,15 +149,16 @@ def isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h):
         return False, None
 
 def getBoardPosition(board, mouse_pos, w, h):
-    board_w = board.shape[0]
-    board_h = board.shape[1]
     scale, which = getScale(board, w, h)
     board_pos = (int(math.ceil(mouse_pos[0] / scale) - 1), int(math.ceil(mouse_pos[1] / scale) - 1))
 
     return board_pos
 
-def blitBoardOnScreenEvenly(surf, boardSurf, infoObject):
-    surf.fill((0, 0, 0))
+def blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode):
+    if EditMode is False:
+        surf.fill((0, 0, 0))
+    else:
+        surf.fill((30, 30, 30))
     surf.blit(boardSurf, (infoObject.current_w / 2 - boardSurf.get_width() / 2, infoObject.current_h / 2 - boardSurf.get_height() / 2))
 
 def printLinesOfText(surf, left, top, spacing, lines):
@@ -200,3 +213,42 @@ def getHeightOfElements(array):
         total_height += (rel_rect.height + rel_rect.top) * 1.145
 
     return total_height
+
+def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board):
+    pygame.image.save(CurrentBoardSurf, save_path)
+
+    targetImage = PngImageFile(save_path)
+    metadata = PngInfo()
+
+    board_string = convertArrayToString(board)
+    metadata.add_text("BoardArray", board_string)
+    targetImage.save(save_path, pnginfo=metadata)
+
+def loadPNGWithBoardInfo(load_path, step_stack, WasContinuous):
+    targetImage = PngImageFile(load_path)
+
+    try:
+        board_string = targetImage.text["BoardArray"]
+    except:
+        return WasContinuous, load_path + ' does not contain a board array'
+
+    board = convertStringToArray(board_string)
+
+    step_stack.clear()
+    step_stack.append(board)
+
+    return False, 'Board loaded: ' + load_path
+
+def convertArrayToString(array):
+    return '\n'.join('\t'.join('%0.3f' % x for x in y) for y in array)
+
+def convertStringToArray(string):
+    return np.array([[float(j) for j in i.split('\t')] for i in string.splitlines()])
+
+def anyAliveElements(array):
+    any = False
+    for element in array:
+        if element is not None and element.alive() is True:
+            any = True
+
+    return any
