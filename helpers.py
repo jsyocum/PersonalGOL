@@ -81,7 +81,7 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15):
+def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[]):
     if RandomColorByPixel is False:
         if RandomColor is True:
             color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
@@ -104,6 +104,15 @@ def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color(
                     else:
                         if (i % 2) != 0:
                             coloredBoard[subi][i] = surf.map_rgb(pygame.Color(DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness))
+
+                if len(SelectedCells) == 2:
+                    x_1, y_1 = SelectedCells[0][0], SelectedCells[0][1]
+                    x_2, y_2 = SelectedCells[1][0], SelectedCells[1][1]
+                    if subi in list(range(min(x_1, x_2), max(x_1, x_2) + 1)):
+                        if i in list(range(min(y_1, y_2), max(y_1, y_2) + 1)):
+                            cell_color = surf.unmap_rgb(int(coloredBoard[subi][i]))
+                            cell_color.hsva = (cell_color.hsva[0], cell_color.hsva[1], max(cell_color.hsva[2] - 10, 3), cell_color.hsva[3])
+                            coloredBoard[subi][i] = surf.map_rgb(cell_color)
 
     Scale = getScale(Board, infoObject.current_w, infoObject.current_h)[0]
     boardSurf = pygame.Surface(Board.shape)

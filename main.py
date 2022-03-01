@@ -170,6 +170,7 @@ def main():
     QuickSave = False
     QuickLoad = False
     CurrentBoardSurf = None
+    LeftClickHeldDown = [False, 0]
     time_delta_added = 0
 
     save_location = None
@@ -300,6 +301,8 @@ def main():
     previousCustomBoardSizeHeightSliderValue = None
     previousCustomBoardSizeHeightEntryValue = None
 
+    HeldDownCells = []
+
     previousWidth = int(w / DefaultScale)
     previousHeight = int(h / DefaultScale)
 
@@ -419,6 +422,11 @@ def main():
                         EditMode = False
                         edit_mode_button.set_text('Enable edit mode (E)')
 
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    LeftClickHeldDown = True
+
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    LeftClickHeldDown = False
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == back_to_game_button):
                 if MenuOpen is False:
@@ -533,7 +541,7 @@ def main():
                     elif event.button == 5:
                         parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
 
-                elif event.button == 1:
+                elif event.button == 1 and len(HeldDownCells) < 2:
                     mouse_pos = pygame.mouse.get_pos()
                     IsColliding, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h)
                     if IsColliding:
@@ -543,10 +551,27 @@ def main():
                         else:
                             step_stack[-1][board_pos[0]][board_pos[1]] = 0
 
+                    HeldDownCells = []
+
+                elif event.button == 1 and len(HeldDownCells) == 2:
+                    HeldDownCells = []
                 elif event.button == 4:
                     config_dict["EditCheckerboardBrightness"][0] = min(config_dict["EditCheckerboardBrightness"][0] + 1, MaxEditCheckerboardBrightness)
                 elif event.button == 5:
                     config_dict["EditCheckerboardBrightness"][0] = max(config_dict["EditCheckerboardBrightness"][0] - 1, 0)
+
+            if LeftClickHeldDown is True:
+                mouse_pos = pygame.mouse.get_pos()
+                IsColliding, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h)
+                if IsColliding:
+                    board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
+
+                    if len(HeldDownCells) < 2 and board_pos not in HeldDownCells:
+                        HeldDownCells.append(board_pos)
+                    elif len(HeldDownCells) == 2 and board_pos == HeldDownCells[0]:
+                        HeldDownCells.pop(1)
+                    elif len(HeldDownCells) == 2:
+                        HeldDownCells[1] = board_pos
 
             if event.type == pygame.MOUSEBUTTONUP and settings_window.vert_scroll_bar is not None:
                 mouse_pos = pygame.mouse.get_pos()
@@ -695,7 +720,7 @@ def main():
             print(load_status_message)
             QuickLoad = False
 
-        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0])
+        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)
