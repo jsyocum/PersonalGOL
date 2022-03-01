@@ -111,7 +111,13 @@ def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color(
                     if subi in list(range(min(x_1, x_2), max(x_1, x_2) + 1)):
                         if i in list(range(min(y_1, y_2), max(y_1, y_2) + 1)):
                             cell_color = surf.unmap_rgb(int(coloredBoard[subi][i]))
-                            cell_color.hsva = (cell_color.hsva[0], cell_color.hsva[1], max(cell_color.hsva[2] - 10, 3), cell_color.hsva[3])
+                            select_color = pygame.Color(27, 69, 109)
+
+                            if cell_color.r > 230 and cell_color.g > 230 and cell_color.b > 230:
+                                cell_color = pygame.Color(int(cell_color.r * 0.5) + select_color.r, int(cell_color.g * 0.5) + select_color.g, int(cell_color.b * 0.5) + select_color.b)
+                            else:
+                                cell_color = pygame.Color(min(cell_color.r + select_color.r, 255), min(cell_color.g + select_color.g, 255), min(cell_color.b + select_color.b, 255))
+
                             coloredBoard[subi][i] = surf.map_rgb(cell_color)
 
     Scale = getScale(Board, infoObject.current_w, infoObject.current_h)[0]

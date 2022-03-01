@@ -171,6 +171,7 @@ def main():
     QuickLoad = False
     CurrentBoardSurf = None
     LeftClickHeldDown = [False, 0]
+    SelectionBoxPresent = False
     time_delta_added = 0
 
     save_location = None
@@ -303,8 +304,8 @@ def main():
 
     HeldDownCells = []
 
-    previousWidth = int(w / DefaultScale)
-    previousHeight = int(h / DefaultScale)
+    previousWidth = int(w / config_dict["Scale"][0])
+    previousHeight = int(h / config_dict["Scale"][0])
 
     pausedLikelihoodSliderValue = DefaultLikelihood
 
@@ -354,6 +355,8 @@ def main():
     if config_dict["CustomBoardSizeEnabled"][0] is True:
         CustomBoardSizeEnabledDict = True
         parameters_scale_entry.set_text(str(config_dict["Scale"][0]))
+        previousWidth = config_dict["CustomBoardSizeWidth"][0]
+        previousHeight = config_dict["CustomBoardSizeHeight"][0]
 
     if config_dict["RandomColorByPixel"][0] is True:
         RandomColorByPixelDict = True
@@ -424,6 +427,10 @@ def main():
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     LeftClickHeldDown = True
+                    if len(HeldDownCells) == 2:
+                        SelectionBoxPresent = True
+                    else:
+                        SelectionBoxPresent = False
 
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     LeftClickHeldDown = False
@@ -541,7 +548,7 @@ def main():
                     elif event.button == 5:
                         parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
 
-                elif event.button == 1 and len(HeldDownCells) < 2:
+                elif event.button == 1 and len(HeldDownCells) < 2 and SelectionBoxPresent is False:
                     mouse_pos = pygame.mouse.get_pos()
                     IsColliding, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h)
                     if IsColliding:
@@ -553,14 +560,14 @@ def main():
 
                     HeldDownCells = []
 
-                elif event.button == 1 and len(HeldDownCells) == 2:
+                elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is True:
                     HeldDownCells = []
                 elif event.button == 4:
                     config_dict["EditCheckerboardBrightness"][0] = min(config_dict["EditCheckerboardBrightness"][0] + 1, MaxEditCheckerboardBrightness)
                 elif event.button == 5:
                     config_dict["EditCheckerboardBrightness"][0] = max(config_dict["EditCheckerboardBrightness"][0] - 1, 0)
 
-            if LeftClickHeldDown is True:
+            if LeftClickHeldDown is True and EditMode is True and MenuOpen is False and SelectionBoxPresent is False:
                 mouse_pos = pygame.mouse.get_pos()
                 IsColliding, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h)
                 if IsColliding:
