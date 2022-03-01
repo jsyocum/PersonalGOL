@@ -23,7 +23,7 @@ class SettingsWindow(pygame_gui.elements.UIWindow):
     def get_real_height(self):
         return self.get_relative_rect().height - 58
 
-class SettingsWindowScrollContainer(pygame_gui.elements.ui_scrolling_container.UIScrollingContainer):
+class WrappedScrollContainer(pygame_gui.elements.ui_scrolling_container.UIScrollingContainer):
     def get_real_width(self):
         return self.get_relative_rect().width - 30
 
@@ -140,6 +140,54 @@ class ChooseFileNameWindow(pygame_gui.elements.UIWindow):
     def get_real_height(self):
         return self.get_relative_rect().height - 58
 
+class ActionWindow(pygame_gui.elements.UIWindow):
+    def __init__(self,
+                 rect: pygame.Rect,
+                 manager: IUIManagerInterface,
+                 window_title: str = 'Board selection actions',
+                 object_id: Union[ObjectID, str] = ObjectID('#actions_dialog', None),
+                 visible: int = 1,
+                 width: int = 500,
+                 height: int = 500,
+                 HeldDownCells: [] = None):
+
+        super().__init__(rect, manager,
+                         window_display_title=window_title,
+                         object_id=object_id,
+                         resizable=True,
+                         visible=visible)
+
+        starting_w = self.get_abs_rect().width
+        self.set_dimensions((width, height))
+
+        self.message = pygame_gui.elements.ui_label.UILabel(text='Choose an action:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.zoom_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='Zoom', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.message})
+
+        min_h = helpers.getHeightOfElements([self.message, self.zoom_button]) + 65
+        self.set_dimensions((starting_w, min_h))
+        self.set_minimum_dimensions((250, min_h))
+
+    def process_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handles events that this UI element is interested in. There are a lot of buttons in the
+        file dialog.
+
+        :param event: The pygame Event to process.
+
+        :return: True if event is consumed by this element and should not be passed on to other
+                 elements.
+
+        """
+        handled = super().process_event(event)
+
+        return handled
+
+    def get_width(self):
+        return self.get_relative_rect().width - 30
+
+    def get_height(self):
+        return self.get_relative_rect().height - 58
+
 def main():
     # Set up pygame
     pygame.init()
@@ -176,6 +224,7 @@ def main():
 
     save_location = None
     file_name_window = None
+    action_window = None
 
     config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
     config_file_path = config_file_dir + '\\config.ini'
@@ -232,7 +281,7 @@ def main():
     settings_window_actual = SettingsWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, resizable=True, window_display_title='Settings', visible=0)
     settings_window_actual.set_minimum_dimensions((330, 200))
     settings_window_actual.set_dimensions((w, h))
-    settings_window = SettingsWindowScrollContainer(relative_rect=pygame.Rect((0, 0), (settings_window_actual.get_real_width(), settings_window_actual.get_real_height())), manager=manager, container=settings_window_actual, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
+    settings_window = WrappedScrollContainer(relative_rect=pygame.Rect((0, 0), (settings_window_actual.get_real_width(), settings_window_actual.get_real_height())), manager=manager, container=settings_window_actual, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
     parameters_warning_text = pygame_gui.elements.ui_text_box.UITextBox('<font face=arial color=regular_text><font color=#989898 size=2>'
                                                                         '<b>Changing scale, likelihood, or board size will reset the board</b></font></font>',
@@ -423,14 +472,11 @@ def main():
                         Continuous = WasContinuous
                         WasContinuous = False
                         EditMode = False
+                        HeldDownCells = []
                         edit_mode_button.set_text('Enable edit mode (E)')
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     LeftClickHeldDown = True
-                    if len(HeldDownCells) == 2:
-                        SelectionBoxPresent = True
-                    else:
-                        SelectionBoxPresent = False
 
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     LeftClickHeldDown = False
@@ -440,6 +486,10 @@ def main():
                     if EditMode is False:
                         WasContinuous = Continuous
                         Continuous = False
+
+                    LeftClickHeldDown = False
+                    if len(HeldDownCells) == 2:
+                        SelectionBoxPresent = True
 
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
@@ -504,6 +554,7 @@ def main():
             elif (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == edit_mode_button) or (MenuOpen is True and event.type == pygame.KEYUP and event.key == pygame.K_e and helpers.anyAliveElements(save_load_windows) is False):
                 edit_mode_button.set_text('Enable edit mode (E)')
                 EditMode = False
+                HeldDownCells = []
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == save_button and helpers.anyAliveElements(save_load_windows) is False:
                 save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick save location', initial_file_path=DefaultSavePath, allow_picking_directories=True)
@@ -550,8 +601,8 @@ def main():
 
                 elif event.button == 1 and len(HeldDownCells) < 2 and SelectionBoxPresent is False:
                     mouse_pos = pygame.mouse.get_pos()
-                    IsColliding, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h)
-                    if IsColliding:
+                    IsColliding, IsCollidingWithActionWindow, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h)
+                    if IsColliding and not IsCollidingWithActionWindow:
                         board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
                         if step_stack[-1][board_pos[0]][board_pos[1]] == 0:
                             step_stack[-1][board_pos[0]][board_pos[1]] = 1
@@ -560,8 +611,11 @@ def main():
 
                     HeldDownCells = []
 
-                elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is True:
+                elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is False:
+                    SelectionBoxPresent = True
+                elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is True and not helpers.isMouseCollidingWithActionWindow(action_window, pygame.mouse.get_pos()):
                     HeldDownCells = []
+                    SelectionBoxPresent = False
                 elif event.button == 4:
                     config_dict["EditCheckerboardBrightness"][0] = min(config_dict["EditCheckerboardBrightness"][0] + 1, MaxEditCheckerboardBrightness)
                 elif event.button == 5:
@@ -569,8 +623,8 @@ def main():
 
             if LeftClickHeldDown is True and EditMode is True and MenuOpen is False and SelectionBoxPresent is False:
                 mouse_pos = pygame.mouse.get_pos()
-                IsColliding, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h)
-                if IsColliding:
+                IsColliding, IsCollidingWithActionWindow, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h)
+                if IsColliding and not IsCollidingWithActionWindow:
                     board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
 
                     if len(HeldDownCells) < 2 and board_pos not in HeldDownCells:
@@ -669,6 +723,9 @@ def main():
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == parameters_color_picker_dialog and config_dict["RandomColorByPixel"][0] is False:
                 for element in all_parameters_color_elements: element.enable()
 
+            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == action_window:
+                HeldDownCells = []
+
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_scale_default_button: parameters_scale_slider.set_current_value(DefaultScale)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_max_fps_default_button: parameters_max_fps_slider.set_current_value(DefaultMaxFps)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_likelihood_default_button: parameters_likelihood_slider.set_current_value(DefaultLikelihood)
@@ -692,6 +749,15 @@ def main():
             Step = False
             StepBack = False
             Update = False
+
+        if SelectionBoxPresent is True:
+            if helpers.anyAliveElements([action_window]) is False and MenuOpen is False:
+                action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, HeldDownCells=HeldDownCells)
+            elif helpers.anyAliveElements([action_window]) is True and MenuOpen is True:
+                action_window.kill()
+        else:
+            if helpers.anyAliveElements([action_window]) is True:
+                action_window.kill()
 
         if NewBoard is True:
             Board = helpers.generateArray(previousHeight, previousWidth, parameters_likelihood_slider.get_current_value())
@@ -731,6 +797,10 @@ def main():
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)
+
+        ScaledHeldDownCells = helpers.getScaledHeldDownCells(step_stack[-1], CurrentBoardSurf, HeldDownCells, w, h)
+        if len(ScaledHeldDownCells) == 2:
+            helpers.showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, sidebar_header_font)
 
 
         helpers.manageSliderAndEntryWithArray(all_parameters_elements_matched)

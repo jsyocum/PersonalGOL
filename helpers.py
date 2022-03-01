@@ -154,7 +154,11 @@ def getScale(board, w, h):
 
     return Scale, Which
 
-def isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h):
+def isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h):
+    IsCollidingWithBoardSurf = False
+    IsCollidingWithActionWindow = isMouseCollidingWithActionWindow(action_window, mouse_pos)
+    rel_mouse_pos = None
+
     x_start = w / 2 - CurrentBoardSurf.get_width() / 2
     x_stop = w / 2 + CurrentBoardSurf.get_width() / 2
     y_start = h / 2 - CurrentBoardSurf.get_height() / 2
@@ -162,15 +166,75 @@ def isMouseCollidingWithBoardSurf(CurrentBoardSurf, mouse_pos, w, h):
 
     if (x_start <= mouse_pos[0] <= x_stop) and (y_start <= mouse_pos[1] <= y_stop):
         rel_mouse_pos = (mouse_pos[0] - x_start, mouse_pos[1] - y_start)
-        return True, rel_mouse_pos
-    else:
-        return False, None
+        IsCollidingWithBoardSurf = True
+
+    return IsCollidingWithBoardSurf, IsCollidingWithActionWindow, rel_mouse_pos
+
+def isMouseCollidingWithActionWindow(action_window, mouse_pos):
+    IsCollidingWithActionWindow = False
+
+    if action_window is not None:
+        IsCollidingWithActionWindow = action_window.get_relative_rect().collidepoint(mouse_pos)
+
+    return IsCollidingWithActionWindow
 
 def getBoardPosition(board, mouse_pos, w, h):
     scale, which = getScale(board, w, h)
     board_pos = (int(math.ceil(mouse_pos[0] / scale) - 1), int(math.ceil(mouse_pos[1] / scale) - 1))
 
     return board_pos
+
+def getScaledHeldDownCells(board, boardSurf, HeldDownCellsArray, w, h):
+    ScaledHeldDownCells = []
+    if len(HeldDownCellsArray) == 2:
+        ScaledHeldDownCells = [getScaledBoardPosition(board, boardSurf, HeldDownCellsArray[0], w, h), getScaledBoardPosition(board, boardSurf, HeldDownCellsArray[1], w, h)]
+
+    return ScaledHeldDownCells
+
+def getScaledBoardPosition(board, boardSurf, board_pos, w, h):
+    scale, which = getScale(board, w, h)
+    width_dif = (w - boardSurf.get_width()) / 2
+    height_dif = (h - boardSurf.get_height()) / 2
+    scaled_board_pos = (board_pos[0] * scale + width_dif, board_pos[1] * scale + height_dif)
+
+    return scaled_board_pos
+
+def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
+    cell_x_1, cell_y_1 = HeldDownCells[0][0], HeldDownCells[0][1]
+    cell_x_2, cell_y_2 = HeldDownCells[1][0], HeldDownCells[1][1]
+
+    cell_width = max(cell_x_1, cell_x_2) - min(cell_x_1, cell_x_2) + 1
+    cell_height = max(cell_y_1, cell_y_2) - min(cell_y_1, cell_y_2) + 1
+
+    x_1, y_1 = ScaledHeldDownCells[0][0], ScaledHeldDownCells[0][1]
+    x_2, y_2 = ScaledHeldDownCells[1][0], ScaledHeldDownCells[1][1]
+
+    x_mid = (x_1 + x_2) / 2
+    y_mid = (y_1 + y_2) / 2
+
+    left = min(x_1, x_2)
+    top = min(y_1, y_2)
+
+    width_text = font.render(str(cell_width), True, (190, 190, 190))
+    height_text = font.render(str(cell_height), True, (190, 190, 190))
+
+    width_text_pos = ()
+    height_text_pos = ()
+
+    if top - width_text.get_height() - 5 > 0:
+        width_text_pos = (x_mid - width_text.get_width() / 2, top - width_text.get_height() - 5)
+    else:
+        width_text_pos = (x_mid - width_text.get_width() / 2, top + 5)
+
+
+    if left - height_text.get_width() - 10 > 0:
+        height_text_pos = (left - height_text.get_width() - 10, y_mid - height_text.get_height() / 2)
+    else:
+        height_text_pos = (left + 10, y_mid - height_text.get_height() / 2)
+
+    surf.blit(width_text, width_text_pos)
+    surf.blit(height_text, height_text_pos)
+
 
 def blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode):
     if EditMode is False:
