@@ -9,7 +9,6 @@ import os
 import re
 import math
 import appdirs
-from configparser import ConfigParser
 from pathvalidate import sanitize_filename, sanitize_filepath
 from pathlib import Path
 from collections import deque
@@ -176,7 +175,11 @@ def main():
     save_location = None
     file_name_window = None
 
-    quick_save_path = os.getcwd() + '\\quick_save.png'
+    config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
+    config_file_path = config_file_dir + '\\config.ini'
+    print('Config file path:', config_file_path)
+
+    quick_save_path = config_file_dir + '\\quick_save.png'
     DefaultSavePath = os.path.expanduser("~/Desktop")
     if os.path.exists(DefaultSavePath) is not True:
         DefaultSavePath = DefaultSavePath.removesuffix("/Desktop") + "\OneDrive\Desktop"
@@ -190,6 +193,9 @@ def main():
     DefaultColorB = 255
     DefaultRandomColorByPixel = False
 
+    DefaultCustomBoardSizeWidth = int(w / DefaultScale)
+    DefaultCustomBoardSizeHeight = int(h / DefaultScale)
+
     DefaultEditCheckerboardBrightness = 15
     MaxEditCheckerboardBrightness = 200
 
@@ -201,44 +207,13 @@ def main():
         "G": [DefaultColorG, 255],
         "B": [DefaultColorB, 255],
         "RandomColorByPixel": [DefaultRandomColorByPixel, False],
+        "CustomBoardSizeWidth": [DefaultCustomBoardSizeWidth, w],
+        "CustomBoardSizeHeight": [DefaultCustomBoardSizeHeight, h],
+        "CustomBoardSizeEnabled": [False, False],
         "EditCheckerboardBrightness": [DefaultEditCheckerboardBrightness, 200]
     }
 
-    config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
-    config_file_path = config_file_dir + '\\config.ini'
-    print('Config file path:', config_file_path)
-    if os.path.isfile(config_file_path) is not True:
-        Path(config_file_dir).mkdir(parents=True, exist_ok=True)
-        config = ConfigParser()
-        config.read(config_file_path)
-
-        config.add_section('main')
-        config.set('main', 'Scale', str(DefaultScale))
-        config.set('main', 'MaxFps', str(DefaultMaxFps))
-        config.set('main', 'Likelihood', str(DefaultLikelihood))
-        config.set('main', 'R', str(DefaultColorR))
-        config.set('main', 'G', str(DefaultColorG))
-        config.set('main', 'B', str(DefaultColorB))
-        config.set('main', 'RandomColorByPixel', str(DefaultRandomColorByPixel))
-        config.set('main', 'EditCheckerboardBrightness', str(DefaultEditCheckerboardBrightness))
-
-    else:
-        config = ConfigParser()
-        config.read(config_file_path)
-        try: config.add_section('main')
-        except: pass
-
-        for key in config_dict:
-            try:
-                config_dict[key][0] = min(config.getint('main', key), config_dict[key][1])
-            except:
-                try:
-                    config_dict[key][0] = config.getboolean('main', key)
-                except:
-                    config.set('main', key, str(config_dict[key][0]))
-
-    with open(config_file_path, 'w') as f:
-        config.write(f)
+    helpers.initialConfigCheck(config_file_dir, config_file_path, config_dict)
 
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
@@ -290,14 +265,16 @@ def main():
     parameters_custom_board_size_enable_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (50, 25)), text='[ ]', manager=manager, container=settings_window, tool_tip_text='Enable to enter a custom board size. Disables scale option.', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_color_text})
     parameters_custom_board_size_width_text = pygame_gui.elements.ui_label.UILabel(text='Width:', relative_rect=pygame.Rect((10, 5), (-1, -1)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': parameters_custom_board_size_text})
     parameters_custom_board_size_height_text = pygame_gui.elements.ui_label.UILabel(text='Height:', relative_rect=pygame.Rect((10, 5), (-1, -1)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': parameters_custom_board_size_width_text})
-    parameters_custom_board_size_height_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 50 - parameters_custom_board_size_height_text.get_relative_rect().width, 25)), start_value=int(h / DefaultScale), value_range=(1, h), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'left_target': parameters_custom_board_size_height_text,
-                                                                                                                                                                                                                                                                                                                                                                             'top_target': parameters_custom_board_size_width_text})
+    parameters_custom_board_size_height_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 50 - parameters_custom_board_size_height_text.get_relative_rect().width, 25)), start_value=config_dict["CustomBoardSizeHeight"][0], value_range=(1, h), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top',
+                                                                                                                                                                                                                                                                                                                                                                                               'left_target': parameters_custom_board_size_height_text,
+                                                                                                                                                                                                                                                                                                                                                                                               'top_target': parameters_custom_board_size_width_text})
     parameters_custom_board_size_height_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((10, 5), (50, 25)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'left_target': parameters_custom_board_size_height_slider, 'top_target': parameters_custom_board_size_width_text})
-    parameters_custom_board_size_width_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 50 - parameters_custom_board_size_height_text.get_relative_rect().width, 25)), start_value=int(w / DefaultScale), value_range=(1, w), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'left_target': parameters_custom_board_size_height_text,
-                                                                                                                                                                                                                                                                                                                                                                            'top_target': parameters_custom_board_size_text})
+    parameters_custom_board_size_width_slider = pygame_gui.elements.UIHorizontalSlider(relative_rect=pygame.Rect((10, 5), (settings_window.get_real_width() - 50 - parameters_custom_board_size_height_text.get_relative_rect().width, 25)), start_value=config_dict["CustomBoardSizeWidth"][0], value_range=(1, w), manager=manager, container=settings_window, click_increment=1, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top',
+                                                                                                                                                                                                                                                                                                                                                                                             'left_target': parameters_custom_board_size_height_text,
+                                                                                                                                                                                                                                                                                                                                                                                             'top_target': parameters_custom_board_size_text})
     parameters_custom_board_size_width_entry = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((10, 5), (50, 25)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'top', 'left_target': parameters_custom_board_size_width_slider, 'top_target': parameters_custom_board_size_text})
-    parameters_custom_board_size_width_entry.set_text(str(int(w / DefaultScale)))
-    parameters_custom_board_size_height_entry.set_text(str(int(h / DefaultScale)))
+    parameters_custom_board_size_width_entry.set_text(str(config_dict["CustomBoardSizeWidth"][0]))
+    parameters_custom_board_size_height_entry.set_text(str(config_dict["CustomBoardSizeHeight"][0]))
     for element in [parameters_custom_board_size_width_slider, parameters_custom_board_size_width_entry, parameters_custom_board_size_height_slider, parameters_custom_board_size_height_entry]: element.disable()
 
     settings_window_actual.set_dimensions(settings_window_actual.minimum_dimensions)
@@ -368,9 +345,23 @@ def main():
                            controls_decrease_max_fps_text, controls_edit_mode_text, controls_clear_board_text, controls_clear_history_text,
                            controls_quick_save_text, controls_quick_load_text]
 
+    CustomBoardSizeEnabledDict = False
+    RandomColorByPixelDict = False
+
+    if config_dict["CustomBoardSizeEnabled"][0] is True:
+        CustomBoardSizeEnabledDict = True
+        parameters_scale_entry.set_text(str(config_dict["Scale"][0]))
+
+    if config_dict["RandomColorByPixel"][0] is True:
+        RandomColorByPixelDict = True
+
     # Generate array which is a fraction of the user's monitor size according to scale. There is a liklihood
     # of 1 / Likelihood that any given cell will start alive
-    Board = helpers.generateArray(int(h / config_dict["Scale"][0]), int(w / config_dict["Scale"][0]), config_dict["Likelihood"][0])
+    if config_dict["CustomBoardSizeEnabled"][0] is False:
+        Board = helpers.generateArray(int(h / config_dict["Scale"][0]), int(w / config_dict["Scale"][0]), config_dict["Likelihood"][0])
+    else:
+        Board = helpers.generateArray(config_dict["CustomBoardSizeHeight"][0], config_dict["CustomBoardSizeWidth"][0], config_dict["Likelihood"][0])
+
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     Board = np.rot90(Board)
     step_stack.append(Board.copy())
@@ -441,6 +432,7 @@ def main():
                     show_parameters_button.set_text('Show settings')
                     MenuOpen = OpenUIElements(all_menu_buttons)
                 else:
+                    helpers.writeDictToConfig(config_file_dir, config_file_path, config_dict)
                     if EditMode is False:
                         Continuous = WasContinuous
 
@@ -595,7 +587,8 @@ def main():
                 parameters_likelihood_slider_size_button.rebuild()
                 parameters_likelihood_slider.rebuild()
 
-            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_custom_board_size_enable_button:
+            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_custom_board_size_enable_button) or CustomBoardSizeEnabledDict is True:
+                CustomBoardSizeEnabledDict = False
                 scale_elements = [parameters_scale_slider, parameters_scale_entry, parameters_scale_slider_size_button, parameters_scale_default_button]
                 custom_board_size_elements = [parameters_custom_board_size_width_slider, parameters_custom_board_size_width_entry, parameters_custom_board_size_height_slider, parameters_custom_board_size_height_entry]
 
@@ -608,6 +601,7 @@ def main():
                         element.enable()
                         element.disable()
                     for element in custom_board_size_elements: element.enable()
+                    config_dict["CustomBoardSizeEnabled"][0] = True
                 else:
                     parameters_custom_board_size_enable_button.text = '[ ]'
                     parameters_likelihood_slider_size_button.tool_tip_text = 'Enable to enter a custom board size. Disables scale option.'
@@ -617,10 +611,12 @@ def main():
                         element.rebuild()
                         element.enable()
                         element.disable()
+                    config_dict["CustomBoardSizeEnabled"][0] = False
 
                 parameters_custom_board_size_enable_button.rebuild()
 
-            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_random_cell_button:
+            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_random_cell_button) or RandomColorByPixelDict is True:
+                RandomColorByPixelDict = False
                 if parameters_color_random_cell_button.text == '[ ]':
                     parameters_color_random_cell_button.text = '[X]'
                     parameters_color_random_cell_button.tool_tip_text = 'Disable to go back to using normal colors.'
@@ -684,6 +680,7 @@ def main():
             ClearHistory = False
 
         if QuickSave is True:
+            print("Quicksaved to:", quick_save_path)
             boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, infoObject, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
             helpers.savePNGWithBoardInfo(quick_save_path, boardsurf_to_save, step_stack[-1])
             QuickSave = False
@@ -705,15 +702,15 @@ def main():
 
 
         helpers.manageSliderAndEntryWithArray(all_parameters_elements_matched)
-        all_parameters_elements_matched[0][2] = parameters_scale_slider.get_current_value()
+        config_dict["Scale"][0] = all_parameters_elements_matched[0][2] = parameters_scale_slider.get_current_value()
         all_parameters_elements_matched[0][3] = parameters_scale_entry.get_text()
-        all_parameters_elements_matched[1][2] = parameters_max_fps_slider.get_current_value()
+        config_dict["MaxFps"][0] = all_parameters_elements_matched[1][2] = parameters_max_fps_slider.get_current_value()
         all_parameters_elements_matched[1][3] = parameters_max_fps_entry.get_text()
-        all_parameters_elements_matched[2][2] = parameters_likelihood_slider.get_current_value()
+        config_dict["Likelihood"][0] = all_parameters_elements_matched[2][2] = parameters_likelihood_slider.get_current_value()
         all_parameters_elements_matched[2][3] = parameters_likelihood_entry.get_text()
-        all_parameters_elements_matched[3][2] = parameters_custom_board_size_width_slider.get_current_value()
+        config_dict["CustomBoardSizeWidth"][0] = all_parameters_elements_matched[3][2] = parameters_custom_board_size_width_slider.get_current_value()
         all_parameters_elements_matched[3][3] = parameters_custom_board_size_width_entry.get_text()
-        all_parameters_elements_matched[4][2] = parameters_custom_board_size_height_slider.get_current_value()
+        config_dict["CustomBoardSizeHeight"][0] = all_parameters_elements_matched[4][2] = parameters_custom_board_size_height_slider.get_current_value()
         all_parameters_elements_matched[4][3] = parameters_custom_board_size_height_entry.get_text()
 
         for entryArray in all_parameters_entries[3:]:
@@ -724,6 +721,7 @@ def main():
         if (settings_window_actual.get_real_width(), settings_window_actual.get_real_height()) != previousSettingsWindowDimensions:
             parameters_warning_text.set_dimensions((settings_window.get_real_width() - 10, -1))
             parameters_warning_text.rebuild()
+            parameters_scale_slider.rebuild()
             parameters_custom_board_size_width_slider.rebuild()
             parameters_custom_board_size_height_slider.rebuild()
 
@@ -732,6 +730,8 @@ def main():
             settings_window.set_scrollable_area_dimensions((settings_window.get_real_width(), parameters_height_total / 1.145 - 2))
 
             previousSettingsWindowDimensions = (settings_window_actual.get_real_width(), settings_window_actual.get_real_height())
+
+        config_dict["R"][0], config_dict["G"][0], config_dict["B"][0] = color.r, color.g, color.b
 
         manager.draw_ui(surf)
         pygame.display.update()

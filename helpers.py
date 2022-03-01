@@ -6,6 +6,8 @@ import totalsize
 import math
 from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
+from configparser import ConfigParser
+from pathlib import Path
 
 # Clears the console screen
 def cls():
@@ -253,3 +255,50 @@ def anyAliveElements(array):
             any = True
 
     return any
+
+# Used to make sure a config exists and sets one up properly
+def initialConfigCheck(config_file_dir, config_file_path, config_dict):
+    if os.path.isfile(config_file_path) is not True:
+        Path(config_file_dir).mkdir(parents=True, exist_ok=True)
+
+        config = writeDict(config_file_path, config_dict)
+
+    else:
+        config = ConfigParser()
+        config.read(config_file_path)
+        try: config.add_section('main')
+        except: pass
+
+        for key in config_dict:
+            try:
+                config_dict[key][0] = min(config.getint('main', key), config_dict[key][1])
+            except:
+                try:
+                    config_dict[key][0] = config.getboolean('main', key)
+                except:
+                    config.set('main', key, str(config_dict[key][0]))
+
+    with open(config_file_path, 'w') as f:
+        config.write(f)
+
+# Used throughout the program to overwrite the config file with the current settings
+def writeDictToConfig(config_file_dir, config_file_path, config_dict):
+    if os.path.isfile(config_file_path) is not True:
+        Path(config_file_dir).mkdir(parents=True, exist_ok=True)
+
+    config = writeDict(config_file_path, config_dict)
+
+    with open(config_file_path, 'w') as f:
+        config.write(f)
+
+# Just a helper function for the other two above it
+def writeDict(config_file_path, config_dict):
+    config = ConfigParser()
+    config.read(config_file_path)
+
+    try: config.add_section('main')
+    except: pass
+    for key in config_dict:
+        config.set('main', key, str(config_dict[key][0]))
+
+    return config
