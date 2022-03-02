@@ -81,7 +81,7 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[]):
+def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[], EvenOrOdd=0):
     if RandomColorByPixel is False:
         if RandomColor is True:
             color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
@@ -99,18 +99,16 @@ def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color(
             for i, Pixel in enumerate(SubArray):
                 if coloredBoard[subi][i] == 0:
                     if (subi % 2) == 0:
-                        if (i % 2) == 0:
+                        if (i % 2) == EvenOrOdd:
                             coloredBoard[subi][i] = surf.map_rgb(pygame.Color(DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness))
                     else:
-                        if (i % 2) != 0:
+                        if (i % 2) != EvenOrOdd:
                             coloredBoard[subi][i] = surf.map_rgb(pygame.Color(DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness, DefaultEditCheckerboardBrightness))
 
                 if len(SelectedCells) == 2:
                     x_1, y_1 = SelectedCells[0][0], SelectedCells[0][1]
                     x_2, y_2 = SelectedCells[1][0], SelectedCells[1][1]
-                    # if subi in list(range(min(x_1, x_2), max(x_1, x_2) + 1)):
                     if min(x_1, x_2) <= subi <= max(x_1, x_2):
-                        # if i in list(range(min(y_1, y_2), max(y_1, y_2) + 1)):
                         if min(y_1, y_2) <= i <= max(y_1, y_2):
                             cell_color = surf.unmap_rgb(int(coloredBoard[subi][i]))
                             select_color = pygame.Color(27, 69, 109)
@@ -242,10 +240,22 @@ def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
     surf.blit(width_text, width_text_pos)
     surf.blit(height_text, height_text_pos)
 
-def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells):
+def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd):
     board_w = board.shape[0]
     board_h = board.shape[1]
     new_board = None
+    hdc = False
+
+    if len(HeldDownCells) == 2:
+        hdc = True
+
+    same_x_pos = False
+    same_y_pos = False
+    if hdc and HeldDownCells[0][0] == HeldDownCells[1][0]:
+        same_x_pos = True
+
+    if hdc and HeldDownCells[0][1] == HeldDownCells[1][1]:
+        same_y_pos = True
 
     if AdjustBoardTuple[1] is True:
         row = np.zeros((board_w, 1))
@@ -253,46 +263,64 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells):
 
         if board_h < h:
             if AdjustBoardTuple[0] == 'Top':
+                EvenOrOdd ^= 1
                 new_board = np.append(row, board, axis=1)
-                HeldDownCells[0] = (HeldDownCells[0][0], HeldDownCells[0][1] + 1)
-                HeldDownCells[1] = (HeldDownCells[1][0], HeldDownCells[1][1] + 1)
+                if hdc:
+                    HeldDownCells[0] = (HeldDownCells[0][0], HeldDownCells[0][1] + 1)
+                    HeldDownCells[1] = (HeldDownCells[1][0], HeldDownCells[1][1] + 1)
             elif AdjustBoardTuple[0] == 'Bottom':
                 new_board = np.append(board, row, axis=1)
 
         if board_w < w:
             if AdjustBoardTuple[0] == 'Left':
+                EvenOrOdd ^= 1
                 new_board = np.append(column, board, axis=0)
-                HeldDownCells[0] = (HeldDownCells[0][0] + 1, HeldDownCells[0][1])
-                HeldDownCells[1] = (HeldDownCells[1][0] + 1, HeldDownCells[1][1])
+                if hdc:
+                    HeldDownCells[0] = (HeldDownCells[0][0] + 1, HeldDownCells[0][1])
+                    HeldDownCells[1] = (HeldDownCells[1][0] + 1, HeldDownCells[1][1])
             elif AdjustBoardTuple[0] == 'Right':
                 new_board = np.append(board, column, axis=0)
 
     else:
         if board_h > 1:
             if AdjustBoardTuple[0] == 'Top':
+                EvenOrOdd ^= 1
                 new_board = board[:, 1:]
-                HeldDownCells[0] = (HeldDownCells[0][0], max(HeldDownCells[0][1] - 1, 0))
-                HeldDownCells[1] = (HeldDownCells[1][0], max(HeldDownCells[1][1] - 1, 0))
+                if hdc:
+                    HeldDownCells[0] = (HeldDownCells[0][0], max(HeldDownCells[0][1] - 1, 0))
+                    HeldDownCells[1] = (HeldDownCells[1][0], max(HeldDownCells[1][1] - 1, 0))
             elif AdjustBoardTuple[0] == 'Bottom':
                 new_board = board[:, :-1]
-                HeldDownCells[0] = (HeldDownCells[0][0], min(HeldDownCells[0][1], board_h - 2))
-                HeldDownCells[1] = (HeldDownCells[1][0], min(HeldDownCells[1][1], board_h - 2))
+                if hdc:
+                    HeldDownCells[0] = (HeldDownCells[0][0], min(HeldDownCells[0][1], board_h - 2))
+                    HeldDownCells[1] = (HeldDownCells[1][0], min(HeldDownCells[1][1], board_h - 2))
+
+            if hdc and same_y_pos and HeldDownCells[0][1] == HeldDownCells[1][1]:
+                HeldDownCells.clear()
+
         else:
             new_board = board
 
         if board_w > 1:
             if AdjustBoardTuple[0] == 'Left':
+                EvenOrOdd ^= 1
                 new_board = board[1:, :]
-                HeldDownCells[0] = (max(HeldDownCells[0][0] - 1, 0), HeldDownCells[0][1])
-                HeldDownCells[1] = (max(HeldDownCells[1][0] - 1, 0), HeldDownCells[1][1])
+                if hdc:
+                    HeldDownCells[0] = (max(HeldDownCells[0][0] - 1, 0), HeldDownCells[0][1])
+                    HeldDownCells[1] = (max(HeldDownCells[1][0] - 1, 0), HeldDownCells[1][1])
             elif AdjustBoardTuple[0] == 'Right':
                 new_board = board[:-1, :]
-                HeldDownCells[0] = (min(HeldDownCells[0][0], board_w - 2), HeldDownCells[0][1])
-                HeldDownCells[1] = (min(HeldDownCells[1][0], board_w - 2), HeldDownCells[1][1])
+                if hdc:
+                    HeldDownCells[0] = (min(HeldDownCells[0][0], board_w - 2), HeldDownCells[0][1])
+                    HeldDownCells[1] = (min(HeldDownCells[1][0], board_w - 2), HeldDownCells[1][1])
+
+            if hdc and same_x_pos and HeldDownCells[0][0] == HeldDownCells[1][0]:
+                HeldDownCells.clear()
+
         else:
             new_board = board
 
-    return new_board
+    return new_board, EvenOrOdd
 
 def blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode):
     if EditMode is False:
@@ -353,6 +381,14 @@ def getHeightOfElements(array):
         total_height += (rel_rect.height + rel_rect.top) * 1.145
 
     return total_height
+
+def getWidthOfElements(array):
+    total_width = 0
+    for element in array:
+        rel_rect = element.get_relative_rect()
+        total_width += (rel_rect.width + rel_rect.left) * 1.145
+
+    return total_width
 
 def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board):
     pygame.image.save(CurrentBoardSurf, save_path)

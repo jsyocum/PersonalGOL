@@ -159,7 +159,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
                          resizable=True,
                          visible=visible)
 
-        starting_w = self.get_abs_rect().width
+        # starting_w = self.get_abs_rect().width
         self.set_dimensions((width, height))
 
         self.message = pygame_gui.elements.ui_label.UILabel(text='Choose an action:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
@@ -176,9 +176,10 @@ class ActionWindow(pygame_gui.elements.UIWindow):
         self.minus_left_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='- left column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.minus_bottom_row_button, 'top_target': self.plus_top_row_button})
         self.minus_right_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='- right column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.minus_left_column_button, 'top_target': self.plus_top_row_button})
 
-        min_h = helpers.getHeightOfElements([self.message, self.zoom_button, self.plus_top_row_button, self.minus_top_row_button]) + 65
-        self.set_dimensions((starting_w, min_h))
-        self.set_minimum_dimensions((250, min_h))
+        min_w = helpers.getWidthOfElements([self.plus_top_row_button, self.plus_bottom_row_button, self.plus_left_column_button, self.plus_right_column_button]) - 30
+        min_h = helpers.getHeightOfElements([self.message, self.zoom_button, self.plus_top_row_button, self.minus_top_row_button]) + 50
+        self.set_dimensions((min_w, min_h))
+        self.set_minimum_dimensions((min_w, min_h))
 
     def process_event(self, event: pygame.event.Event) -> bool:
         """
@@ -279,6 +280,7 @@ def main():
     AdjustBoard = False
     AdjustBoardTuple = None
     Zoom = False
+    EvenOrOdd = 0
     time_delta_added = 0
 
     save_location = None
@@ -534,7 +536,7 @@ def main():
                         HeldDownCells = []
                         edit_mode_button.set_text('Enable edit mode (E)')
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not helpers.isMouseCollidingWithActionWindow(action_window, pygame.mouse.get_pos()):
                     LeftClickHeldDown = True
 
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
@@ -556,6 +558,8 @@ def main():
                     if len(HeldDownCells) == 2:
                         SelectionBoxPresent = True
 
+                    action_window.kill()
+
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
                     show_controls_button.set_text('Show controls')
@@ -565,6 +569,9 @@ def main():
                     helpers.writeDictToConfig(config_file_dir, config_file_path, config_dict)
                     if EditMode is False:
                         Continuous = WasContinuous
+
+                    if SelectionBoxPresent is True:
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
 
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     settings_window_actual.hide()
@@ -677,9 +684,11 @@ def main():
                     HeldDownCells = []
 
                 elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is False:
+                    if not ActionWindowAlive: action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
                     SelectionBoxPresent = True
                 elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is True and not helpers.isMouseCollidingWithActionWindow(action_window, pygame.mouse.get_pos()):
                     HeldDownCells = []
+                    action_window.kill()
                     SelectionBoxPresent = False
                 elif event.button == 4:
                     config_dict["EditCheckerboardBrightness"][0] = min(config_dict["EditCheckerboardBrightness"][0] + 1, MaxEditCheckerboardBrightness)
@@ -788,8 +797,9 @@ def main():
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == parameters_color_picker_dialog and config_dict["RandomColorByPixel"][0] is False:
                 for element in all_parameters_color_elements: element.enable()
 
-            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == action_window:
+            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == action_window and MenuOpen is False:
                 HeldDownCells = []
+                SelectionBoxPresent = False
                 ActionWindowAlive = False
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and ActionWindowAlive is True and event.ui_element == action_window.zoom_button:
@@ -835,15 +845,6 @@ def main():
             StepBack = False
             Update = False
 
-        if SelectionBoxPresent is True:
-            if ActionWindowAlive is False and MenuOpen is False:
-                action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
-            elif ActionWindowAlive is True and MenuOpen is True:
-                action_window.kill()
-        else:
-            if ActionWindowAlive is True:
-                action_window.kill()
-
         if NewBoard is True:
             Board = helpers.generateArray(previousHeight, previousWidth, parameters_likelihood_slider.get_current_value())
             Board = np.rot90(Board)
@@ -869,7 +870,7 @@ def main():
             Zoom = False
 
         if AdjustBoard is True:
-            Board = helpers.adjustBoardDimensions(step_stack[-1], AdjustBoardTuple, w, h, HeldDownCells)
+            Board, EvenOrOdd = helpers.adjustBoardDimensions(step_stack[-1], AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
             step_stack.append(Board)
 
             AdjustBoard = False
@@ -900,7 +901,7 @@ def main():
             print(load_status_message)
             QuickLoad = False
 
-        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells)
+        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)
