@@ -285,7 +285,8 @@ def main():
 
     save_location = None
     file_name_window = None
-    action_window = None
+    action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
+    action_window.kill()
 
     config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
     config_file_path = config_file_dir + '\\config.ini'
@@ -528,13 +529,28 @@ def main():
                     elif Continuous is False and EditMode is False:
                         EditMode = True
                         edit_mode_button.set_text('Disable edit mode (E)')
-                        print(WasContinuous)
                     elif EditMode is True:
                         Continuous = WasContinuous
                         WasContinuous = False
                         EditMode = False
                         HeldDownCells = []
+                        action_window.kill()
                         edit_mode_button.set_text('Enable edit mode (E)')
+                elif event.type == pygame.KEYUP and event.key == pygame.K_TAB:
+                    if Continuous is True and EditMode is False:
+                        WasContinuous = True
+                        Continuous = False
+                        EditMode = True
+                        edit_mode_button.set_text('Disable edit mode (E)')
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
+                    elif Continuous is False and EditMode is False:
+                        EditMode = True
+                        edit_mode_button.set_text('Disable edit mode (E)')
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
+                    elif EditMode is True and not action_window.alive():
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
+                    elif EditMode is True and action_window.alive():
+                        action_window.kill()
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not helpers.isMouseCollidingWithActionWindow(action_window, pygame.mouse.get_pos()):
                     LeftClickHeldDown = True
@@ -547,6 +563,11 @@ def main():
 
             if helpers.anyAliveElements([action_window]) is True:
                 ActionWindowAlive = True
+
+            if SelectionBoxPresent is True and action_window.zoom_button.is_enabled is False:
+                action_window.zoom_button.enable()
+            elif SelectionBoxPresent is False and action_window.zoom_button.is_enabled is True:
+                action_window.zoom_button.disable()
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == back_to_game_button):
                 if MenuOpen is False:
@@ -688,7 +709,6 @@ def main():
                     SelectionBoxPresent = True
                 elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is True and not helpers.isMouseCollidingWithActionWindow(action_window, pygame.mouse.get_pos()):
                     HeldDownCells = []
-                    action_window.kill()
                     SelectionBoxPresent = False
                 elif event.button == 4:
                     config_dict["EditCheckerboardBrightness"][0] = min(config_dict["EditCheckerboardBrightness"][0] + 1, MaxEditCheckerboardBrightness)
@@ -850,7 +870,6 @@ def main():
             Board = np.rot90(Board)
             step_stack.clear()
             step_stack.append(Board)
-            # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color)
             NewBoard = False
 
         if Zoom is True:
@@ -864,7 +883,6 @@ def main():
 
             Board = step_stack[-1][left:right + 1, top:bottom + 1]
             step_stack.append(Board)
-            # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color)
 
             HeldDownCells = []
             Zoom = False

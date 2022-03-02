@@ -263,6 +263,7 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
 
         if board_h < h:
             if AdjustBoardTuple[0] == 'Top':
+                # same as doing EvenOrOdd = not EvenOrOdd
                 EvenOrOdd ^= 1
                 new_board = np.append(row, board, axis=1)
                 if hdc:
