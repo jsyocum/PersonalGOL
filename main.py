@@ -149,7 +149,8 @@ class ActionWindow(pygame_gui.elements.UIWindow):
                  visible: int = 1,
                  width: int = 500,
                  height: int = 500,
-                 HeldDownCells: [] = None):
+                 HeldDownCells: [] = None
+                 ):
 
         super().__init__(rect, manager,
                          window_display_title=window_title,
@@ -157,6 +158,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
                          resizable=True,
                          visible=visible)
 
+        self.HeldDownCells = HeldDownCells
         starting_w = self.get_abs_rect().width
         self.set_dimensions((width, height))
 
@@ -180,7 +182,17 @@ class ActionWindow(pygame_gui.elements.UIWindow):
         """
         handled = super().process_event(event)
 
+        # if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.zoom_button:
+        #     event_data = {'text': self.save_path,
+        #                   'ui_element': self,
+        #                   'ui_object_id': self.most_specific_combined_id}
+        #     pygame.event.post(pygame.event.Event(pygame_gui., event_data))
+
         return handled
+
+    def on_close_window_button_pressed(self):
+        self.HeldDownCells.clear()
+        # self.kill()
 
     def get_width(self):
         return self.get_relative_rect().width - 30
@@ -220,6 +232,7 @@ def main():
     CurrentBoardSurf = None
     LeftClickHeldDown = [False, 0]
     SelectionBoxPresent = False
+    Zoom = False
     time_delta_added = 0
 
     save_location = None
@@ -481,6 +494,9 @@ def main():
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     LeftClickHeldDown = False
 
+            if len(HeldDownCells) < 2:
+                SelectionBoxPresent = False
+
             if (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == back_to_game_button):
                 if MenuOpen is False:
                     if EditMode is False:
@@ -726,6 +742,9 @@ def main():
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == action_window:
                 HeldDownCells = []
 
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.zoom_button:
+                Zoom = True
+
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_scale_default_button: parameters_scale_slider.set_current_value(DefaultScale)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_max_fps_default_button: parameters_max_fps_slider.set_current_value(DefaultMaxFps)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_likelihood_default_button: parameters_likelihood_slider.set_current_value(DefaultLikelihood)
@@ -766,6 +785,22 @@ def main():
             step_stack.append(Board)
             CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color)
             NewBoard = False
+
+        if Zoom is True:
+            x_1, y_1 = HeldDownCells[0][0], HeldDownCells[0][1]
+            x_2, y_2 = HeldDownCells[1][0], HeldDownCells[1][1]
+
+            left = min(x_1, x_2)
+            right = max(x_1, x_2)
+            top = min(y_1, y_2)
+            bottom = max(y_1, y_2)
+
+            Board = step_stack[-1][left:right + 1, top:bottom + 1]
+            step_stack.append(Board)
+            CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color)
+
+            HeldDownCells = []
+            Zoom = False
 
         if ClearBoard is True:
             step_stack.append(np.zeros_like(step_stack[-1]))

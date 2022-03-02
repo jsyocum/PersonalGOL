@@ -108,8 +108,10 @@ def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color(
                 if len(SelectedCells) == 2:
                     x_1, y_1 = SelectedCells[0][0], SelectedCells[0][1]
                     x_2, y_2 = SelectedCells[1][0], SelectedCells[1][1]
-                    if subi in list(range(min(x_1, x_2), max(x_1, x_2) + 1)):
-                        if i in list(range(min(y_1, y_2), max(y_1, y_2) + 1)):
+                    # if subi in list(range(min(x_1, x_2), max(x_1, x_2) + 1)):
+                    if min(x_1, x_2) <= subi <= max(x_1, x_2):
+                        # if i in list(range(min(y_1, y_2), max(y_1, y_2) + 1)):
+                        if min(y_1, y_2) <= i <= max(y_1, y_2):
                             cell_color = surf.unmap_rgb(int(coloredBoard[subi][i]))
                             select_color = pygame.Color(27, 69, 109)
 
@@ -173,7 +175,7 @@ def isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window,
 def isMouseCollidingWithActionWindow(action_window, mouse_pos):
     IsCollidingWithActionWindow = False
 
-    if action_window is not None:
+    if action_window is not None and action_window.alive():
         IsCollidingWithActionWindow = action_window.get_relative_rect().collidepoint(mouse_pos)
 
     return IsCollidingWithActionWindow
@@ -213,7 +215,12 @@ def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
     y_mid = (y_1 + y_2) / 2
 
     left = min(x_1, x_2)
+    right = max(x_1, x_2)
     top = min(y_1, y_2)
+    # bottom = max(y_1, y_2)
+
+    width = right - left
+    individual_cell_length = width / max(cell_width - 1, 1)
 
     width_text = font.render(str(cell_width), True, (190, 190, 190))
     height_text = font.render(str(cell_height), True, (190, 190, 190))
@@ -222,15 +229,15 @@ def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
     height_text_pos = ()
 
     if top - width_text.get_height() - 5 > 0:
-        width_text_pos = (x_mid - width_text.get_width() / 2, top - width_text.get_height() - 5)
+        width_text_pos = (x_mid - width_text.get_width() / 2 + individual_cell_length / 2, top - width_text.get_height() - 5)
     else:
-        width_text_pos = (x_mid - width_text.get_width() / 2, top + 5)
+        width_text_pos = (x_mid - width_text.get_width() / 2 + individual_cell_length / 2, top + 5)
 
 
     if left - height_text.get_width() - 10 > 0:
-        height_text_pos = (left - height_text.get_width() - 10, y_mid - height_text.get_height() / 2)
+        height_text_pos = (left - height_text.get_width() - 10, y_mid - height_text.get_height() / 2 + individual_cell_length / 2)
     else:
-        height_text_pos = (left + 10, y_mid - height_text.get_height() / 2)
+        height_text_pos = (left + 10, y_mid - height_text.get_height() / 2 + individual_cell_length / 2)
 
     surf.blit(width_text, width_text_pos)
     surf.blit(height_text, height_text_pos)
