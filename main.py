@@ -869,7 +869,7 @@ def main():
             Zoom = False
 
         if AdjustBoard is True:
-            Board = helpers.adjustBoardDimensions(step_stack[-1], AdjustBoardTuple)
+            Board = helpers.adjustBoardDimensions(step_stack[-1], AdjustBoardTuple, w, h, HeldDownCells)
             step_stack.append(Board)
 
             AdjustBoard = False

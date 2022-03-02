@@ -242,38 +242,53 @@ def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
     surf.blit(width_text, width_text_pos)
     surf.blit(height_text, height_text_pos)
 
-def adjustBoardDimensions(board, AdjustBoardTuple):
-    w = board.shape[0]
-    h = board.shape[1]
+def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells):
+    board_w = board.shape[0]
+    board_h = board.shape[1]
     new_board = None
 
     if AdjustBoardTuple[1] is True:
-        row = np.zeros((w, 1))
-        column = np.zeros((1, h))
+        row = np.zeros((board_w, 1))
+        column = np.zeros((1, board_h))
 
-        if AdjustBoardTuple[0] == 'Top':
-            new_board = np.append(row, board, axis=1)
-        elif AdjustBoardTuple[0] == 'Bottom':
-            new_board = np.append(board, row, axis=1)
-        elif AdjustBoardTuple[0] == 'Left':
-            new_board = np.append(column, board, axis=0)
-        elif AdjustBoardTuple[0] == 'Right':
-            new_board = np.append(board, column, axis=0)
+        if board_h < h:
+            if AdjustBoardTuple[0] == 'Top':
+                new_board = np.append(row, board, axis=1)
+                HeldDownCells[0] = (HeldDownCells[0][0], HeldDownCells[0][1] + 1)
+                HeldDownCells[1] = (HeldDownCells[1][0], HeldDownCells[1][1] + 1)
+            elif AdjustBoardTuple[0] == 'Bottom':
+                new_board = np.append(board, row, axis=1)
+
+        if board_w < w:
+            if AdjustBoardTuple[0] == 'Left':
+                new_board = np.append(column, board, axis=0)
+                HeldDownCells[0] = (HeldDownCells[0][0] + 1, HeldDownCells[0][1])
+                HeldDownCells[1] = (HeldDownCells[1][0] + 1, HeldDownCells[1][1])
+            elif AdjustBoardTuple[0] == 'Right':
+                new_board = np.append(board, column, axis=0)
 
     else:
-        if h > 1:
+        if board_h > 1:
             if AdjustBoardTuple[0] == 'Top':
                 new_board = board[:, 1:]
+                HeldDownCells[0] = (HeldDownCells[0][0], max(HeldDownCells[0][1] - 1, 0))
+                HeldDownCells[1] = (HeldDownCells[1][0], max(HeldDownCells[1][1] - 1, 0))
             elif AdjustBoardTuple[0] == 'Bottom':
                 new_board = board[:, :-1]
+                HeldDownCells[0] = (HeldDownCells[0][0], min(HeldDownCells[0][1], board_h - 2))
+                HeldDownCells[1] = (HeldDownCells[1][0], min(HeldDownCells[1][1], board_h - 2))
         else:
             new_board = board
 
-        if w > 1:
+        if board_w > 1:
             if AdjustBoardTuple[0] == 'Left':
                 new_board = board[1:, :]
+                HeldDownCells[0] = (max(HeldDownCells[0][0] - 1, 0), HeldDownCells[0][1])
+                HeldDownCells[1] = (max(HeldDownCells[1][0] - 1, 0), HeldDownCells[1][1])
             elif AdjustBoardTuple[0] == 'Right':
                 new_board = board[:-1, :]
+                HeldDownCells[0] = (min(HeldDownCells[0][0], board_w - 2), HeldDownCells[0][1])
+                HeldDownCells[1] = (min(HeldDownCells[1][0], board_w - 2), HeldDownCells[1][1])
         else:
             new_board = board
 
