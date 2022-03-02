@@ -242,6 +242,42 @@ def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
     surf.blit(width_text, width_text_pos)
     surf.blit(height_text, height_text_pos)
 
+def adjustBoardDimensions(board, AdjustBoardTuple):
+    w = board.shape[0]
+    h = board.shape[1]
+    new_board = None
+
+    if AdjustBoardTuple[1] is True:
+        row = np.zeros((w, 1))
+        column = np.zeros((1, h))
+
+        if AdjustBoardTuple[0] == 'Top':
+            new_board = np.append(row, board, axis=1)
+        elif AdjustBoardTuple[0] == 'Bottom':
+            new_board = np.append(board, row, axis=1)
+        elif AdjustBoardTuple[0] == 'Left':
+            new_board = np.append(column, board, axis=0)
+        elif AdjustBoardTuple[0] == 'Right':
+            new_board = np.append(board, column, axis=0)
+
+    else:
+        if h > 1:
+            if AdjustBoardTuple[0] == 'Top':
+                new_board = board[:, 1:]
+            elif AdjustBoardTuple[0] == 'Bottom':
+                new_board = board[:, :-1]
+        else:
+            new_board = board
+
+        if w > 1:
+            if AdjustBoardTuple[0] == 'Left':
+                new_board = board[1:, :]
+            elif AdjustBoardTuple[0] == 'Right':
+                new_board = board[:-1, :]
+        else:
+            new_board = board
+
+    return new_board
 
 def blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode):
     if EditMode is False:
