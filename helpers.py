@@ -257,6 +257,58 @@ def zoom(board, HeldDownCells):
 
     return board[left:right + 1, top:bottom + 1]
 
+def cut(board, HeldDownCells):
+    left, right, top, bottom = getCorners(HeldDownCells)
+    board[left:right + 1, top:bottom + 1] = 0
+
+    return board
+
+def paste(board, HeldDownCells, CopiedBoard, board_pos=None):
+    width = board.shape[0]
+    height = board.shape[1]
+
+    c_width = CopiedBoard.shape[0]
+    c_height = CopiedBoard.shape[1]
+
+    if board_pos is None:
+        left, right, top, bottom = getCorners(HeldDownCells)
+    else:
+        left, top = board_pos[0], board_pos[1]
+
+    board[left:min(left + c_width, width), top:min(top + c_height, height)] = CopiedBoard[:min(c_width, width - left), :min(c_height, height - top)]
+
+    return board
+
+def rotate(board, HeldDownCells):
+    left, right, top, bottom = getCorners(HeldDownCells)
+    width = right - left
+    height = bottom - top
+    slice = board[left:right + 1, top:bottom + 1]
+
+    if width != height:
+        slice = np.rot90(slice)
+
+    slice = np.rot90(slice)
+
+    board[left:right + 1, top:bottom + 1] = slice
+
+    return board
+
+def flip(board, HeldDownCells):
+    left, right, top, bottom = getCorners(HeldDownCells)
+    width = right - left
+    height = bottom - top
+    slice = board[left:right + 1, top:bottom + 1]
+
+    if height >= width:
+        slice = np.fliplr(slice)
+    else:
+        slice = np.flipud(slice)
+
+    board[left:right + 1, top:bottom + 1] = slice
+
+    return board
+
 def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd):
     board_w = board.shape[0]
     board_h = board.shape[1]

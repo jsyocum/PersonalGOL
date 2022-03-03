@@ -1,0 +1,9 @@
+{
+    "#less_dead_zone_button":
+    {
+        "misc":
+        {
+            "text_horiz_alignment_padding": "0.5"
+        }
+    }
+}
