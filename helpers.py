@@ -263,17 +263,14 @@ def cut(board, HeldDownCells):
 
     return board
 
-def paste(board, HeldDownCells, CopiedBoard, board_pos=None):
+def paste(board, HeldDownCells, CopiedBoard):
     width = board.shape[0]
     height = board.shape[1]
 
     c_width = CopiedBoard.shape[0]
     c_height = CopiedBoard.shape[1]
 
-    if board_pos is None:
-        left, right, top, bottom = getCorners(HeldDownCells)
-    else:
-        left, top = board_pos[0], board_pos[1]
+    left, right, top, bottom = getCorners(HeldDownCells)
 
     board[left:min(left + c_width, width), top:min(top + c_height, height)] = CopiedBoard[:min(c_width, width - left), :min(c_height, height - top)]
 
@@ -461,6 +458,10 @@ def getWidthOfElements(array):
     return total_width
 
 def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board):
+    save_path_dir = '\\'.join(save_path.split('\\')[:-1])
+    if os.path.exists(save_path_dir) is False:
+        Path(save_path_dir).mkdir(parents=True, exist_ok=True)
+
     pygame.image.save(CurrentBoardSurf, save_path)
 
     targetImage = PngImageFile(save_path)

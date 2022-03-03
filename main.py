@@ -100,8 +100,7 @@ class ChooseFileNameWindow(pygame_gui.elements.UIWindow):
 
             self.file_name_entry.set_text(default_filename)
 
-            self.save_path = save_path.split('\\')[:-1]
-            self.save_path = '\\'.join(self.save_path)
+            self.save_path = '\\'.join(save_path.split('\\')[:-1])
 
     def process_event(self, event: pygame.event.Event) -> bool:
         """
@@ -318,10 +317,20 @@ def main():
     config_file_path = config_file_dir + '\\config.ini'
     print('Config file path:', config_file_path)
 
-    quick_save_path = config_file_dir + '\\quick_save.png'
-    DefaultSavePath = os.path.expanduser("~/Desktop")
+    SavePath = ''
+    quick_save_path = config_file_dir + '\\Patterns\\quick_save.png'
+    DefaultSavePath = config_file_dir + '\\Patterns'
+    BackupSavePath = os.path.expanduser("~/Desktop")
+    if os.path.exists(BackupSavePath) is not True:
+        BackupSavePath = BackupSavePath.removesuffix("/Desktop") + "\OneDrive\Desktop"
+
     if os.path.exists(DefaultSavePath) is not True:
-        DefaultSavePath = DefaultSavePath.removesuffix("/Desktop") + "\OneDrive\Desktop"
+        Path(DefaultSavePath).mkdir(parents=True, exist_ok=True)
+
+    if os.path.exists(DefaultSavePath) is True:
+        SavePath = DefaultSavePath
+    else:
+        SavePath = BackupSavePath
 
     DefaultScale = 20
     DefaultMaxFps = 18
@@ -671,7 +680,7 @@ def main():
                 HeldDownCells = []
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == save_button and helpers.anyAliveElements(save_load_windows) is False:
-                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick save location', initial_file_path=DefaultSavePath, allow_picking_directories=True)
+                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick save location', initial_file_path=SavePath, allow_picking_directories=True)
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == save_location and save_location.window_display_title == 'Pick save location':
                 save_path = event.text
@@ -683,7 +692,7 @@ def main():
                 helpers.savePNGWithBoardInfo(save_path, boardsurf_to_save, step_stack[-1])
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
-                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=DefaultSavePath, allow_picking_directories=False)
+                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=SavePath, allow_picking_directories=False)
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == save_location and save_location.window_display_title == 'Pick .PNG board file':
                 load_path = event.text
@@ -886,8 +895,7 @@ def main():
                 IsColliding, IsCollidingWithActionWindow, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h)
                 if IsColliding and not IsCollidingWithActionWindow:
                     board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
-
-                    Board = helpers.paste(step_stack[-1].copy(), None, CopiedBoard, board_pos=board_pos)
+                    Board = helpers.paste(step_stack[-1].copy(), [board_pos, [board_pos[0] + 1, board_pos[1] + 1]], CopiedBoard)
                     step_stack.append(Board)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.clear_button:
@@ -1001,6 +1009,11 @@ def main():
             step_stack.clear()
             step_stack.append(current_board)
             ClearHistory = False
+
+        if os.path.exists(DefaultSavePath) is True:
+            SavePath = DefaultSavePath
+        else:
+            SavePath = BackupSavePath
 
         if QuickSave is True:
             print("Quicksaved to:", quick_save_path)
