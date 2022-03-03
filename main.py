@@ -270,9 +270,9 @@ def main():
     pygame.display.set_icon(logo)
     pygame.display.set_caption("Personal Game Of Life")
     surf = pygame.display.set_mode((0, 0))
-    infoObject = pygame.display.Info()
-    w = infoObject.current_w
-    h = infoObject.current_h
+    # infoObject = pygame.display.Info()
+    w = surf.get_width()
+    h = surf.get_height()
     manager = pygame_gui.UIManager((w, h), 'LessDeadZoneButton.json')
 
     clock = pygame.time.Clock()
@@ -525,6 +525,8 @@ def main():
         if len(time_delta_stack) > 2000:
             time_delta_stack.popleft()
 
+        keys = pygame.key.get_pressed()
+
         time_delta_added = time_delta_added + time_delta
         if time_delta_added >= (1 / parameters_max_fps_slider.get_current_value()):
             Update = True
@@ -533,8 +535,6 @@ def main():
         save_load_windows = [save_location, file_name_window]
 
         for event in pygame.event.get():
-            keys = pygame.key.get_pressed()
-
             if event.type == pygame.QUIT:
                 running = False
 
@@ -656,7 +656,7 @@ def main():
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button:
                 show_controls_button.set_text('Show controls')
-                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject, EditMode)
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button and show_parameters_button.text == 'Show settings':
                 show_parameters_button.set_text('Hide settings')
@@ -667,7 +667,7 @@ def main():
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button:
                 show_parameters_button.set_text('Show settings')
-                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject, EditMode)
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
                 settings_window_actual.hide()
 
             if ((event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == edit_mode_button) or (MenuOpen is True and event.type == pygame.KEYUP and event.key == pygame.K_e and helpers.anyAliveElements(save_load_windows) is False)) and edit_mode_button.text == 'Enable edit mode (E)':
@@ -688,7 +688,7 @@ def main():
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == file_name_window:
                 save_path = event.text
-                boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, infoObject, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
+                boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
                 helpers.savePNGWithBoardInfo(save_path, boardsurf_to_save, step_stack[-1])
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
@@ -867,7 +867,7 @@ def main():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.zoom_button:
                 Zoom = True
 
-            if keys[pygame.K_LCTRL] and keys[pygame.K_a] and MenuOpen is False and EditMode is True:
+            if keys[pygame.K_LCTRL] and event.type == pygame.KEYUP and event.key == pygame.K_a and MenuOpen is False and EditMode is True:
                 if SelectionBoxPresent is False:
                     HeldDownCells = [(0, 0), (step_stack[-1].shape[0] - 1, step_stack[-1].shape[1] - 1)]
                     SelectionBoxPresent = True
@@ -881,13 +881,13 @@ def main():
                         HeldDownCells = []
                         SelectionBoxPresent = False
 
-            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.cut_button) or (keys[pygame.K_LCTRL] and keys[pygame.K_x] and SelectionBoxPresent is True):
+            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.cut_button) or (keys[pygame.K_LCTRL] and event.type == pygame.KEYUP and event.key == pygame.K_x and SelectionBoxPresent is True):
                 Cut = True
 
-            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.copy_button) or (keys[pygame.K_LCTRL] and keys[pygame.K_c] and SelectionBoxPresent is True):
+            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.copy_button) or (keys[pygame.K_LCTRL] and event.type == pygame.KEYUP and event.key == pygame.K_c and SelectionBoxPresent is True):
                 Copy = True
 
-            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.paste_button) or (keys[pygame.K_LCTRL] and keys[pygame.K_v] and SelectionBoxPresent is True):
+            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.paste_button) or (keys[pygame.K_LCTRL] and event.type == pygame.KEYUP and event.key == pygame.K_v and SelectionBoxPresent is True):
                 Paste = True
 
             if keys[pygame.K_LCTRL] and keys[pygame.K_v] and MenuOpen is False and EditMode is True and SelectionBoxPresent is False and CopiedBoard is not None:
@@ -898,7 +898,7 @@ def main():
                     Board = helpers.paste(step_stack[-1].copy(), [board_pos, [board_pos[0] + 1, board_pos[1] + 1]], CopiedBoard)
                     step_stack.append(Board)
 
-            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.clear_button:
+            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.clear_button) or (event.type == pygame.KEYUP and event.key == pygame.K_BACKSPACE and SelectionBoxPresent is True):
                 Clear = True
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.rotate_button:
@@ -917,7 +917,7 @@ def main():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_default_button: color = pygame.Color(DefaultColorR, DefaultColorG, DefaultColorB)
 
             if (event.type == pygame_gui.UI_BUTTON_ON_UNHOVERED or event.type == pygame_gui.UI_BUTTON_PRESSED) and (event.ui_element in all_buttons_with_tool_tips) and (show_parameters_button.text == 'Hide parameters') and (MenuOpen is not False):
-                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, infoObject, EditMode)
+                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
 
             manager.process_events(event)
 
@@ -1017,7 +1017,7 @@ def main():
 
         if QuickSave is True:
             print("Quicksaved to:", quick_save_path)
-            boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, infoObject, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
+            boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
             helpers.savePNGWithBoardInfo(quick_save_path, boardsurf_to_save, step_stack[-1])
             QuickSave = False
 
@@ -1031,7 +1031,7 @@ def main():
             print(load_status_message)
             QuickLoad = False
 
-        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, infoObject, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
+        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)

@@ -81,7 +81,7 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[], EvenOrOdd=0):
+def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[], EvenOrOdd=0):
     if RandomColorByPixel is False:
         if RandomColor is True:
             color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
@@ -120,13 +120,13 @@ def updateScreenWithBoard(Board, surf, infoObject, EditMode, color=pygame.Color(
 
                             coloredBoard[subi][i] = surf.map_rgb(cell_color)
 
-    Scale = getScale(Board, infoObject.current_w, infoObject.current_h)[0]
+    Scale = getScale(Board, surf.get_width(), surf.get_height())[0]
     boardSurf = pygame.Surface(Board.shape)
     pygame.surfarray.blit_array(boardSurf, coloredBoard)
     boardSurf = pygame.transform.scale(boardSurf, (boardSurf.get_width() * Scale, boardSurf.get_height() * Scale))
 
     if Saving is False:
-        blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode)
+        blitBoardOnScreenEvenly(surf, boardSurf, EditMode)
 
     return boardSurf
 
@@ -389,12 +389,12 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
 
     return new_board, EvenOrOdd
 
-def blitBoardOnScreenEvenly(surf, boardSurf, infoObject, EditMode):
+def blitBoardOnScreenEvenly(surf, boardSurf, EditMode):
     if EditMode is False:
         surf.fill((0, 0, 0))
     else:
         surf.fill((30, 30, 30))
-    surf.blit(boardSurf, (infoObject.current_w / 2 - boardSurf.get_width() / 2, infoObject.current_h / 2 - boardSurf.get_height() / 2))
+    surf.blit(boardSurf, (surf.get_width() / 2 - boardSurf.get_width() / 2, surf.get_height() / 2 - boardSurf.get_height() / 2))
 
 def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):
