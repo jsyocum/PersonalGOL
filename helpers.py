@@ -226,7 +226,7 @@ def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
     x_mid = (x_1 + x_2) / 2
     y_mid = (y_1 + y_2) / 2
 
-    left, right, top, bottom = getCorners(HeldDownCells)
+    left, right, top, bottom = getCorners(ScaledHeldDownCells)
 
     width = right - left
     individual_cell_length = width / max(cell_width - 1, 1)
