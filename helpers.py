@@ -199,23 +199,34 @@ def getScaledBoardPosition(board, boardSurf, board_pos, w, h):
 
     return scaled_board_pos
 
-def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
-    cell_x_1, cell_y_1 = HeldDownCells[0][0], HeldDownCells[0][1]
-    cell_x_2, cell_y_2 = HeldDownCells[1][0], HeldDownCells[1][1]
+def getPositions(HeldDownCells):
+    x_1, y_1 = HeldDownCells[0][0], HeldDownCells[0][1]
+    x_2, y_2 = HeldDownCells[1][0], HeldDownCells[1][1]
 
-    cell_width = max(cell_x_1, cell_x_2) - min(cell_x_1, cell_x_2) + 1
-    cell_height = max(cell_y_1, cell_y_2) - min(cell_y_1, cell_y_2) + 1
+    return x_1, y_1, x_2, y_2
 
-    x_1, y_1 = ScaledHeldDownCells[0][0], ScaledHeldDownCells[0][1]
-    x_2, y_2 = ScaledHeldDownCells[1][0], ScaledHeldDownCells[1][1]
-
-    x_mid = (x_1 + x_2) / 2
-    y_mid = (y_1 + y_2) / 2
+def getCorners(HeldDownCells):
+    x_1, y_1, x_2, y_2 = getPositions(HeldDownCells)
 
     left = min(x_1, x_2)
     right = max(x_1, x_2)
     top = min(y_1, y_2)
-    # bottom = max(y_1, y_2)
+    bottom = max(y_1, y_2)
+
+    return left, right, top, bottom
+
+def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
+    cell_x_1, cell_y_1, cell_x_2, cell_y_2 = getPositions(HeldDownCells)
+
+    cell_width = max(cell_x_1, cell_x_2) - min(cell_x_1, cell_x_2) + 1
+    cell_height = max(cell_y_1, cell_y_2) - min(cell_y_1, cell_y_2) + 1
+
+    x_1, y_1, x_2, y_2 = getPositions(ScaledHeldDownCells)
+
+    x_mid = (x_1 + x_2) / 2
+    y_mid = (y_1 + y_2) / 2
+
+    left, right, top, bottom = getCorners(HeldDownCells)
 
     width = right - left
     individual_cell_length = width / max(cell_width - 1, 1)
@@ -239,6 +250,12 @@ def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
 
     surf.blit(width_text, width_text_pos)
     surf.blit(height_text, height_text_pos)
+
+# Just copies that section of the board, so can use for zooming or copy/pasting
+def zoom(board, HeldDownCells):
+    left, right, top, bottom = getCorners(HeldDownCells)
+
+    return board[left:right + 1, top:bottom + 1]
 
 def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd):
     board_w = board.shape[0]

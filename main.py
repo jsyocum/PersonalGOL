@@ -280,6 +280,7 @@ def main():
     AdjustBoard = False
     AdjustBoardTuple = None
     Zoom = False
+    Copy = False
     EvenOrOdd = 0
     time_delta_added = 0
 
@@ -414,6 +415,7 @@ def main():
     previousCustomBoardSizeHeightEntryValue = None
 
     HeldDownCells = []
+    CopiedBoard = None
 
     previousWidth = int(w / config_dict["Scale"][0])
     previousHeight = int(h / config_dict["Scale"][0])
@@ -497,6 +499,8 @@ def main():
         save_load_windows = [save_location, file_name_window]
 
         for event in pygame.event.get():
+            keys = pygame.key.get_pressed()
+
             if event.type == pygame.QUIT:
                 running = False
 
@@ -511,9 +515,9 @@ def main():
                     StepBack = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_r:
                     NewBoard = True
-                elif event.type == pygame.KEYUP and event.key == pygame.K_c:
-                    if EditMode is True:
-                        ClearBoard = True
+                # elif event.type == pygame.KEYUP and event.key == pygame.K_c:
+                #     if EditMode is True:
+                #         ClearBoard = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_v:
                     ClearHistory = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_F5:
@@ -728,6 +732,9 @@ def main():
                     elif len(HeldDownCells) == 2:
                         HeldDownCells[1] = board_pos
 
+            if keys[pygame.K_LCTRL] and keys[pygame.K_c] and SelectionBoxPresent is True:
+                Copy = True
+
             if event.type == pygame.MOUSEBUTTONUP and settings_window.vert_scroll_bar is not None:
                 mouse_pos = pygame.mouse.get_pos()
                 if settings_window.rect.collidepoint(mouse_pos):
@@ -873,19 +880,16 @@ def main():
             NewBoard = False
 
         if Zoom is True:
-            x_1, y_1 = HeldDownCells[0][0], HeldDownCells[0][1]
-            x_2, y_2 = HeldDownCells[1][0], HeldDownCells[1][1]
-
-            left = min(x_1, x_2)
-            right = max(x_1, x_2)
-            top = min(y_1, y_2)
-            bottom = max(y_1, y_2)
-
-            Board = step_stack[-1][left:right + 1, top:bottom + 1]
+            Board = helpers.zoom(step_stack[-1], HeldDownCells)
             step_stack.append(Board)
 
             HeldDownCells = []
             Zoom = False
+
+        if Copy is True:
+            CopiedBoard = helpers.zoom(step_stack[-1], HeldDownCells)
+            print('here')
+            Copy = False
 
         if AdjustBoard is True:
             Board, EvenOrOdd = helpers.adjustBoardDimensions(step_stack[-1], AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
