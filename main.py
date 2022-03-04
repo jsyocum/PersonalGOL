@@ -166,13 +166,13 @@ class ActionWindow(pygame_gui.elements.UIWindow):
         self.message = pygame_gui.elements.ui_label.UILabel(text='Actions:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
         # Row 2
-        self.set_custom_board_size_entries_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='#', tool_tip_text='Set the custom board size settings to the board\'s current size', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.message})
+        self.zoom_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (-1, 30)), text='Zoom', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.message})
 
         # Row 3
-        self.plus_top_row_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ top row', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.set_custom_board_size_entries_button})
-        self.plus_bottom_row_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ bottom row', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_top_row_button, 'top_target': self.set_custom_board_size_entries_button})
-        self.plus_left_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ left column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_bottom_row_button, 'top_target': self.set_custom_board_size_entries_button})
-        self.plus_right_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ right column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_left_column_button, 'top_target': self.set_custom_board_size_entries_button})
+        self.plus_top_row_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ top row', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.zoom_button})
+        self.plus_bottom_row_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ bottom row', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_top_row_button, 'top_target': self.zoom_button})
+        self.plus_left_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ left column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_bottom_row_button, 'top_target': self.zoom_button})
+        self.plus_right_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ right column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_left_column_button, 'top_target': self.zoom_button})
 
         # Row 4
         self.minus_top_row_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='- top row', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.plus_top_row_button})
@@ -196,6 +196,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
         # Row 1 (Set here so that sizes / positions can be relative to buttons in row 3)
         self.selection_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.minus_bottom_row_button.get_relative_rect().width, 30)), text='Sel. mode: [X]', tool_tip_text='Turn off to paint with the mouse',
                                                                   manager=self.ui_manager, object_id=pygame_gui.core.ObjectID(object_id='#less_dead_zone_button'), container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.minus_top_row_button})
+        self.set_custom_board_size_entries_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((-10, 10), (-1, 30)), text='#', tool_tip_text='Set the custom board size settings to the board\'s current size', manager=self.ui_manager, container=self, anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top', 'right_target': self.selection_mode_button})
         self.eraser_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.minus_left_column_button.get_relative_rect().width, 30)), text='Eraser: [ ]', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.selection_mode_button})
 
         if EraserMode is True:
@@ -208,23 +209,24 @@ class ActionWindow(pygame_gui.elements.UIWindow):
         else:
             self.eraser_mode_button.disable()
 
-            # Row 2 (Set here so that sizes / positions can be relative to buttons in row 3)
-        zoom_button_width = self.plus_top_row_button.get_relative_rect().width - self.set_custom_board_size_entries_button.get_relative_rect().width - 5
-        self.zoom_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (zoom_button_width, 30)), text='Zoom', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.set_custom_board_size_entries_button, 'top_target': self.message})
+        # Row 2 (Set here so that sizes / positions can be relative to buttons in row 3)
+        self.cut_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (-1, 30)), text='Cut', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.zoom_button, 'top_target': self.message})
+        zoom_button_width = self.plus_top_row_button.get_relative_rect().width - self.cut_button.get_relative_rect().width
+        self.zoom_button.set_dimensions((zoom_button_width, 30))
 
-        self.cut_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='Cut', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.zoom_button, 'top_target': self.message})
-        copy_button_width = self.plus_bottom_row_button.get_relative_rect().width - self.cut_button.get_relative_rect().width - 5
-        self.copy_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (copy_button_width, 30)), text='Copy', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.cut_button, 'top_target': self.message})
+        self.copy_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='Copy', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.cut_button, 'top_target': self.message})
+        paste_button_width = self.plus_bottom_row_button.get_relative_rect().width - self.copy_button.get_relative_rect().width - 5
+        self.paste_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (paste_button_width, 30)), text='Paste', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.copy_button, 'top_target': self.message})
 
-        self.paste_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='Paste', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.copy_button, 'top_target': self.message})
-        clear_button_width = self.plus_left_column_button.get_relative_rect().width - self.paste_button.get_relative_rect().width - 5
-        self.clear_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (clear_button_width, 30)), text='Clear', manager=self.ui_manager, object_id=pygame_gui.core.ObjectID(object_id='#less_dead_zone_button', class_id=None), container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.paste_button, 'top_target': self.message})
+        self.fill_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='Fill', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.paste_button, 'top_target': self.message})
+        clear_button_width = self.plus_left_column_button.get_relative_rect().width - self.fill_button.get_relative_rect().width - 5
+        self.clear_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (clear_button_width, 30)), text='Clear', manager=self.ui_manager, object_id=pygame_gui.core.ObjectID(object_id='#less_dead_zone_button', class_id=None), container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.fill_button, 'top_target': self.message})
 
         self.rotate_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='Rotate', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.clear_button, 'top_target': self.message})
         flip_button_width = self.plus_right_column_button.get_relative_rect().width - self.rotate_button.get_relative_rect().width - 5
         self.flip_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (flip_button_width, 30)), text='Flip', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.rotate_button, 'top_target': self.message})
 
-        self.buttons_require_sel_box = [self.zoom_button, self.cut_button, self.copy_button, self.clear_button, self.rotate_button, self.flip_button]
+        self.buttons_require_sel_box = [self.zoom_button, self.cut_button, self.copy_button, self.fill_button, self.clear_button, self.rotate_button, self.flip_button]
         min_w = helpers.getWidthOfElements([self.plus_top_row_button, self.plus_bottom_row_button, self.plus_left_column_button, self.plus_right_column_button]) - 30
         min_h = helpers.getHeightOfElements([self.message, self.zoom_button, self.plus_top_row_button, self.minus_top_row_button]) + 50
         self.set_dimensions((min_w, min_h))
@@ -332,6 +334,7 @@ def main():
     Cut = False
     Copy = False
     Paste = False
+    Fill = False
     Clear = False
     Rotate = False
     Flip = False
@@ -750,10 +753,11 @@ def main():
             if event.type == pygame.MOUSEBUTTONUP and MenuOpen is False:
                 current_max_fps = parameters_max_fps_slider.get_current_value()
                 max_fps_slider_range = parameters_max_fps_slider.value_range
-                if event.button == 4:
-                    parameters_max_fps_slider.set_current_value(min(current_max_fps + 1, max_fps_slider_range[1]))
-                elif event.button == 5:
-                    parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
+                if Continuous is True:
+                    if event.button == 4:
+                        parameters_max_fps_slider.set_current_value(min(current_max_fps + 1, max_fps_slider_range[1]))
+                    elif event.button == 5:
+                        parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
 
                 elif event.button == 1 and len(HeldDownCells) < 2 and EditMode is True and SelectionBoxPresent is False and config_dict["SelectionMode"][0] is True:
                     mouse_pos = pygame.mouse.get_pos()
@@ -963,6 +967,9 @@ def main():
                     Board = helpers.paste(step_stack[-1].copy(), [board_pos, [board_pos[0] + 1, board_pos[1] + 1]], CopiedBoard)
                     helpers.appendToStepStack(Board, step_stack)
 
+            if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.fill_button) or (event.type == pygame.KEYUP and event.key == pygame.K_BACKSPACE and SelectionBoxPresent is True):
+                Fill = True
+
             if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.clear_button) or (event.type == pygame.KEYUP and event.key == pygame.K_BACKSPACE and SelectionBoxPresent is True):
                 Clear = True
 
@@ -1050,6 +1057,12 @@ def main():
             helpers.appendToStepStack(Board, step_stack)
 
             Paste = False
+
+        if Fill is True:
+            Board = helpers.cut(step_stack[-1].copy(), HeldDownCells, Fill=Fill)
+            helpers.appendToStepStack(Board, step_stack)
+
+            Fill = False
 
         if Clear is True:
             Board = helpers.cut(step_stack[-1].copy(), HeldDownCells)

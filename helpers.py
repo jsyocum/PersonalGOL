@@ -254,9 +254,12 @@ def zoom(board, HeldDownCells):
 
     return board[left:right + 1, top:bottom + 1]
 
-def cut(board, HeldDownCells):
+def cut(board, HeldDownCells, Fill=False):
     left, right, top, bottom = getCorners(HeldDownCells)
-    board[left:right + 1, top:bottom + 1] = 0
+    if Fill is False:
+        board[left:right + 1, top:bottom + 1] = 0
+    else:
+        board[left:right + 1, top:bottom + 1] = 1
 
     return board
 
