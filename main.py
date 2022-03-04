@@ -151,7 +151,14 @@ class ActionWindow(pygame_gui.elements.UIWindow):
                  width: int = 500,
                  height: int = 500,
                  SelMode: bool = True,
-                 EraserMode: bool = False):
+                 EraserMode: bool = False,
+                 AutoAdjust: bool = False,
+                 AutoAdjustments: {} = {
+                     "Top": 0,
+                     "Bottom": 0,
+                     "Left": 0,
+                     "Right": 0
+                 }):
 
         super().__init__(rect, manager,
                          window_display_title=window_title,
@@ -165,14 +172,17 @@ class ActionWindow(pygame_gui.elements.UIWindow):
         # Row 1
         self.message = pygame_gui.elements.ui_label.UILabel(text='Actions:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
+
         # Row 2
         self.zoom_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (-1, 30)), text='Zoom', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.message})
+
 
         # Row 3
         self.plus_top_row_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ top row', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.zoom_button})
         self.plus_bottom_row_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ bottom row', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_top_row_button, 'top_target': self.zoom_button})
         self.plus_left_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ left column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_bottom_row_button, 'top_target': self.zoom_button})
         self.plus_right_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='+ right column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.plus_left_column_button, 'top_target': self.zoom_button})
+
 
         # Row 4
         self.minus_top_row_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='- top row', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.plus_top_row_button})
@@ -193,10 +203,22 @@ class ActionWindow(pygame_gui.elements.UIWindow):
             b_h = button.get_relative_rect().height
             button.set_dimensions((b_w, b_h))
 
+
+        # Row 5
+        self.auto_adjust_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.minus_top_row_button.get_relative_rect().width, 30)), text='Auto-adjust: [ ]', tool_tip_text='Enable auto-adjust mode to allow the board to automatically resize to fit the cells.',
+                                                                    manager=self.ui_manager, object_id=pygame_gui.core.ObjectID(object_id='#less_dead_zone_button'), container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.minus_top_row_button})
+
+        adjustment_buttons_width = (self.minus_bottom_row_button.get_relative_rect().width - 10) / 3
+        self.apply_adjustments_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (adjustment_buttons_width, 30)), text='+', tool_tip_text='Apply the auto adjustments made again to the current board.',
+                                                                     manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.auto_adjust_mode_button, 'top_target': self.minus_top_row_button})
+        self.clear_adjustments_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (adjustment_buttons_width, 30)), text='*', tool_tip_text='Clear the auto adjustments made over time.',
+                                                                     manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.apply_adjustments_button, 'top_target': self.minus_top_row_button})
+        self.set_custom_board_size_entries_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (adjustment_buttons_width, 30)), text='#', tool_tip_text='Set the custom board size settings to the board\'s current size', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.clear_adjustments_button, 'top_target': self.minus_top_row_button})
+
+
         # Row 1 (Set here so that sizes / positions can be relative to buttons in row 3)
         self.selection_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.minus_bottom_row_button.get_relative_rect().width, 30)), text='Sel. mode: [X]', tool_tip_text='Turn off to paint with the mouse',
                                                                   manager=self.ui_manager, object_id=pygame_gui.core.ObjectID(object_id='#less_dead_zone_button'), container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.minus_top_row_button})
-        self.set_custom_board_size_entries_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((-10, 10), (-1, 30)), text='#', tool_tip_text='Set the custom board size settings to the board\'s current size', manager=self.ui_manager, container=self, anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top', 'right_target': self.selection_mode_button})
         self.eraser_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.minus_left_column_button.get_relative_rect().width, 30)), text='Eraser: [ ]', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.selection_mode_button})
 
         if EraserMode is True:
@@ -208,6 +230,14 @@ class ActionWindow(pygame_gui.elements.UIWindow):
             self.selection_mode_button.rebuild()
         else:
             self.eraser_mode_button.disable()
+
+        if AutoAdjust is True:
+            self.auto_adjust_mode_button.set_text('Auto-adjust: [X]')
+
+        if sum(AutoAdjustments.values()) == 0:
+            self.apply_adjustments_button.disable()
+            self.clear_adjustments_button.disable()
+
 
         # Row 2 (Set here so that sizes / positions can be relative to buttons in row 3)
         self.cut_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (-1, 30)), text='Cut', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.zoom_button, 'top_target': self.message})
@@ -228,7 +258,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
 
         self.buttons_require_sel_box = [self.zoom_button, self.cut_button, self.copy_button, self.fill_button, self.clear_button, self.rotate_button, self.flip_button]
         min_w = helpers.getWidthOfElements([self.plus_top_row_button, self.plus_bottom_row_button, self.plus_left_column_button, self.plus_right_column_button]) - 30
-        min_h = helpers.getHeightOfElements([self.message, self.zoom_button, self.plus_top_row_button, self.minus_top_row_button]) + 50
+        min_h = helpers.getHeightOfElements([self.message, self.zoom_button, self.plus_top_row_button, self.minus_top_row_button, self.auto_adjust_mode_button]) + 45
         self.set_dimensions((min_w, min_h))
 
     def process_event(self, event: pygame.event.Event) -> bool:
@@ -328,8 +358,15 @@ def main():
     SelectionBoxPresent = False
     SelMode = True
     EraseMode = False
+    AutoAdjust = False
     AdjustBoard = False
     AdjustBoardTuple = None
+    AutoAdjustments = {
+        "Top": 0,
+        "Bottom": 0,
+        "Left": 0,
+        "Right": 0
+    }
     Zoom = False
     Cut = False
     Copy = False
@@ -391,13 +428,14 @@ def main():
         "CustomBoardSizeEnabled": [False, False],
         "EditCheckerboardBrightness": [DefaultEditCheckerboardBrightness, 200],
         "SelectionMode": [SelMode, True],
-        "Eraser": [EraseMode, False]
+        "Eraser": [EraseMode, False],
+        "AutoAdjust": [AutoAdjust, False]
     }
 
     helpers.initialConfigCheck(config_file_dir, config_file_path, config_dict)
 
 
-    action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
+    action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
     action_window.kill()
 
 
@@ -613,13 +651,13 @@ def main():
                         Continuous = False
                         EditMode = True
                         edit_mode_button.set_text('Disable edit mode (E)')
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
                     elif Continuous is False and EditMode is False:
                         EditMode = True
                         edit_mode_button.set_text('Disable edit mode (E)')
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
                     elif EditMode is True and not action_window.alive():
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
                     elif EditMode is True and action_window.alive():
                         action_window.kill()
 
@@ -654,7 +692,7 @@ def main():
                         Continuous = WasContinuous
 
                     if SelectionBoxPresent is True:
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
 
                     action_window.show()
                     MenuOpen = CloseUIElements(all_menu_buttons)
@@ -921,7 +959,6 @@ def main():
 
                 action_window.eraser_mode_button.rebuild()
 
-
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.set_custom_board_size_entries_button:
                 current_width = step_stack[-1].shape[0]
                 current_height = step_stack[-1].shape[1]
@@ -983,6 +1020,25 @@ def main():
                 AdjustBoard = True
                 AdjustBoardTuple = (event.side, event.plus)
 
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.auto_adjust_mode_button:
+                if action_window.auto_adjust_mode_button.text == 'Auto-adjust: [ ]':
+                    action_window.auto_adjust_mode_button.text = 'Auto-adjust: [X]'
+                    action_window.tool_tip_text = 'Disable auto-adjust mode to keep the board from automatically resizing to fit the cells.'
+                    config_dict["AutoAdjust"][0] = True
+
+                else:
+                    action_window.auto_adjust_mode_button.text = 'Auto-adjust: [ ]'
+                    action_window.tool_tip_text = 'Enable auto-adjust mode to allow the board to automatically resize to fit the cells.'
+                    config_dict["AutoAdjust"][0] = False
+
+                action_window.auto_adjust_mode_button.rebuild()
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.apply_adjustments_button:
+                pass
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.clear_adjustments_button:
+                AutoAdjustments = dict.fromkeys(AutoAdjustments, 0)
+
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_scale_default_button: parameters_scale_slider.set_current_value(DefaultScale)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_max_fps_default_button: parameters_max_fps_slider.set_current_value(DefaultMaxFps)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_likelihood_default_button: parameters_likelihood_slider.set_current_value(DefaultLikelihood)
@@ -1028,7 +1084,6 @@ def main():
         if NewBoard is True:
             Board = helpers.generateArray(previousHeight, previousWidth, parameters_likelihood_slider.get_current_value())
             Board = np.rot90(Board)
-            step_stack.clear()
             step_stack.append(Board)
 
             NewBoard = False
@@ -1083,10 +1138,21 @@ def main():
             Flip = False
 
         if AdjustBoard is True:
-            Board, EvenOrOdd = helpers.adjustBoardDimensions(step_stack[-1], AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
+            Board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
             helpers.appendToStepStack(Board, step_stack)
 
             AdjustBoard = False
+
+        if Continuous is True and config_dict["AutoAdjust"][0] is True:
+            Board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
+            helpers.appendToStepStack(Board, step_stack)
+
+        if sum(AutoAdjustments.values()) > 0:
+            action_window.apply_adjustments_button.enable()
+            action_window.clear_adjustments_button.enable()
+        else:
+            action_window.apply_adjustments_button.disable()
+            action_window.clear_adjustments_button.disable()
 
         if ClearHistory is True:
             current_board = step_stack[-1]

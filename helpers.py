@@ -311,6 +311,7 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
     board_h = board.shape[1]
     new_board = None
     hdc = False
+    adjustments_made = True
 
     if len(HeldDownCells) == 2:
         hdc = True
@@ -338,6 +339,10 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
             elif AdjustBoardTuple[0] == 'Bottom':
                 new_board = np.append(board, row, axis=1)
 
+        else:
+            new_board = board
+            adjustments_made = False
+
         if board_w < w:
             if AdjustBoardTuple[0] == 'Left':
                 EvenOrOdd ^= 1
@@ -347,6 +352,10 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
                     HeldDownCells[1] = (HeldDownCells[1][0] + 1, HeldDownCells[1][1])
             elif AdjustBoardTuple[0] == 'Right':
                 new_board = np.append(board, column, axis=0)
+
+        else:
+            new_board = board
+            adjustments_made = False
 
     else:
         if board_h > 1:
@@ -367,6 +376,7 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
 
         else:
             new_board = board
+            adjustments_made = False
 
         if board_w > 1:
             if AdjustBoardTuple[0] == 'Left':
@@ -386,8 +396,37 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
 
         else:
             new_board = board
+            adjustments_made = False
+
+    return new_board, EvenOrOdd, adjustments_made
+
+def adjustBoardDimensionsFromDict(board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments):
+    new_board = None
 
     return new_board, EvenOrOdd
+
+def autoAdjustBoardDimensions(board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments):
+    adjustments = []
+
+    if 1 in board[:, 0]:
+        adjustments.append('Top')
+
+    if 1 in board[:, -1]:
+        adjustments.append('Bottom')
+
+    if 1 in board[0, :]:
+        adjustments.append('Left')
+
+    if 1 in board[-1, :]:
+        adjustments.append('Right')
+
+    for side in adjustments:
+        board, EvenOrOdd, adjustments_made = adjustBoardDimensions(board, (side, True), w, h, HeldDownCells, EvenOrOdd)
+        if adjustments_made is True:
+            AutoAdjustments[side] += 1
+
+
+    return board, EvenOrOdd, AutoAdjustments
 
 def blitBoardOnScreenEvenly(surf, boardSurf, EditMode):
     if EditMode is False:
