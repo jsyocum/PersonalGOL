@@ -57,9 +57,7 @@ def applyRules(ogArray, step_stack):
     return array
 
 def appendToStepStack(Board, step_stack):
-    if np.array_equal(Board, step_stack[-1]):
-        pass
-    else:
+    if not np.array_equal(Board, step_stack[-1]):
         step_stack.append(Board.copy())
 
     if totalsize.total_size(step_stack) > 1e+9:
@@ -215,7 +213,7 @@ def getCorners(HeldDownCells):
 
     return left, right, top, bottom
 
-def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
+def showSelectionBoxSize(surf, board, ScaledHeldDownCells, HeldDownCells, font):
     cell_x_1, cell_y_1, cell_x_2, cell_y_2 = getPositions(HeldDownCells)
 
     cell_width = max(cell_x_1, cell_x_2) - min(cell_x_1, cell_x_2) + 1
@@ -228,8 +226,7 @@ def showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, font):
 
     left, right, top, bottom = getCorners(ScaledHeldDownCells)
 
-    width = right - left
-    individual_cell_length = width / max(cell_width - 1, 1)
+    individual_cell_length, Which = getScale(board, surf.get_width(), surf.get_height())
 
     width_text = font.render(str(cell_width), True, (190, 190, 190))
     height_text = font.render(str(cell_height), True, (190, 190, 190))
@@ -471,20 +468,26 @@ def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board):
     metadata.add_text("BoardArray", board_string)
     targetImage.save(save_path, pnginfo=metadata)
 
-def loadPNGWithBoardInfo(load_path, step_stack, WasContinuous):
+def loadPNGWithBoardInfo(load_path, step_stack):
+    loaded = False
+    if load_path.endswith('.png') is False:
+        return loaded, load_path + ' is not a .png file'
+
     targetImage = PngImageFile(load_path)
 
     try:
         board_string = targetImage.text["BoardArray"]
     except:
-        return WasContinuous, load_path + ' does not contain a board array'
+        return loaded, load_path + ' does not contain a board array'
 
     board = convertStringToArray(board_string)
 
     step_stack.clear()
     step_stack.append(board)
 
-    return False, 'Board loaded: ' + load_path
+    loaded = True
+
+    return loaded, 'Board loaded: ' + load_path
 
 def convertArrayToString(array):
     return '\n'.join('\t'.join('%0.3f' % x for x in y) for y in array)

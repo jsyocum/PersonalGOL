@@ -145,12 +145,13 @@ class ActionWindow(pygame_gui.elements.UIWindow):
     def __init__(self,
                  rect: pygame.Rect,
                  manager: IUIManagerInterface,
-                 window_title: str = 'Board selection actions',
+                 window_title: str = 'Edit mode actions',
                  object_id: Union[ObjectID, str] = ObjectID('#actions_dialog', None),
                  visible: int = 1,
                  width: int = 500,
                  height: int = 500,
-                 ):
+                 SelMode: bool = True,
+                 EraserMode: bool = False):
 
         super().__init__(rect, manager,
                          window_display_title=window_title,
@@ -162,7 +163,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
         self.set_dimensions((width, height))
 
         # Row 1
-        self.message = pygame_gui.elements.ui_label.UILabel(text='Choose an action:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.message = pygame_gui.elements.ui_label.UILabel(text='Actions:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
         # Row 2
         self.set_custom_board_size_entries_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='#', tool_tip_text='Set the custom board size settings to the board\'s current size', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.message})
@@ -179,7 +180,35 @@ class ActionWindow(pygame_gui.elements.UIWindow):
         self.minus_left_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='- left column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.minus_bottom_row_button, 'top_target': self.plus_top_row_button})
         self.minus_right_column_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (-1, 30)), text='- right column', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.minus_left_column_button, 'top_target': self.plus_top_row_button})
 
-        # Row 2 (Set here so that sizes can be relative to buttons in row 3)
+        plus_minus_buttons = [self.plus_top_row_button, self.plus_bottom_row_button, self.plus_left_column_button, self.plus_right_column_button,
+                              self.minus_top_row_button, self.minus_bottom_row_button, self.minus_left_column_button, self.minus_right_column_button]
+
+        l_w = 0
+        for button in plus_minus_buttons:
+            b_w = button.get_relative_rect().width
+            if b_w > l_w:
+                l_w = b_w
+
+        for button in plus_minus_buttons:
+            b_h = button.get_relative_rect().height
+            button.set_dimensions((b_w, b_h))
+
+        # Row 1 (Set here so that sizes / positions can be relative to buttons in row 3)
+        self.selection_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.minus_bottom_row_button.get_relative_rect().width, 30)), text='Sel. mode: [X]', tool_tip_text='Turn off to paint with the mouse',
+                                                                  manager=self.ui_manager, object_id=pygame_gui.core.ObjectID(object_id='#less_dead_zone_button'), container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.minus_top_row_button})
+        self.eraser_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.minus_left_column_button.get_relative_rect().width, 30)), text='Eraser: [ ]', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.selection_mode_button})
+
+        if EraserMode is True:
+            self.eraser_mode_button.text = 'Eraser: [X]'
+            self.eraser_mode_button.rebuild()
+
+        if SelMode is False:
+            self.selection_mode_button.text = 'Sel. mode: [ ]'
+            self.selection_mode_button.rebuild()
+        else:
+            self.eraser_mode_button.disable()
+
+            # Row 2 (Set here so that sizes / positions can be relative to buttons in row 3)
         zoom_button_width = self.plus_top_row_button.get_relative_rect().width - self.set_custom_board_size_entries_button.get_relative_rect().width - 5
         self.zoom_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (zoom_button_width, 30)), text='Zoom', manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.set_custom_board_size_entries_button, 'top_target': self.message})
 
@@ -266,7 +295,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
 def main():
     # Set up pygame
     pygame.init()
-    logo = pygame.image.load("logo32x32.png")
+    logo = pygame.image.load("logo.png")
     pygame.display.set_icon(logo)
     pygame.display.set_caption("Personal Game Of Life")
     surf = pygame.display.set_mode((0, 0))
@@ -288,14 +317,15 @@ def main():
     NewBoard = False
     EditMode = False
     MenuOpen = False
-    ClearBoard = False
     ClearHistory = False
     QuickSave = False
     QuickLoad = False
+    Load = False
     CurrentBoardSurf = None
     LeftClickHeldDown = [False, 0]
     SelectionBoxPresent = False
-    ActionWindowAlive = False
+    SelMode = True
+    EraseMode = False
     AdjustBoard = False
     AdjustBoardTuple = None
     Zoom = False
@@ -310,8 +340,6 @@ def main():
 
     save_location = None
     file_name_window = None
-    action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
-    action_window.kill()
 
     config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
     config_file_path = config_file_dir + '\\config.ini'
@@ -358,10 +386,16 @@ def main():
         "CustomBoardSizeWidth": [DefaultCustomBoardSizeWidth, w],
         "CustomBoardSizeHeight": [DefaultCustomBoardSizeHeight, h],
         "CustomBoardSizeEnabled": [False, False],
-        "EditCheckerboardBrightness": [DefaultEditCheckerboardBrightness, 200]
+        "EditCheckerboardBrightness": [DefaultEditCheckerboardBrightness, 200],
+        "SelectionMode": [SelMode, True],
+        "Eraser": [EraseMode, False]
     }
 
     helpers.initialConfigCheck(config_file_dir, config_file_path, config_dict)
+
+
+    action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
+    action_window.kill()
 
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
@@ -486,14 +520,14 @@ def main():
     controls_increase_max_fps_text = sidebar_font.render("+ max fps: MWHEELUP", True, (152, 152, 152))
     controls_decrease_max_fps_text = sidebar_font.render("-  max fps: MWHEELDOWN", True, (152, 152, 152))
     controls_edit_mode_text = sidebar_font.render("Toggle edit mode: E", True, (152, 152, 152))
-    controls_clear_board_text = sidebar_font.render("Clear board: C", True, (152, 152, 152))
-    controls_clear_history_text = sidebar_font.render("Clear history: V", True, (152, 152, 152))
+    controls_action_menu_text = sidebar_font.render("Open action menu: Tab", True, (152, 152, 152))
+    controls_clear_history_text = sidebar_font.render("Clear history: H", True, (152, 152, 152))
     controls_quick_save_text = sidebar_font.render("Quick save: F5", True, (152, 152, 152))
     controls_quick_load_text = sidebar_font.render("Quick load: F6", True, (152, 152, 152))
     controls_rect = pygame.Rect((w / 2 - 510, h / 4 + 2), (300, 400))
 
     controls_text_array = [controls_pause_text, controls_step_forward_text, controls_step_backward_text, controls_reset_text, controls_increase_max_fps_text,
-                           controls_decrease_max_fps_text, controls_edit_mode_text, controls_clear_board_text, controls_clear_history_text,
+                           controls_decrease_max_fps_text, controls_edit_mode_text, controls_action_menu_text, controls_clear_history_text,
                            controls_quick_save_text, controls_quick_load_text]
 
     CustomBoardSizeEnabledDict = False
@@ -536,20 +570,19 @@ def main():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                helpers.writeDictToConfig(config_file_dir, config_file_path, config_dict)
                 running = False
 
             if MenuOpen is False:
                 if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                     Continuous = not Continuous
-                    EditMode = False
-                    edit_mode_button.set_text('Enable edit mode (E)')
                 elif event.type == pygame.KEYUP and event.key == pygame.K_w:
                     Step = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_s:
                     StepBack = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_r:
                     NewBoard = True
-                elif event.type == pygame.KEYUP and event.key == pygame.K_v:
+                elif event.type == pygame.KEYUP and event.key == pygame.K_h:
                     ClearHistory = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_F5:
                     QuickSave = True
@@ -577,13 +610,13 @@ def main():
                         Continuous = False
                         EditMode = True
                         edit_mode_button.set_text('Disable edit mode (E)')
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
                     elif Continuous is False and EditMode is False:
                         EditMode = True
                         edit_mode_button.set_text('Disable edit mode (E)')
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
                     elif EditMode is True and not action_window.alive():
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
                     elif EditMode is True and action_window.alive():
                         action_window.kill()
 
@@ -596,9 +629,6 @@ def main():
             if len(HeldDownCells) < 2:
                 SelectionBoxPresent = False
 
-            if helpers.anyAliveElements([action_window]) is True:
-                ActionWindowAlive = True
-
             if (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == back_to_game_button):
                 if MenuOpen is False:
                     if EditMode is False:
@@ -609,7 +639,7 @@ def main():
                     if len(HeldDownCells) == 2:
                         SelectionBoxPresent = True
 
-                    action_window.kill()
+                    action_window.hide()
 
                     pausedLikelihoodSliderValue = parameters_likelihood_slider.get_current_value()
 
@@ -617,13 +647,13 @@ def main():
                     show_parameters_button.set_text('Show settings')
                     MenuOpen = OpenUIElements(all_menu_buttons)
                 else:
-                    helpers.writeDictToConfig(config_file_dir, config_file_path, config_dict)
                     if EditMode is False:
                         Continuous = WasContinuous
 
                     if SelectionBoxPresent is True:
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0])
 
+                    action_window.show()
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     settings_window_actual.hide()
                     if parameters_color_picker_dialog is not None: parameters_color_picker_dialog.kill()
@@ -644,6 +674,7 @@ def main():
                         NewBoard = True
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_F4) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == quit_game_button):
+                helpers.writeDictToConfig(config_file_dir, config_file_path, config_dict)
                 running = False
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button and show_controls_button.text == 'Show controls':
@@ -696,8 +727,11 @@ def main():
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == save_location and save_location.window_display_title == 'Pick .PNG board file':
                 load_path = event.text
-                WasContinuous, load_status_message = helpers.loadPNGWithBoardInfo(load_path, step_stack, WasContinuous)
-                print(load_status_message)
+                Load = True
+
+            if event.type == pygame.DROPFILE:
+                load_path = event.file
+                Load = True
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_scale_slider_size_button:
                 if parameters_scale_slider_size_button.text == '[ ]':
@@ -714,36 +748,33 @@ def main():
                 parameters_scale_slider.rebuild()
 
             if event.type == pygame.MOUSEBUTTONUP and MenuOpen is False:
-                if EditMode is False:
-                    current_max_fps = parameters_max_fps_slider.get_current_value()
-                    max_fps_slider_range = parameters_max_fps_slider.value_range
-                    if event.button == 4:
-                        parameters_max_fps_slider.set_current_value(min(current_max_fps + 1, max_fps_slider_range[1]))
-                    elif event.button == 5:
-                        parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
+                current_max_fps = parameters_max_fps_slider.get_current_value()
+                max_fps_slider_range = parameters_max_fps_slider.value_range
+                if event.button == 4:
+                    parameters_max_fps_slider.set_current_value(min(current_max_fps + 1, max_fps_slider_range[1]))
+                elif event.button == 5:
+                    parameters_max_fps_slider.set_current_value(max(current_max_fps - 1, max_fps_slider_range[0]))
 
-                elif event.button == 1 and len(HeldDownCells) < 2 and SelectionBoxPresent is False:
+                elif event.button == 1 and len(HeldDownCells) < 2 and EditMode is True and SelectionBoxPresent is False and config_dict["SelectionMode"][0] is True:
                     mouse_pos = pygame.mouse.get_pos()
                     IsColliding, IsCollidingWithActionWindow, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h)
                     if IsColliding and not IsCollidingWithActionWindow:
                         board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
-                        if step_stack[-1][board_pos[0]][board_pos[1]] == 0:
-                            step_stack[-1][board_pos[0]][board_pos[1]] = 1
+                        Board = step_stack[-1].copy()
+                        if Board[board_pos] == 0:
+                            Board[board_pos] = 1
                         else:
-                            step_stack[-1][board_pos[0]][board_pos[1]] = 0
+                            Board[board_pos] = 0
+
+                        helpers.appendToStepStack(Board, step_stack)
 
                     HeldDownCells = []
 
                 elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is False:
-                    if not ActionWindowAlive: action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
                     SelectionBoxPresent = True
                 elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is True and not helpers.isMouseCollidingWithActionWindow(action_window, pygame.mouse.get_pos()):
                     HeldDownCells = []
                     SelectionBoxPresent = False
-                elif event.button == 4:
-                    config_dict["EditCheckerboardBrightness"][0] = min(config_dict["EditCheckerboardBrightness"][0] + 1, MaxEditCheckerboardBrightness)
-                elif event.button == 5:
-                    config_dict["EditCheckerboardBrightness"][0] = max(config_dict["EditCheckerboardBrightness"][0] - 1, 0)
 
             if LeftClickHeldDown is True and EditMode is True and MenuOpen is False and SelectionBoxPresent is False:
                 mouse_pos = pygame.mouse.get_pos()
@@ -751,12 +782,22 @@ def main():
                 if IsColliding and not IsCollidingWithActionWindow:
                     board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
 
-                    if len(HeldDownCells) < 2 and board_pos not in HeldDownCells:
-                        HeldDownCells.append(board_pos)
-                    elif len(HeldDownCells) == 2 and board_pos == HeldDownCells[0]:
-                        HeldDownCells.pop(1)
-                    elif len(HeldDownCells) == 2:
-                        HeldDownCells[1] = board_pos
+                    if config_dict["SelectionMode"][0] is True:
+                        if len(HeldDownCells) < 2 and board_pos not in HeldDownCells:
+                            HeldDownCells.append(board_pos)
+                        elif len(HeldDownCells) == 2 and board_pos == HeldDownCells[0]:
+                            HeldDownCells.pop(1)
+                        elif len(HeldDownCells) == 2:
+                            HeldDownCells[1] = board_pos
+
+                    else:
+                        Board = step_stack[-1].copy()
+                        if config_dict["Eraser"][0] is False:
+                            Board[board_pos] = 1
+                        else:
+                            Board[board_pos] = 0
+
+                        helpers.appendToStepStack(Board, step_stack)
 
             if event.type == pygame.MOUSEBUTTONUP and settings_window.vert_scroll_bar is not None:
                 mouse_pos = pygame.mouse.get_pos()
@@ -847,10 +888,35 @@ def main():
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == parameters_color_picker_dialog and config_dict["RandomColorByPixel"][0] is False:
                 for element in all_parameters_color_elements: element.enable()
 
-            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == action_window and MenuOpen is False:
-                HeldDownCells = []
-                SelectionBoxPresent = False
-                ActionWindowAlive = False
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.selection_mode_button:
+                if action_window.selection_mode_button.text == 'Sel. mode: [X]':
+                    action_window.selection_mode_button.text = 'Sel. mode: [ ]'
+                    action_window.tool_tip_text = 'Turn on to select things and use the other actions.'
+                    config_dict["SelectionMode"][0] = False
+                    HeldDownCells = []
+                    action_window.eraser_mode_button.enable()
+
+                else:
+                    action_window.selection_mode_button.text = 'Sel. mode: [X]'
+                    action_window.tool_tip_text = 'Turn off to paint with the mouse.'
+                    config_dict["SelectionMode"][0] = True
+                    action_window.eraser_mode_button.disable()
+
+                action_window.selection_mode_button.rebuild()
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.eraser_mode_button:
+                if action_window.eraser_mode_button.text == 'Eraser: [ ]':
+                    action_window.eraser_mode_button.text = 'Eraser: [X]'
+                    action_window.tool_tip_text = 'Disable the eraser to create cells with the mouse.'
+                    config_dict["Eraser"][0] = True
+
+                else:
+                    action_window.eraser_mode_button.text = 'Eraser: [ ]'
+                    action_window.tool_tip_text = 'Enable the eraser to only delete cells with the mouse.'
+                    config_dict["Eraser"][0] = False
+
+                action_window.eraser_mode_button.rebuild()
+
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.set_custom_board_size_entries_button:
                 current_width = step_stack[-1].shape[0]
@@ -867,11 +933,10 @@ def main():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.zoom_button:
                 Zoom = True
 
-            if keys[pygame.K_LCTRL] and event.type == pygame.KEYUP and event.key == pygame.K_a and MenuOpen is False and EditMode is True:
+            if keys[pygame.K_LCTRL] and event.type == pygame.KEYUP and event.key == pygame.K_a and MenuOpen is False and EditMode is True and config_dict["SelectionMode"][0] is True:
                 if SelectionBoxPresent is False:
                     HeldDownCells = [(0, 0), (step_stack[-1].shape[0] - 1, step_stack[-1].shape[1] - 1)]
                     SelectionBoxPresent = True
-                    if not ActionWindowAlive: action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h)
 
                 else:
                     if HeldDownCells != [(0, 0), (step_stack[-1].shape[0] - 1, step_stack[-1].shape[1] - 1)]:
@@ -896,7 +961,7 @@ def main():
                 if IsColliding and not IsCollidingWithActionWindow:
                     board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
                     Board = helpers.paste(step_stack[-1].copy(), [board_pos, [board_pos[0] + 1, board_pos[1] + 1]], CopiedBoard)
-                    step_stack.append(Board)
+                    helpers.appendToStepStack(Board, step_stack)
 
             if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.clear_button) or (event.type == pygame.KEYUP and event.key == pygame.K_BACKSPACE and SelectionBoxPresent is True):
                 Clear = True
@@ -934,6 +999,12 @@ def main():
         elif CopiedBoard is not None and SelectionBoxPresent is True and action_window.paste_button.is_enabled is False:
             action_window.paste_button.enable()
 
+        if EditMode is True:
+            if keys[pygame.K_UP]:
+                config_dict["EditCheckerboardBrightness"][0] = min(config_dict["EditCheckerboardBrightness"][0] + 1, MaxEditCheckerboardBrightness)
+            elif keys[pygame.K_DOWN]:
+                config_dict["EditCheckerboardBrightness"][0] = max(config_dict["EditCheckerboardBrightness"][0] - 1, 0)
+
 
         if (Continuous is False) and (Step is True):
             helpers.applyRules(step_stack[-1], step_stack)
@@ -957,7 +1028,7 @@ def main():
 
         if Zoom is True:
             Board = helpers.zoom(step_stack[-1], HeldDownCells)
-            step_stack.append(Board)
+            helpers.appendToStepStack(Board, step_stack)
             HeldDownCells = []
 
             Zoom = False
@@ -965,7 +1036,7 @@ def main():
         if Cut is True:
             CopiedBoard = helpers.zoom(step_stack[-1], HeldDownCells)
             Board = helpers.cut(step_stack[-1].copy(), HeldDownCells)
-            step_stack.append(Board)
+            helpers.appendToStepStack(Board, step_stack)
 
             Cut = False
 
@@ -976,31 +1047,31 @@ def main():
 
         if Paste is True:
             Board = helpers.paste(step_stack[-1].copy(), HeldDownCells, CopiedBoard)
-            step_stack.append(Board)
+            helpers.appendToStepStack(Board, step_stack)
 
             Paste = False
 
         if Clear is True:
             Board = helpers.cut(step_stack[-1].copy(), HeldDownCells)
-            step_stack.append(Board)
+            helpers.appendToStepStack(Board, step_stack)
 
             Clear = False
 
         if Rotate is True:
             Board = helpers.rotate(step_stack[-1].copy(), HeldDownCells)
-            step_stack.append(Board)
+            helpers.appendToStepStack(Board, step_stack)
 
             Rotate = False
 
         if Flip is True:
             Board = helpers.flip(step_stack[-1].copy(), HeldDownCells)
-            step_stack.append(Board)
+            helpers.appendToStepStack(Board, step_stack)
 
             Flip = False
 
         if AdjustBoard is True:
             Board, EvenOrOdd = helpers.adjustBoardDimensions(step_stack[-1], AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
-            step_stack.append(Board)
+            helpers.appendToStepStack(Board, step_stack)
 
             AdjustBoard = False
 
@@ -1022,14 +1093,24 @@ def main():
             QuickSave = False
 
         if QuickLoad is True:
-            load_status_message = None
+            load_status_message = ''
             if os.path.exists(quick_save_path):
-                WasContinuous, load_status_message = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, WasContinuous)
+                WasContinuous, load_status_message = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack)
             else:
                 load_status_message = 'No quicksave exists to be loaded!'
 
             print(load_status_message)
             QuickLoad = False
+
+        if Load is True:
+            load_status_message = ''
+            loaded, load_status_message = helpers.loadPNGWithBoardInfo(load_path, step_stack)
+            print(load_status_message)
+            if loaded is True:
+                Continuous = False
+                WasContinuous = False
+
+            Load = False
 
         CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
         if MenuOpen is True:
@@ -1038,7 +1119,7 @@ def main():
 
         ScaledHeldDownCells = helpers.getScaledHeldDownCells(step_stack[-1], CurrentBoardSurf, HeldDownCells, w, h)
         if len(ScaledHeldDownCells) == 2:
-            helpers.showSelectionBoxSize(surf, ScaledHeldDownCells, HeldDownCells, sidebar_header_font)
+            helpers.showSelectionBoxSize(surf, step_stack[-1].copy(), ScaledHeldDownCells, HeldDownCells, sidebar_header_font)
 
 
         helpers.manageSliderAndEntryWithArray(all_parameters_elements_matched)
