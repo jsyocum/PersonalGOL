@@ -306,12 +306,30 @@ def flip(board, HeldDownCells):
 
     return board
 
-def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd):
+def fixSelectionBoxAfterLoad(board, HeldDownCells):
+    SelectionBoxPresent = True
     board_w = board.shape[0]
     board_h = board.shape[1]
-    new_board = None
+
+    if (HeldDownCells[0][0] > board_w - 1 and HeldDownCells[1][0] > board_w - 1) or (HeldDownCells[0][1] > board_h - 1 and HeldDownCells[1][1] > board_h - 1):
+        HeldDownCells = []
+        SelectionBoxPresent = False
+
+    else:
+        HeldDownCells[0] = (min(HeldDownCells[0][0], board_w - 1), min(HeldDownCells[0][1], board_h - 1))
+        HeldDownCells[1] = (min(HeldDownCells[1][0], board_w - 1), min(HeldDownCells[1][1], board_h - 1))
+
+    return HeldDownCells, SelectionBoxPresent
+
+def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd, AutoAdjust={"Top": 0, "Bottom": 0, "Left": 0, "Right": 0}):
+    t = AutoAdjust["Top"]
+    b = AutoAdjust["Bottom"]
+    l = AutoAdjust["Left"]
+    r = AutoAdjust["Right"]
+
     hdc = False
-    adjustments_made = True
+    adjustments_made = False
+    initial_shape = board.shape
 
     if len(HeldDownCells) == 2:
         hdc = True
@@ -324,81 +342,72 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
     if hdc and HeldDownCells[0][1] == HeldDownCells[1][1]:
         same_y_pos = True
 
-    if AdjustBoardTuple[1] is True:
-        row = np.zeros((board_w, 1))
-        column = np.zeros((1, board_h))
+    if AdjustBoardTuple[1] is True or sum(AutoAdjust.values()) > 0:
+        if board.shape[1] < h and (AdjustBoardTuple[0] == 'Top' or t > 0):
+            if t % 2 == 1 or AdjustBoardTuple[0] == 'Top':
+                EvenOrOdd ^= 1  # Same as doing EvenOrOdd = not EvenOrOdd
 
-        if board_h < h:
-            if AdjustBoardTuple[0] == 'Top':
-                # same as doing EvenOrOdd = not EvenOrOdd
+            top_row = np.zeros((board.shape[0], 1 + t))
+            board = np.append(top_row, board, axis=1)
+            if hdc:
+                HeldDownCells[0] = (HeldDownCells[0][0], HeldDownCells[0][1] + 1 + t)
+                HeldDownCells[1] = (HeldDownCells[1][0], HeldDownCells[1][1] + 1 + t)
+
+        if board.shape[1] < h and (AdjustBoardTuple[0] == 'Bottom' or b > 0):
+            bottom_row = np.zeros((board.shape[0], 1 + b))
+            board = np.append(board, bottom_row, axis=1)
+
+        if board.shape[0] < w and (AdjustBoardTuple[0] == 'Left' or l > 0):
+            if l % 2 == 1 or AdjustBoardTuple[0] == 'Left':
                 EvenOrOdd ^= 1
-                new_board = np.append(row, board, axis=1)
-                if hdc:
-                    HeldDownCells[0] = (HeldDownCells[0][0], HeldDownCells[0][1] + 1)
-                    HeldDownCells[1] = (HeldDownCells[1][0], HeldDownCells[1][1] + 1)
-            elif AdjustBoardTuple[0] == 'Bottom':
-                new_board = np.append(board, row, axis=1)
 
-        else:
-            new_board = board
-            adjustments_made = False
+            left_column = np.zeros((1 + l, board.shape[1]))
+            board = np.append(left_column, board, axis=0)
+            if hdc:
+                HeldDownCells[0] = (HeldDownCells[0][0] + 1 + l, HeldDownCells[0][1])
+                HeldDownCells[1] = (HeldDownCells[1][0] + 1 + l, HeldDownCells[1][1])
 
-        if board_w < w:
-            if AdjustBoardTuple[0] == 'Left':
-                EvenOrOdd ^= 1
-                new_board = np.append(column, board, axis=0)
-                if hdc:
-                    HeldDownCells[0] = (HeldDownCells[0][0] + 1, HeldDownCells[0][1])
-                    HeldDownCells[1] = (HeldDownCells[1][0] + 1, HeldDownCells[1][1])
-            elif AdjustBoardTuple[0] == 'Right':
-                new_board = np.append(board, column, axis=0)
-
-        else:
-            new_board = board
-            adjustments_made = False
+        if board.shape[0] < w and (AdjustBoardTuple[0] == 'Right' or r > 0):
+            right_column = np.zeros((1 + r, board.shape[1]))
+            board = np.append(board, right_column, axis=0)
 
     else:
-        if board_h > 1:
+        if board.shape[1] > 1:
             if AdjustBoardTuple[0] == 'Top':
                 EvenOrOdd ^= 1
-                new_board = board[:, 1:]
+                board = board[:, 1:]
                 if hdc:
                     HeldDownCells[0] = (HeldDownCells[0][0], max(HeldDownCells[0][1] - 1, 0))
                     HeldDownCells[1] = (HeldDownCells[1][0], max(HeldDownCells[1][1] - 1, 0))
             elif AdjustBoardTuple[0] == 'Bottom':
-                new_board = board[:, :-1]
+                board = board[:, :-1]
                 if hdc:
-                    HeldDownCells[0] = (HeldDownCells[0][0], min(HeldDownCells[0][1], board_h - 2))
-                    HeldDownCells[1] = (HeldDownCells[1][0], min(HeldDownCells[1][1], board_h - 2))
+                    HeldDownCells[0] = (HeldDownCells[0][0], min(HeldDownCells[0][1], board.shape[1] - 1))
+                    HeldDownCells[1] = (HeldDownCells[1][0], min(HeldDownCells[1][1], board.shape[1] - 1))
 
             if hdc and same_y_pos and HeldDownCells[0][1] == HeldDownCells[1][1]:
                 HeldDownCells.clear()
 
-        else:
-            new_board = board
-            adjustments_made = False
-
-        if board_w > 1:
+        if board.shape[0] > 1:
             if AdjustBoardTuple[0] == 'Left':
                 EvenOrOdd ^= 1
-                new_board = board[1:, :]
+                board = board[1:, :]
                 if hdc:
                     HeldDownCells[0] = (max(HeldDownCells[0][0] - 1, 0), HeldDownCells[0][1])
                     HeldDownCells[1] = (max(HeldDownCells[1][0] - 1, 0), HeldDownCells[1][1])
             elif AdjustBoardTuple[0] == 'Right':
-                new_board = board[:-1, :]
+                board = board[:-1, :]
                 if hdc:
-                    HeldDownCells[0] = (min(HeldDownCells[0][0], board_w - 2), HeldDownCells[0][1])
-                    HeldDownCells[1] = (min(HeldDownCells[1][0], board_w - 2), HeldDownCells[1][1])
+                    HeldDownCells[0] = (min(HeldDownCells[0][0], board.shape[0] - 1), HeldDownCells[0][1])
+                    HeldDownCells[1] = (min(HeldDownCells[1][0], board.shape[0] - 1), HeldDownCells[1][1])
 
             if hdc and same_x_pos and HeldDownCells[0][0] == HeldDownCells[1][0]:
                 HeldDownCells.clear()
 
-        else:
-            new_board = board
-            adjustments_made = False
+    if initial_shape != board.shape:
+        adjustments_made = True
 
-    return new_board, EvenOrOdd, adjustments_made
+    return board, EvenOrOdd, adjustments_made
 
 def adjustBoardDimensionsFromDict(board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments):
     new_board = None

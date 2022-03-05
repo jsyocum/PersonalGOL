@@ -361,6 +361,7 @@ def main():
     AutoAdjust = False
     AdjustBoard = False
     AdjustBoardTuple = None
+    ApplyAdjustments = False
     AutoAdjustments = {
         "Top": 0,
         "Bottom": 0,
@@ -600,6 +601,9 @@ def main():
         if len(time_delta_stack) > 2000:
             time_delta_stack.popleft()
 
+        if len(HeldDownCells) < 2:
+            SelectionBoxPresent = False
+
         keys = pygame.key.get_pressed()
 
         time_delta_added = time_delta_added + time_delta
@@ -667,8 +671,6 @@ def main():
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     LeftClickHeldDown = False
 
-            if len(HeldDownCells) < 2:
-                SelectionBoxPresent = False
 
             if (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE) or (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == back_to_game_button):
                 if MenuOpen is False:
@@ -1034,7 +1036,7 @@ def main():
                 action_window.auto_adjust_mode_button.rebuild()
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.apply_adjustments_button:
-                pass
+                ApplyAdjustments = True
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.clear_adjustments_button:
                 AutoAdjustments = dict.fromkeys(AutoAdjustments, 0)
@@ -1043,9 +1045,6 @@ def main():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_max_fps_default_button: parameters_max_fps_slider.set_current_value(DefaultMaxFps)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_likelihood_default_button: parameters_likelihood_slider.set_current_value(DefaultLikelihood)
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == parameters_color_default_button: color = pygame.Color(DefaultColorR, DefaultColorG, DefaultColorB)
-
-            if (event.type == pygame_gui.UI_BUTTON_ON_UNHOVERED or event.type == pygame_gui.UI_BUTTON_PRESSED) and (event.ui_element in all_buttons_with_tool_tips) and (show_parameters_button.text == 'Hide parameters') and (MenuOpen is not False):
-                helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
 
             manager.process_events(event)
 
@@ -1068,14 +1067,17 @@ def main():
             elif keys[pygame.K_DOWN]:
                 config_dict["EditCheckerboardBrightness"][0] = max(config_dict["EditCheckerboardBrightness"][0] - 1, 0)
 
+        if (Continuous is True and config_dict["AutoAdjust"][0] is True) or (Continuous is False and Step is True):
+            Board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
+            helpers.appendToStepStack(Board, step_stack)
 
-        if (Continuous is False) and (Step is True):
+        if Continuous is False and Step is True:
             helpers.applyRules(step_stack[-1], step_stack)
             Step = False
-        elif (Continuous is False) and (StepBack is True):
+        elif Continuous is False and StepBack is True:
             helpers.stepBack(step_stack)
             StepBack = False
-        elif (Continuous is True) and (Update is True):
+        elif Continuous is True and Update is True:
             helpers.applyRules(step_stack[-1], step_stack)
             Step = False
             StepBack = False
@@ -1143,16 +1145,18 @@ def main():
 
             AdjustBoard = False
 
-        if Continuous is True and config_dict["AutoAdjust"][0] is True:
-            Board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
-            helpers.appendToStepStack(Board, step_stack)
-
         if sum(AutoAdjustments.values()) > 0:
             action_window.apply_adjustments_button.enable()
             action_window.clear_adjustments_button.enable()
         else:
             action_window.apply_adjustments_button.disable()
             action_window.clear_adjustments_button.disable()
+
+        if ApplyAdjustments is True:
+            Board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), (None, None), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
+            helpers.appendToStepStack(Board, step_stack)
+
+            ApplyAdjustments = False
 
         if ClearHistory is True:
             current_board = step_stack[-1]
@@ -1172,11 +1176,12 @@ def main():
             QuickSave = False
 
         if QuickLoad is True:
-            load_status_message = ''
+            load_status_message = 'No quicksave exists to be loaded!'
             if os.path.exists(quick_save_path):
-                WasContinuous, load_status_message = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack)
-            else:
-                load_status_message = 'No quicksave exists to be loaded!'
+                loaded, load_status_message = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack)
+
+            if loaded is True and len(HeldDownCells) == 2:
+                HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
 
             print(load_status_message)
             QuickLoad = False
@@ -1188,6 +1193,9 @@ def main():
             if loaded is True:
                 Continuous = False
                 WasContinuous = False
+
+                if len(HeldDownCells) == 2:
+                    HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
 
             Load = False
 
