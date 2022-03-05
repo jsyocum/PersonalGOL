@@ -15,6 +15,16 @@ from collections import deque
 
 BOARDADJUSTBUTTON = pygame.event.custom_type()
 
+
+def get_version_number():
+    # major.minor.patch
+    # major: major changes, like a rewrite of the project
+    # minor: new functionality
+    # patch: minor changes or bug fixes
+    version = '1.0.0'
+
+    return version
+
 class SettingsWindow(pygame_gui.elements.UIWindow):
     def on_close_window_button_pressed(self):
         self.hide()
@@ -329,7 +339,7 @@ def main():
     pygame.init()
     logo = pygame.image.load(helpers.resource_path('logo.png'))
     pygame.display.set_icon(logo)
-    pygame.display.set_caption("Personal Game Of Life")
+    pygame.display.set_caption("Personal Game Of Life - " + get_version_number())
     surf = pygame.display.set_mode((0, 0))
     w = surf.get_width()
     h = surf.get_height()
