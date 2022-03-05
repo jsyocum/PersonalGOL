@@ -327,14 +327,13 @@ class ActionWindow(pygame_gui.elements.UIWindow):
 def main():
     # Set up pygame
     pygame.init()
-    logo = pygame.image.load("logo.png")
+    logo = pygame.image.load(helpers.resource_path('logo.png'))
     pygame.display.set_icon(logo)
     pygame.display.set_caption("Personal Game Of Life")
     surf = pygame.display.set_mode((0, 0))
-    # infoObject = pygame.display.Info()
     w = surf.get_width()
     h = surf.get_height()
-    manager = pygame_gui.UIManager((w, h), 'LessDeadZoneButton.json')
+    manager = pygame_gui.UIManager((w, h), helpers.resource_path('LessDeadZoneButton.json'))
 
     clock = pygame.time.Clock()
     time_delta_stack = deque([])

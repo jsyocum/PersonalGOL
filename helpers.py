@@ -4,6 +4,7 @@ import os
 import pygame
 import totalsize
 import math
+import sys
 from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
@@ -24,6 +25,16 @@ def _input(message, input_type=str):
             elif (type(UserInput) is int) and (UserInput <= 0):
                 print("ERR: Input must be greater than 0")
         except Exception: pass
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 # Generates a matrix of the specified height and width. Randomizes each cell as either 0 or 1.
 def generateArray(height, width, likelihood):

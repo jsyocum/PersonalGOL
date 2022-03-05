@@ -8,6 +8,6 @@ def install(package):
         print('Failed to install', package)
 
 
-packages = ('pygame', 'pygame_gui', 'numpy', 'scipy', 'pillow', 'typing', 'appdirs', 'pathvalidate', 'pathlib', 'configparser')
+packages = ('pygame', 'pygame_gui', 'numpy', 'scipy', 'pillow', 'typing', 'appdirs', 'pathvalidate', 'pathlib', 'configparser', 'PyInstaller')
 for package in packages:
     install(package)
