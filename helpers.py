@@ -517,7 +517,8 @@ def getWidthOfElements(array):
     return total_width
 
 def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board):
-    save_path_dir = '\\'.join(save_path.split('\\')[:-1])
+    save_path = str(save_path)
+    save_path_dir = Path('/'.join(save_path.split('/')[:-1]))
     if os.path.exists(save_path_dir) is False:
         Path(save_path_dir).mkdir(parents=True, exist_ok=True)
 
@@ -531,6 +532,7 @@ def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board):
     targetImage.save(save_path, pnginfo=metadata)
 
 def loadPNGWithBoardInfo(load_path, step_stack):
+    load_path = str(load_path)
     loaded = False
     if load_path.endswith('.png') is False:
         return loaded, load_path + ' is not a .png file'

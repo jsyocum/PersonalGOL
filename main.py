@@ -340,7 +340,7 @@ def main():
     logo = pygame.image.load(helpers.resource_path('logo.png'))
     pygame.display.set_icon(logo)
     pygame.display.set_caption("Personal Game Of Life - " + get_version_number())
-    surf = pygame.display.set_mode((0, 0))
+    surf = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     w = surf.get_width()
     h = surf.get_height()
     manager = pygame_gui.UIManager((w, h), helpers.resource_path('LessDeadZoneButton.json'))
@@ -392,15 +392,15 @@ def main():
     file_name_window = None
 
     config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
-    config_file_path = config_file_dir + '\\config.ini'
+    config_file_path = Path(config_file_dir + '/config.ini')
     print('Config file path:', config_file_path)
 
     SavePath = ''
-    quick_save_path = config_file_dir + '\\Patterns\\quick_save.png'
-    DefaultSavePath = config_file_dir + '\\Patterns'
+    quick_save_path = Path(config_file_dir + '/Patterns/quick_save.png')
+    DefaultSavePath = Path(config_file_dir + '/Patterns')
     BackupSavePath = os.path.expanduser("~/Desktop")
     if os.path.exists(BackupSavePath) is not True:
-        BackupSavePath = BackupSavePath.removesuffix("/Desktop") + "\OneDrive\Desktop"
+        BackupSavePath = Path(BackupSavePath.removesuffix("/Desktop") + "/OneDrive/Desktop")
 
     if os.path.exists(DefaultSavePath) is not True:
         Path(DefaultSavePath).mkdir(parents=True, exist_ok=True)

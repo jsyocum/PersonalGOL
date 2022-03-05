@@ -1,4 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_data_files
+
+datas = [('logo.png', '.'), ('LessDeadZoneButton.json', '.')]
+datas += collect_data_files('pygame_gui')
 
 
 block_cipher = None
@@ -7,7 +11,7 @@ block_cipher = None
 a = Analysis(['main.py'],
              pathex=[],
              binaries=[],
-             datas=[('logo.png', '.'), ('LessDeadZoneButton.json', '.')],
+             datas=datas,
              hiddenimports=[],
              hookspath=[],
              hooksconfig={},
