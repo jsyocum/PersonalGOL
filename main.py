@@ -21,7 +21,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: minor changes or bug fixes
-    version = '1.0.0'
+    version = '1.0.1'
 
     return version
 
@@ -1076,9 +1076,10 @@ def main():
             elif keys[pygame.K_DOWN]:
                 config_dict["EditCheckerboardBrightness"][0] = max(config_dict["EditCheckerboardBrightness"][0] - 1, 0)
 
-        if (Continuous is True and config_dict["AutoAdjust"][0] is True) or (Continuous is False and Step is True):
-            Board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
-            helpers.appendToStepStack(Board, step_stack)
+        if config_dict["AutoAdjust"][0] is True:
+            if Continuous is True or (Continuous is False and Step is True):
+                Board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
+                helpers.appendToStepStack(Board, step_stack)
 
         if Continuous is False and Step is True:
             helpers.applyRules(step_stack[-1], step_stack)
