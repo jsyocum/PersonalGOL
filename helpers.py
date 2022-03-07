@@ -358,28 +358,28 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
             if t % 2 == 1 or AdjustBoardTuple[0] == 'Top':
                 EvenOrOdd ^= 1  # Same as doing EvenOrOdd = not EvenOrOdd
 
-            top_row = np.zeros((board.shape[0], 1 + t))
+            top_row = np.zeros((board.shape[0], max(1, t)))
             board = np.append(top_row, board, axis=1)
             if hdc:
                 HeldDownCells[0] = (HeldDownCells[0][0], HeldDownCells[0][1] + 1 + t)
                 HeldDownCells[1] = (HeldDownCells[1][0], HeldDownCells[1][1] + 1 + t)
 
         if board.shape[1] < h and (AdjustBoardTuple[0] == 'Bottom' or b > 0):
-            bottom_row = np.zeros((board.shape[0], 1 + b))
+            bottom_row = np.zeros((board.shape[0], max(1, b)))
             board = np.append(board, bottom_row, axis=1)
 
         if board.shape[0] < w and (AdjustBoardTuple[0] == 'Left' or l > 0):
             if l % 2 == 1 or AdjustBoardTuple[0] == 'Left':
                 EvenOrOdd ^= 1
 
-            left_column = np.zeros((1 + l, board.shape[1]))
+            left_column = np.zeros((max(1, l), board.shape[1]))
             board = np.append(left_column, board, axis=0)
             if hdc:
                 HeldDownCells[0] = (HeldDownCells[0][0] + 1 + l, HeldDownCells[0][1])
                 HeldDownCells[1] = (HeldDownCells[1][0] + 1 + l, HeldDownCells[1][1])
 
         if board.shape[0] < w and (AdjustBoardTuple[0] == 'Right' or r > 0):
-            right_column = np.zeros((1 + r, board.shape[1]))
+            right_column = np.zeros((max(1, r), board.shape[1]))
             board = np.append(board, right_column, axis=0)
 
     else:
@@ -426,25 +426,29 @@ def adjustBoardDimensionsFromDict(board, w, h, HeldDownCells, EvenOrOdd, AutoAdj
     return new_board, EvenOrOdd
 
 def autoAdjustBoardDimensions(board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments):
-    adjustments = []
+    AutoAdjust = {"Top": 0, "Bottom": 0, "Left": 0, "Right": 0}
 
     if 1 in board[:, 0]:
-        adjustments.append('Top')
+        side = "Top"
+        AutoAdjust[side] = 1
+        AutoAdjustments[side] += 1
 
     if 1 in board[:, -1]:
-        adjustments.append('Bottom')
+        side = "Bottom"
+        AutoAdjust[side] = 1
+        AutoAdjustments[side] += 1
 
     if 1 in board[0, :]:
-        adjustments.append('Left')
+        side = "Left"
+        AutoAdjust[side] = 1
+        AutoAdjustments[side] += 1
 
     if 1 in board[-1, :]:
-        adjustments.append('Right')
+        side = "Right"
+        AutoAdjust[side] = 1
+        AutoAdjustments[side] += 1
 
-    for side in adjustments:
-        board, EvenOrOdd, adjustments_made = adjustBoardDimensions(board, (side, True), w, h, HeldDownCells, EvenOrOdd)
-        if adjustments_made is True:
-            AutoAdjustments[side] += 1
-
+    board, EvenOrOdd, adjustments_made = adjustBoardDimensions(board, (None, False), w, h, HeldDownCells, EvenOrOdd, AutoAdjust)
 
     return board, EvenOrOdd, AutoAdjustments
 
