@@ -189,7 +189,7 @@ def isMouseCollidingWithActionWindow(action_window, mouse_pos):
 
 def getBoardPosition(board, mouse_pos, w, h):
     scale, which = getScale(board, w, h)
-    board_pos = (int(math.ceil(mouse_pos[0] / scale) - 1), int(math.ceil(mouse_pos[1] / scale) - 1))
+    board_pos = (max(int(math.ceil(mouse_pos[0] / scale) - 1), 0), max(int(math.ceil(mouse_pos[1] / scale) - 1), 0))
 
     return board_pos
 

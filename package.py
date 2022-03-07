@@ -33,7 +33,7 @@ else:
     print('Using release path at:', release_path)
 
 og_file_path = Path('dist/' + og_filename)
-release_file_path = Path(release_path + '/' + filename)
+release_file_path = Path(str(release_path) + '/' + filename)
 try:
     shutil.move(og_file_path, release_file_path)
     print('Moved executable from', og_file_path, 'to', release_file_path)
@@ -41,11 +41,12 @@ except:
     print('Failed to move', og_file_path, 'to', release_file_path)
     exit()
 
-zip_file_path = Path(release_file_path + '.zip')
+zip_file_path = Path(str(release_file_path) + '.zip')
 zipObj = ZipFile(zip_file_path, 'w')
-zipObj.write(release_file_path)
+os.chdir(release_path)
+zipObj.write(filename)
 zipObj.close()
 print('Zipped executable into', zip_file_path)
 
-os.remove(release_file_path)
+os.remove(filename)
 print('Removed executable at:', release_file_path)
