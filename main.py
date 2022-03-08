@@ -9,6 +9,8 @@ import appdirs
 from pathlib import Path
 from collections import deque
 
+COLORCHANGED = pygame.event.custom_type()
+SETTINGSAPPLIED = pygame.event.custom_type()
 BOARDADJUSTBUTTON = pygame.event.custom_type()
 
 def get_version_number():
@@ -129,9 +131,10 @@ def main():
     }
 
     helpers.initialConfigCheck(config_file_dir, config_file_path, config_dict)
+    color = pygame.Color(config_dict["R"][0], config_dict["G"][0], config_dict["B"][0])
 
 
-    action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
+    action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
     action_window.kill()
 
 
@@ -145,7 +148,7 @@ def main():
 
     all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, edit_mode_button, save_button, load_button, quit_game_button]
 
-    settings_window_new = SettingsWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, w=w, h=h, config_dict=config_dict)
+    settings_window_new = SettingsWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, w=w, h=h, config_dict=config_dict, color=[color][0], COLORCHANGED=COLORCHANGED, SETTINGSAPPLIED=SETTINGSAPPLIED)
     settings_window_actual = OldSettingsWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, resizable=True, window_display_title='Settings', visible=0)
     settings_window_actual.set_minimum_dimensions((330, 200))
     settings_window_actual.set_dimensions((w, h))
@@ -178,7 +181,6 @@ def main():
     parameters_color_random_cell_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((-50, 10), (50, 25)), text='[ ]', manager=manager, container=settings_window, tool_tip_text='Enable to randomize the color of each cell.', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_likelihood_slider})
     parameters_color_default_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (50, 25)), text='*', manager=manager, container=settings_window, tool_tip_text='Reset to default: White', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_likelihood_slider})
     parameters_color_picker_dialog = None
-    color = pygame.Color(config_dict["R"][0], config_dict["G"][0], config_dict["B"][0])
 
     parameters_custom_board_size_text = pygame_gui.elements.ui_label.UILabel(text='Set custom board size:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=settings_window, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': parameters_color_text})
     parameters_custom_board_size_enable_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (50, 25)), text='[ ]', manager=manager, container=settings_window, tool_tip_text='Enable to enter a custom board size. Disables scale option.', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': parameters_likelihood_slider, 'top_target': parameters_color_text})
@@ -232,11 +234,11 @@ def main():
     all_parameters_entries = [[parameters_scale_entry, 1, 80], [parameters_max_fps_entry, 1, 50], [parameters_likelihood_entry, 1, 30],
                               [parameters_custom_board_size_width_entry, 1, w], [parameters_custom_board_size_height_entry, 1, h]]
 
-    all_parameters_elements_matched = [[parameters_scale_slider, parameters_scale_entry, previousScaleSliderValue, previousScaleEntryValue],
-                                       [parameters_max_fps_slider, parameters_max_fps_entry, previousMaxFpsSliderValue, previousMaxFpsEntryValue],
-                                       [parameters_likelihood_slider, parameters_likelihood_entry, previousLikelihoodSliderValue, previousLikelihoodEntryValue],
-                                       [parameters_custom_board_size_width_slider, parameters_custom_board_size_width_entry, previousCustomBoardSizeWidthSliderValue, previousCustomBoardSizeWidthEntryValue],
-                                       [parameters_custom_board_size_height_slider, parameters_custom_board_size_height_entry, previousCustomBoardSizeHeightSliderValue, previousCustomBoardSizeHeightEntryValue]]
+    all_parameters_elements_matched = [[parameters_scale_slider, parameters_scale_entry, previousScaleSliderValue, previousScaleEntryValue, "Scale"],
+                                       [parameters_max_fps_slider, parameters_max_fps_entry, previousMaxFpsSliderValue, previousMaxFpsEntryValue, "MaxFps"],
+                                       [parameters_likelihood_slider, parameters_likelihood_entry, previousLikelihoodSliderValue, previousLikelihoodEntryValue, "Likelihood"],
+                                       [parameters_custom_board_size_width_slider, parameters_custom_board_size_width_entry, previousCustomBoardSizeWidthSliderValue, previousCustomBoardSizeWidthEntryValue, "CustomBoardSizeWidth"],
+                                       [parameters_custom_board_size_height_slider, parameters_custom_board_size_height_entry, previousCustomBoardSizeHeightSliderValue, previousCustomBoardSizeHeightEntryValue, "CustomBoardSizeHeight"]]
 
     for entry in all_parameters_entries: entry[0].set_allowed_characters('numbers')
 
@@ -297,7 +299,7 @@ def main():
         keys = pygame.key.get_pressed()
 
         time_delta_added = time_delta_added + time_delta
-        if time_delta_added >= (1 / parameters_max_fps_slider.get_current_value()):
+        if time_delta_added >= (1 / config_dict["MaxFps"][0]):
             Update = True
             time_delta_added = 0
 
@@ -345,13 +347,13 @@ def main():
                         Continuous = False
                         EditMode = True
                         edit_mode_button.set_text('Disable edit mode (E)')
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
                     elif Continuous is False and EditMode is False:
                         EditMode = True
                         edit_mode_button.set_text('Disable edit mode (E)')
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
                     elif EditMode is True and not action_window.alive():
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
                     elif EditMode is True and action_window.alive():
                         action_window.kill()
 
@@ -382,7 +384,7 @@ def main():
                     Continuous = WasContinuous
 
                     if SelectionBoxPresent is True:
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], AutoAdjust=config_dict["AutoAdjust"][0])
+                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
 
                     action_window.show()
                     MenuOpen = CloseUIElements(all_menu_buttons)
@@ -479,7 +481,7 @@ def main():
                 parameters_scale_slider.rebuild()
 
             if event.type == pygame.MOUSEBUTTONUP and MenuOpen is False:
-                current_max_fps = parameters_max_fps_slider.get_current_value()
+                current_max_fps = config_dict["MaxFps"][0]
                 max_fps_slider_range = parameters_max_fps_slider.value_range
                 if Continuous is True:
                     if event.button == 4:
@@ -619,6 +621,12 @@ def main():
 
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == parameters_color_picker_dialog and config_dict["RandomColorByPixel"][0] is False:
                 for element in all_parameters_color_elements: element.enable()
+
+            if event.type == SETTINGSAPPLIED and event.ui_element == settings_window_new:
+                config_dict = event.config_dict
+
+            if event.type == COLORCHANGED and event.ui_element == settings_window_new:
+                color = event.color
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.selection_mode_button:
                 if action_window.selection_mode_button.text == 'Sel. mode: [X]':
@@ -899,16 +907,7 @@ def main():
 
 
         helpers.manageSliderAndEntryWithArray(all_parameters_elements_matched)
-        config_dict["Scale"][0] = all_parameters_elements_matched[0][2] = parameters_scale_slider.get_current_value()
-        all_parameters_elements_matched[0][3] = parameters_scale_entry.get_text()
-        config_dict["MaxFps"][0] = all_parameters_elements_matched[1][2] = parameters_max_fps_slider.get_current_value()
-        all_parameters_elements_matched[1][3] = parameters_max_fps_entry.get_text()
-        config_dict["Likelihood"][0] = all_parameters_elements_matched[2][2] = parameters_likelihood_slider.get_current_value()
-        all_parameters_elements_matched[2][3] = parameters_likelihood_entry.get_text()
-        config_dict["CustomBoardSizeWidth"][0] = all_parameters_elements_matched[3][2] = parameters_custom_board_size_width_slider.get_current_value()
-        all_parameters_elements_matched[3][3] = parameters_custom_board_size_width_entry.get_text()
-        config_dict["CustomBoardSizeHeight"][0] = all_parameters_elements_matched[4][2] = parameters_custom_board_size_height_slider.get_current_value()
-        all_parameters_elements_matched[4][3] = parameters_custom_board_size_height_entry.get_text()
+        # all_parameters_elements_matched, config_dict = helpers.setParametersValues(all_parameters_elements_matched, config_dict)
 
         for entryArray in all_parameters_entries[3:]:
             if entryArray[0].is_focused is not True:

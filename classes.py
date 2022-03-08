@@ -7,8 +7,7 @@ from pygame_gui.core.interfaces import IUIManagerInterface
 from pathlib import Path
 from typing import Union
 from pathvalidate import sanitize_filename, sanitize_filepath
-
-BOARDADJUSTBUTTON = pygame.event.custom_type()
+from copy import deepcopy
 
 class SettingsWindow(pygame_gui.elements.UIWindow):
     def __init__(self,
@@ -21,13 +20,42 @@ class SettingsWindow(pygame_gui.elements.UIWindow):
                  height: int = 500,
                  w: int = 0,  # Pixel width of pygame window
                  h: int = 0,  # Pixel height of pygame window
-                 config_dict: {} = {}):
+                 config_dict: {} = {},
+                 color: pygame.color = None,
+                 COLORCHANGED: int = 0,
+                 SETTINGSAPPLIED: int = 0):
 
         super().__init__(rect, manager,
                          window_display_title=window_title,
                          object_id=object_id,
                          resizable=True,
                          visible=visible)
+
+        self.config_dict = deepcopy(config_dict)
+        self.w = w
+        self.h = h
+        self.color = color
+        self.previous_color = color
+        self.og_color = color
+        self.COLORCHANGED = COLORCHANGED
+        self.SETTINGSAPPLIED = SETTINGSAPPLIED
+
+        self.DefaultScale = 20
+        self.DefaultMaxFps = 18
+        self.DefaultLikelihood = 5
+        self.DefaultColorR = 255
+        self.DefaultColorG = 255
+        self.DefaultColorB = 255
+
+        if self.config_dict["CustomBoardSizeEnabled"][0] is True:
+            self.CustomBoardSizeEnabledDict = True
+        else:
+            self.CustomBoardSizeEnabledDict = False
+
+        if self.config_dict["RandomColorByPixel"][0] is True:
+            self.RandomColorByPixelDict = True
+        else:
+            self.RandomColorByPixelDict = False
 
         self.set_dimensions((width, height))
         self.set_minimum_dimensions((330, 200))
@@ -80,16 +108,46 @@ class SettingsWindow(pygame_gui.elements.UIWindow):
         self.custom_board_size_height_entry.set_text(str(config_dict["CustomBoardSizeHeight"][0]))
         for element in [self.custom_board_size_width_slider, self.custom_board_size_width_entry, self.custom_board_size_height_slider, self.custom_board_size_height_entry]: element.disable()
 
+        self.cancel_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((0, 10), (-1, 25)), text='Cancel', manager=manager, container=self.sc, tool_tip_text='Exit without saving changes to settings.', anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top', 'top_target': self.custom_board_size_height_text})
+        self.apply_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((-5, 10), (-1, 25)), text='Apply', manager=manager, container=self.sc, tool_tip_text='Apply settings.', anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top', 'right_target': self.cancel_button, 'top_target': self.custom_board_size_height_text})
+
         self.set_dimensions(self.minimum_dimensions)
         self.warning_text.set_dimensions((self.sc.get_real_width() - 10, -1))
         self.warning_text.rebuild()
 
-        all_height_references = [self.warning_text, self.scale_text, self.scale_slider, self.max_fps_text, self.max_fps_slider,
-                                 self.likelihood_text, self.likelihood_slider, self.color_text,
-                                 self.custom_board_size_text, self.custom_board_size_width_text, self.custom_board_size_height_text]
-        height_total = helpers.getHeightOfElements(all_height_references) + 10
-        self.set_dimensions((self.minimum_dimensions[0], height_total))
-        self.sc.set_scrollable_area_dimensions((self.minimum_dimensions[0], height_total))
+        self.all_height_references = [self.warning_text, self.scale_text, self.scale_slider, self.max_fps_text, self.max_fps_slider,
+                                      self.likelihood_text, self.likelihood_slider, self.color_text,
+                                      self.custom_board_size_text, self.custom_board_size_width_text, self.custom_board_size_height_text,
+                                      self.apply_button]
+        self.height_total = helpers.getHeightOfElements(self.all_height_references) + 10
+        self.set_dimensions((self.minimum_dimensions[0], self.height_total))
+        self.sc.set_scrollable_area_dimensions((self.minimum_dimensions[0], self.height_total))
+
+        self.previousSettingsWindowDimensions = None
+        self.previousScaleSliderValue = None
+        self.previousScaleEntryValue = None
+        self.previousMaxFpsSliderValue = None
+        self.previousMaxFpsEntryValue = None
+        self.previousLikelihoodSliderValue = None
+        self.previousLikelihoodEntryValue = None
+        self.previousCustomBoardSizeWidthSliderValue = None
+        self.previousCustomBoardSizeWidthEntryValue = None
+        self.previousCustomBoardSizeHeightSliderValue = None
+        self.previousCustomBoardSizeHeightEntryValue = None
+
+        self.scale_elements = [self.scale_slider, self.scale_entry, self.scale_slider_size_button, self.scale_default_button]
+        self.custom_board_size_elements = [self.custom_board_size_width_slider, self.custom_board_size_width_entry, self.custom_board_size_height_slider, self.custom_board_size_height_entry]
+
+        self.color_elements = [self.color_random_cell_button, self.color_default_button, self.color_picker_button]
+
+        self.all_parameters_entries = [[self.scale_entry, 1, 80], [self.max_fps_entry, 1, 50], [self.likelihood_entry, 1, 30],
+                                       [self.custom_board_size_width_entry, 1, w], [self.custom_board_size_height_entry, 1, h]]
+
+        self.all_parameters_elements_matched = [[self.scale_slider, self.scale_entry, self.previousScaleSliderValue, self.previousScaleEntryValue, "Scale"],
+                                                [self.max_fps_slider, self.max_fps_entry, self.previousMaxFpsSliderValue, self.previousMaxFpsEntryValue, "MaxFps"],
+                                                [self.likelihood_slider, self.likelihood_entry, self.previousLikelihoodSliderValue, self.previousLikelihoodEntryValue, "Likelihood"],
+                                                [self.custom_board_size_width_slider, self.custom_board_size_width_entry, self.previousCustomBoardSizeWidthSliderValue, self.previousCustomBoardSizeWidthEntryValue, "CustomBoardSizeWidth"],
+                                                [self.custom_board_size_height_slider, self.custom_board_size_height_entry, self.previousCustomBoardSizeHeightSliderValue, self.previousCustomBoardSizeHeightEntryValue, "CustomBoardSizeHeight"]]
 
     def process_event(self, event: pygame.event.Event) -> bool:
         """
@@ -103,6 +161,151 @@ class SettingsWindow(pygame_gui.elements.UIWindow):
 
         """
         handled = super().process_event(event)
+
+        if event.type == pygame.MOUSEBUTTONUP and self.sc.vert_scroll_bar is not None:
+            mouse_pos = pygame.mouse.get_pos()
+            if self.sc.rect.collidepoint(mouse_pos):
+                scroll_amount = self.sc.vert_scroll_bar.bottom_limit / 30
+                if event.button == 4:
+                    self.sc.vert_scroll_bar.scroll_position = max(self.sc.vert_scroll_bar.scroll_position - scroll_amount, 0)
+
+                elif event.button == 5:
+                    self.sc.vert_scroll_bar.scroll_position = min(self.sc.vert_scroll_bar.scroll_position + scroll_amount, self.sc.vert_scroll_bar.bottom_limit - self.sc.vert_scroll_bar.sliding_button.rect.height)
+
+                self.sc.vert_scroll_bar.start_percentage = self.sc.vert_scroll_bar.scroll_position / self.sc.vert_scroll_bar.scrollable_height
+                self.sc.vert_scroll_bar.has_moved_recently = True
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.scale_slider_size_button:
+            if self.scale_slider_size_button.text == '[ ]':
+                self.scale_slider_size_button.text = '[X]'
+                self.scale_slider_size_button.tool_tip_text = 'Change slider maximum to 80'
+                self.scale_slider.value_range = (1, 200)
+            else:
+                self.scale_slider_size_button.text = '[ ]'
+                self.scale_slider_size_button.tool_tip_text = 'Change slider maximum to 200'
+                self.scale_slider_size_button.rebuild()
+                self.scale_slider.value_range = (1, 80)
+
+            self.scale_slider_size_button.rebuild()
+            self.scale_slider.rebuild()
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.max_fps_slider_size_button:
+            if self.max_fps_slider_size_button.text == '[ ]':
+                self.max_fps_slider_size_button.text = '[X]'
+                self.max_fps_slider_size_button.tool_tip_text = 'Change slider maximum to 50'
+                self.max_fps_slider.value_range = (1, 1000)
+            else:
+                self.max_fps_slider_size_button.text = '[ ]'
+                self.max_fps_slider_size_button.tool_tip_text = 'Change slider maximum to 1000'
+                self.max_fps_slider.value_range = (1, 50)
+
+            self.max_fps_slider_size_button.rebuild()
+            self.max_fps_slider.rebuild()
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.likelihood_slider_size_button:
+            if self.likelihood_slider_size_button.text == '[ ]':
+                self.likelihood_slider_size_button.text = '[X]'
+                self.likelihood_slider_size_button.tool_tip_text = 'Change slider maximum to 30'
+                self.likelihood_slider.value_range = (1, 100)
+            else:
+                self.likelihood_slider_size_button.text = '[ ]'
+                self.likelihood_slider_size_button.tool_tip_text = 'Change slider maximum to 100'
+                self.likelihood_slider.value_range = (1, 30)
+
+            self.likelihood_slider_size_button.rebuild()
+            self.likelihood_slider.rebuild()
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.color_picker_button:
+            self.color_picker_dialog = pygame_gui.windows.UIColourPickerDialog(pygame.Rect((self.w / 2 - 80, self.h / 2 + 25), (420, 400)), manager=self.ui_manager, initial_colour=self.color, window_title='Pick a color...')
+            self.og_picker_color = deepcopy(self.color)
+            for element in self.color_elements: element.disable()
+
+        if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == self.color_picker_dialog and self.config_dict["RandomColorByPixel"][0] is False:
+            for element in self.color_elements: element.enable()
+            self.color = self.og_picker_color
+
+        if event.type == pygame_gui.UI_COLOUR_PICKER_COLOUR_PICKED and event.ui_element == self.color_picker_dialog:
+            self.og_picker_color = event.colour
+
+        if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.color_random_cell_button) or self.RandomColorByPixelDict is True:
+            self.RandomColorByPixelDict = False
+
+            if self.color_random_cell_button.text == '[ ]':
+                self.color_random_cell_button.text = '[X]'
+                self.color_random_cell_button.tool_tip_text = 'Disable to go back to using normal colors.'
+                for element in self.color_elements[1:]: element.disable()
+                self.config_dict["RandomColorByPixel"][0] = True
+            else:
+                self.color_random_cell_button.text = '[ ]'
+                self.color_random_cell_button.tool_tip_text = 'Enable to randomize the color of each cell.'
+                for element in self.color_elements[1:]: element.enable()
+                self.config_dict["RandomColorByPixel"][0] = False
+
+            self.color_random_cell_button.rebuild()
+
+        if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.custom_board_size_enable_button) or self.CustomBoardSizeEnabledDict is True:
+            self.CustomBoardSizeEnabledDict = False
+
+            if self.custom_board_size_enable_button.text == '[ ]':
+                self.custom_board_size_enable_button.text = '[X]'
+                self.likelihood_slider_size_button.tool_tip_text = 'Disable to use the scale option instead.'
+                for element in self.scale_elements:
+                    element.disable()
+                    element.rebuild()
+                    element.enable()
+                    element.disable()
+                for element in self.custom_board_size_elements: element.enable()
+                self.config_dict["CustomBoardSizeEnabled"][0] = True
+            else:
+                self.custom_board_size_enable_button.text = '[ ]'
+                self.likelihood_slider_size_button.tool_tip_text = 'Enable to enter a custom board size. Disables scale option.'
+                for element in self.scale_elements: element.enable()
+                for element in self.custom_board_size_elements:
+                    element.disable()
+                    element.rebuild()
+                    element.enable()
+                    element.disable()
+                self.config_dict["CustomBoardSizeEnabled"][0] = False
+
+            self.custom_board_size_enable_button.rebuild()
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.scale_default_button: self.scale_slider.set_current_value(self.DefaultScale)
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.max_fps_default_button: self.max_fps_slider.set_current_value(self.DefaultMaxFps)
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.likelihood_default_button: self.likelihood_slider.set_current_value(self.DefaultLikelihood)
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.color_default_button: self.color = pygame.Color(self.DefaultColorR, self.DefaultColorG, self.DefaultColorB)
+
+        helpers.manageSliderAndEntryWithArray(self.all_parameters_elements_matched)
+        self.all_parameters_elements_matched, self.config_dict = helpers.setParametersValues(self.all_parameters_elements_matched, self.config_dict)
+
+        for entryArray in self.all_parameters_entries[3:]:
+            if entryArray[0].is_focused is not True:
+                helpers.manageNumberEntry(entryArray)
+
+        # If the height or width of the settings window has changed...
+        if (self.get_real_width(), self.get_real_height()) != self.previousSettingsWindowDimensions:
+            self.warning_text.set_dimensions((self.sc.get_real_width() - 10, -1))
+            self.warning_text.rebuild()
+            self.scale_slider.rebuild()
+            self.custom_board_size_width_slider.rebuild()
+            self.custom_board_size_height_slider.rebuild()
+
+            self.height_total = helpers.getHeightOfElements(self.all_height_references) + 10
+            self.set_dimensions((self.get_relative_rect().width, min(self.get_relative_rect().height, self.height_total)))
+            self.sc.set_scrollable_area_dimensions((self.sc.get_real_width(), self.height_total / 1.145 - 2))
+
+            self.previousSettingsWindowDimensions = (self.get_real_width(), self.get_real_height())
+
+        self.config_dict["R"][0], self.config_dict["G"][0], self.config_dict["B"][0] = self.color.r, self.color.g, self.color.b
+        if self.color != self.previous_color:
+            helpers.quick_post(self, 'color', self.color, self.COLORCHANGED)
+
+            self.previous_color = self.color
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.apply_button:
+            helpers.quick_post(self, 'config_dict', self.config_dict, self.SETTINGSAPPLIED)
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.cancel_button:
+            self.kill()
 
         return handled
 
@@ -220,10 +423,7 @@ class ChooseFileNameWindow(pygame_gui.elements.UIWindow):
             self.save_path = self.save_path + '\\' + filename
             self.save_path = sanitize_filepath(self.save_path, platform='auto')
 
-            event_data = {'text': self.save_path,
-                          'ui_element': self,
-                          'ui_object_id': self.most_specific_combined_id}
-            pygame.event.post(pygame.event.Event(pygame_gui.UI_FILE_DIALOG_PATH_PICKED, event_data))
+            helpers.quick_post(self, 'text', self.save_path, pygame_gui.UI_FILE_DIALOG_PATH_PICKED)
 
             self.kill()
 
@@ -249,6 +449,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
                  height: int = 500,
                  SelMode: bool = True,
                  EraserMode: bool = False,
+                 BOARDADJUSTBUTTON: int = 0,
                  AutoAdjust: bool = False,
                  AutoAdjustments: {} = {
                      "Top": 0,
@@ -263,6 +464,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
                          resizable=False,
                          visible=visible)
 
+        self.BOARDADJUSTBUTTON = BOARDADJUSTBUTTON
         self.set_dimensions((width, height))
 
         # Row 1
@@ -410,7 +612,7 @@ class ActionWindow(pygame_gui.elements.UIWindow):
                           'plus': plus,
                           'ui_element': self,
                           'ui_object_id': self.most_specific_combined_id}
-            pygame.event.post(pygame.event.Event(BOARDADJUSTBUTTON, event_data))
+            pygame.event.post(pygame.event.Event(self.BOARDADJUSTBUTTON, event_data))
 
         return handled
 

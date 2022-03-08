@@ -504,6 +504,13 @@ def manageNumberEntry(entryArray):
     elif (int(entry.get_text()) > max):
         entry.set_text(str(max))
 
+def setParametersValues(all_parameters_elements_matched, config_dict):
+    for elements_array in all_parameters_elements_matched:
+        config_dict[elements_array[4]][0] = elements_array[2] = elements_array[0].get_current_value()
+        elements_array[3] = elements_array[1].get_text()
+
+    return all_parameters_elements_matched, config_dict
+
 def getHeightOfElements(array):
     total_height = 0
     for element in array:
@@ -617,3 +624,9 @@ def writeDict(config_file_path, config_dict):
         config.set('main', key, str(config_dict[key][0]))
 
     return config
+
+def quick_post(self, data_name, data, event_id):
+    event_data = {data_name: data,
+                  'ui_element': self,
+                  'ui_object_id': self.most_specific_combined_id}
+    pygame.event.post(pygame.event.Event(event_id, event_data))
