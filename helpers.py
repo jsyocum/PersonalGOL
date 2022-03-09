@@ -58,7 +58,7 @@ def determineWidthAndHeight(config_dict, w, h):
         width = w / config_dict["Scale"][0]
         height = h / config_dict["Scale"][0]
 
-    return width, height
+    return int(width), int(height)
 
 def sumOfNeighbors(array):
     kernel = np.ones((3, 3), dtype=int)

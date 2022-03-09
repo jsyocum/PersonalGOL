@@ -546,6 +546,9 @@ def main():
             Board = helpers.generateArray(height, width, config_dict["Likelihood"][0])
             step_stack.append(Board)
 
+            if len(HeldDownCells) == 2:
+                HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
+
             NewBoard = False
 
         if Zoom is True:
