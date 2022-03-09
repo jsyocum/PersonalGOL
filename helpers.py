@@ -45,7 +45,20 @@ def generateArray(height, width, likelihood):
         for i, cell in enumerate(SubArray):
             SubArray[i] = random.choice(chanceArray)
 
+    # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
+    array = np.rot90(array)
+
     return array
+
+def determineWidthAndHeight(config_dict, w, h):
+    if config_dict["CustomBoardSizeEnabled"][0] is True:
+        width = config_dict["CustomBoardSizeWidth"][0]
+        height = config_dict["CustomBoardSizeHeight"][0]
+    else:
+        width = w / config_dict["Scale"][0]
+        height = h / config_dict["Scale"][0]
+
+    return width, height
 
 def sumOfNeighbors(array):
     kernel = np.ones((3, 3), dtype=int)
