@@ -32,6 +32,7 @@ class SettingsWindow(pygame_gui.elements.UIWindow):
                          visible=visible)
 
         self.config_dict = deepcopy(config_dict)
+        self.og_config_dict = deepcopy(config_dict)
         self.w = w
         self.h = h
         self.color = color
@@ -300,6 +301,11 @@ class SettingsWindow(pygame_gui.elements.UIWindow):
             helpers.quick_post(self, 'color', self.color, self.COLORCHANGED)
 
             self.previous_color = self.color
+
+        if self.config_dict == self.og_config_dict:
+            self.apply_button.disable()
+        else:
+            self.apply_button.enable()
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.apply_button:
             helpers.quick_post(self, 'config_dict', self.config_dict, self.SETTINGSAPPLIED)

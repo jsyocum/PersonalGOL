@@ -877,22 +877,28 @@ def main():
             if os.path.exists(quick_save_path):
                 loaded, load_status_message = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack)
 
-            if loaded is True and len(HeldDownCells) == 2:
-                HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
-
-            print(load_status_message)
-            QuickLoad = False
-
-        if Load is True:
-            load_status_message = ''
-            loaded, load_status_message = helpers.loadPNGWithBoardInfo(load_path, step_stack)
-            print(load_status_message)
             if loaded is True:
                 Continuous = False
                 WasContinuous = False
 
                 if len(HeldDownCells) == 2:
                     HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
+
+            print(load_status_message)
+
+            QuickLoad = False
+
+        if Load is True:
+            load_status_message = ''
+            loaded, load_status_message = helpers.loadPNGWithBoardInfo(load_path, step_stack)
+            if loaded is True:
+                Continuous = False
+                WasContinuous = False
+
+                if len(HeldDownCells) == 2:
+                    HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
+
+            print(load_status_message)
 
             Load = False
 
