@@ -48,7 +48,7 @@ def generateArray(height, width, likelihood):
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     array = np.rot90(array)
 
-    return array
+    return array, get_random_theme_board(array)
 
 def determineWidthAndHeight(config_dict, w, h):
     if config_dict["CustomBoardSizeEnabled"][0] is True:
@@ -102,6 +102,62 @@ def interpretArray(ogArray, onChar, offChar):
                 array[subi][i] = offChar
 
     return array
+
+def get_polygon_corners(Scale, subi, i, theme_shape_int):
+    top_left = (subi * Scale, i * Scale)
+    top_right = (top_left[0] + Scale, top_left[1])
+    bottom_left = (top_left[0], top_left[1] + Scale)
+    bottom_right = (top_left[0] + Scale + Scale, top_left[1] + Scale)
+
+    top_center = (top_left[0] + Scale / 2, top_left[1])
+    bottom_center = bottom_right = (top_left[0] + Scale / 2, top_left[1] + Scale)
+    left_center = (top_left[0], top_left[1] + Scale / 2)
+    right_center = (top_left[0] + Scale, top_left[1] + Scale / 2)
+
+    match theme_shape_int:
+        case 0:  # square, handled in calling function
+            pass
+        case 1:  # 1/2 triangle, base at bottom left
+            corners = (top_left, bottom_left, bottom_right)
+
+    return corners
+
+def get_random_theme_board(board):
+    theme_board = np.zeros(board.shape, dtype=int)
+    chanceArray = np.zeros(5)
+    chanceArray = np.append(chanceArray, 1)
+    for SubArray in theme_board:
+        for i, cell in enumerate(SubArray):
+            SubArray[i] = random.choice(chanceArray)
+
+    return theme_board
+
+# The theme_board is the same shape as the board. The default theme is 0, which is just a square of solid color.
+# The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
+# The user can create as many themes as they want, each with different shape and/or color.
+# This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
+def complex_blit_array(board, theme_board, themes, surf, EditMode) -> pygame.surface:
+    Scale = getScale(board, surf.get_width(), surf.get_height())[0]
+    boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
+
+    for subi, SubArray in enumerate(board):
+        for i, Square in enumerate(SubArray):
+            if Square == 1:
+                theme_index = theme_board[subi][i]
+                theme = themes[theme_index]
+                theme_index, color = theme[0], theme[1]
+
+                if theme[0] == 0:
+                    square = pygame.Rect((subi * Scale, i * Scale), (Scale, Scale))
+                    pygame.draw.rect(boardSurf, color, square)
+
+                else:
+                    corners = get_polygon_corners(Scale, subi, i, theme[0])
+                    pygame.draw.polygon(boardSurf, color, corners)
+
+    blitBoardOnScreenEvenly(surf, boardSurf, EditMode)
+
+    return boardSurf
 
 def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[], EvenOrOdd=0):
     if RandomColorByPixel is False:

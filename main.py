@@ -74,6 +74,11 @@ def main():
     EvenOrOdd = 0
     time_delta_added = 0
 
+    themes = [
+             [0, pygame.Color('Red')],
+             [1, pygame.Color('Orange')]
+    ]
+
     save_location = None
     file_name_window = None
 
@@ -176,9 +181,9 @@ def main():
     # Generate array which is a fraction of the user's monitor size according to scale. There is a liklihood
     # of 1 / Likelihood that any given cell will start alive
     if config_dict["CustomBoardSizeEnabled"][0] is False:
-        Board = helpers.generateArray(int(h / config_dict["Scale"][0]), int(w / config_dict["Scale"][0]), config_dict["Likelihood"][0])
+        Board, theme_board = helpers.generateArray(int(h / config_dict["Scale"][0]), int(w / config_dict["Scale"][0]), config_dict["Likelihood"][0])
     else:
-        Board = helpers.generateArray(config_dict["CustomBoardSizeHeight"][0], config_dict["CustomBoardSizeWidth"][0], config_dict["Likelihood"][0])
+        Board, theme_board = helpers.generateArray(config_dict["CustomBoardSizeHeight"][0], config_dict["CustomBoardSizeWidth"][0], config_dict["Likelihood"][0])
 
     step_stack.append(Board.copy())
 
@@ -543,7 +548,7 @@ def main():
 
         if NewBoard is True:
             width, height = helpers.determineWidthAndHeight(config_dict, w, h)
-            Board = helpers.generateArray(height, width, config_dict["Likelihood"][0])
+            Board, theme_board = helpers.generateArray(height, width, config_dict["Likelihood"][0])
             step_stack.append(Board)
 
             if len(HeldDownCells) == 2:
@@ -666,7 +671,8 @@ def main():
 
             Load = False
 
-        CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
+        # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
+        CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)
