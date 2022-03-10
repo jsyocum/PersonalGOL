@@ -74,10 +74,7 @@ def main():
     EvenOrOdd = 0
     time_delta_added = 0
 
-    themes = [
-             [0, pygame.Color('Red')],
-             [1, pygame.Color('Orange')]
-    ]
+    themes = [[0, pygame.Color('Red')]]
 
     save_location = None
     file_name_window = None
@@ -213,6 +210,7 @@ def main():
             if MenuOpen is False:
                 if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                     Continuous = not Continuous
+                    HeldDownCells = []
                 elif event.type == pygame.KEYUP and event.key == pygame.K_w:
                     Step = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_s:
@@ -330,7 +328,7 @@ def main():
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == file_name_window:
                 save_path = event.text
                 boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
-                helpers.savePNGWithBoardInfo(save_path, boardsurf_to_save, step_stack[-1])
+                helpers.savePNGWithBoardInfo(save_path, boardsurf_to_save, step_stack[-1], theme_board)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
                 save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=SavePath, allow_picking_directories=False)
@@ -379,7 +377,7 @@ def main():
                 if IsColliding and not IsCollidingWithActionWindow:
                     board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
 
-                    if config_dict["SelectionMode"][0] is True:
+                    if config_dict["SelectionMode"][0] is True and Continuous is False:
                         if len(HeldDownCells) < 2 and board_pos not in HeldDownCells:
                             HeldDownCells.append(board_pos)
                         elif len(HeldDownCells) == 2 and board_pos == HeldDownCells[0]:
@@ -387,7 +385,7 @@ def main():
                         elif len(HeldDownCells) == 2:
                             HeldDownCells[1] = board_pos
 
-                    else:
+                    elif config_dict["SelectionMode"][0] is False:
                         Board = step_stack[-1].copy()
                         if config_dict["Eraser"][0] is False:
                             Board[board_pos] = 1
@@ -557,21 +555,21 @@ def main():
             NewBoard = False
 
         if Zoom is True:
-            Board = helpers.zoom(step_stack[-1], HeldDownCells)
+            Board, theme_board = helpers.zoom(step_stack[-1], theme_board, HeldDownCells)
             helpers.appendToStepStack(Board, step_stack)
             HeldDownCells = []
 
             Zoom = False
 
         if Cut is True:
-            CopiedBoard = helpers.zoom(step_stack[-1], HeldDownCells)
+            CopiedBoard, none = helpers.zoom(step_stack[-1], theme_board, HeldDownCells)
             Board = helpers.cut(step_stack[-1].copy(), HeldDownCells)
             helpers.appendToStepStack(Board, step_stack)
 
             Cut = False
 
         if Copy is True:
-            CopiedBoard = helpers.zoom(step_stack[-1], HeldDownCells)
+            CopiedBoard, none = helpers.zoom(step_stack[-1], theme_board, HeldDownCells)
 
             Copy = False
 
@@ -606,7 +604,7 @@ def main():
             Flip = False
 
         if AdjustBoard is True:
-            Board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
+            Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), theme_board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
             helpers.appendToStepStack(Board, step_stack)
 
             AdjustBoard = False
@@ -619,7 +617,7 @@ def main():
             action_window.clear_adjustments_button.disable()
 
         if ApplyAdjustments is True:
-            Board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), (None, None), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
+            Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), theme_board, (None, None), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
             helpers.appendToStepStack(Board, step_stack)
 
             ApplyAdjustments = False
@@ -638,13 +636,13 @@ def main():
         if QuickSave is True:
             print("Quicksaved to:", quick_save_path)
             boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
-            helpers.savePNGWithBoardInfo(quick_save_path, boardsurf_to_save, step_stack[-1])
+            helpers.savePNGWithBoardInfo(quick_save_path, boardsurf_to_save, step_stack[-1], theme_board)
             QuickSave = False
 
         if QuickLoad is True:
             load_status_message = 'No quicksave exists to be loaded!'
             if os.path.exists(quick_save_path):
-                loaded, load_status_message = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack)
+                loaded, load_status_message, theme_board = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack)
 
             if loaded is True:
                 Continuous = False
@@ -659,7 +657,7 @@ def main():
 
         if Load is True:
             load_status_message = ''
-            loaded, load_status_message = helpers.loadPNGWithBoardInfo(load_path, step_stack)
+            loaded, load_status_message, theme_board = helpers.loadPNGWithBoardInfo(load_path, step_stack)
             if loaded is True:
                 Continuous = False
                 WasContinuous = False
@@ -672,7 +670,7 @@ def main():
             Load = False
 
         # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
-        CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode)
+        CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)

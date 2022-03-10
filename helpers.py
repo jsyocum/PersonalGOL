@@ -47,8 +47,9 @@ def generateArray(height, width, likelihood):
 
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     array = np.rot90(array)
+    theme_board = np.ones(array.shape, dtype=int)
 
-    return array, get_random_theme_board(array)
+    return array, theme_board
 
 def determineWidthAndHeight(config_dict, w, h):
     if config_dict["CustomBoardSizeEnabled"][0] is True:
@@ -103,29 +104,44 @@ def interpretArray(ogArray, onChar, offChar):
 
     return array
 
-def get_polygon_corners(Scale, subi, i, theme_shape_int):
-    top_left = (subi * Scale, i * Scale)
-    top_right = (top_left[0] + Scale, top_left[1])
-    bottom_left = (top_left[0], top_left[1] + Scale)
-    bottom_right = (top_left[0] + Scale + Scale, top_left[1] + Scale)
+def add_selection_to_color(color, select_color):
+    if color.r > 230 and color.g > 230 and color.b > 230:
+        colors_added = pygame.Color(int(color.r * 0.5) + select_color.r, int(color.g * 0.5) + select_color.g, int(color.b * 0.5) + select_color.b)
+    else:
+        colors_added = pygame.Color(min(color.r + select_color.r, 255), min(color.g + select_color.g, 255), min(color.b + select_color.b, 255))
 
-    top_center = (top_left[0] + Scale / 2, top_left[1])
-    bottom_center = bottom_right = (top_left[0] + Scale / 2, top_left[1] + Scale)
-    left_center = (top_left[0], top_left[1] + Scale / 2)
-    right_center = (top_left[0] + Scale, top_left[1] + Scale / 2)
+    return colors_added
+
+def get_polygon_corners(Scale, subi, i, theme_shape_int):
+    f_s = Scale  # Normally the scale is one pixel too long to add onto the top left position??
+
+    top_left = (subi * Scale, i * Scale)
+    top_right = (top_left[0] + f_s, top_left[1])
+    bottom_left = (top_left[0], top_left[1] + f_s)
+    bottom_right = (top_left[0] + f_s, top_left[1] + f_s)
+
+    top_center = (top_left[0] + f_s / 2, top_left[1])
+    bottom_center = (top_left[0] + f_s / 2, top_left[1] + f_s)
+    left_center = (top_left[0], top_left[1] + f_s / 2)
+    right_center = (top_left[0] + f_s, top_left[1] + f_s / 2)
 
     match theme_shape_int:
         case 0:  # square, handled in calling function
-            pass
+            return None
         case 1:  # 1/2 triangle, base at bottom left
             corners = (top_left, bottom_left, bottom_right)
+        case 2:  # 1/2 triangle, base at top left
+            corners = (top_left, top_right, bottom_left)
+        case 3:  # 1/2 triangle, base at top right
+            corners = (top_left, top_right, bottom_right)
+        case 4:  # 1/2 triangle, base at bottom right
+            corners = (top_right, bottom_left, bottom_right)
 
     return corners
 
 def get_random_theme_board(board):
     theme_board = np.zeros(board.shape, dtype=int)
-    chanceArray = np.zeros(5)
-    chanceArray = np.append(chanceArray, 1)
+    chanceArray = range(0, 5)
     for SubArray in theme_board:
         for i, cell in enumerate(SubArray):
             SubArray[i] = random.choice(chanceArray)
@@ -136,16 +152,40 @@ def get_random_theme_board(board):
 # The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
-def complex_blit_array(board, theme_board, themes, surf, EditMode) -> pygame.surface:
+def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, EvenOrOdd, SelectedCells) -> pygame.surface:
     Scale = getScale(board, surf.get_width(), surf.get_height())[0]
     boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
+    checkerboard_color = pygame.Color(EditCheckerboardBrightness, EditCheckerboardBrightness, EditCheckerboardBrightness)
 
     for subi, SubArray in enumerate(board):
         for i, Square in enumerate(SubArray):
+            select_color = pygame.Color('Black')
+            if len(SelectedCells) == 2:
+                x_1, y_1 = SelectedCells[0][0], SelectedCells[0][1]
+                x_2, y_2 = SelectedCells[1][0], SelectedCells[1][1]
+                if min(x_1, x_2) <= subi <= max(x_1, x_2):
+                    if min(y_1, y_2) <= i <= max(y_1, y_2):
+                        select_color = pygame.Color(27, 69, 109)
+
+            if EditMode is True:
+                square = pygame.Rect((subi * Scale, i * Scale), (Scale, Scale))
+                checkerboard_color_final = pygame.Color('Black')
+
+                if (subi % 2) == 0:
+                    if (i % 2) == EvenOrOdd:
+                        checkerboard_color_final = checkerboard_color
+                else:
+                    if (i % 2) != EvenOrOdd:
+                        checkerboard_color_final = checkerboard_color
+
+                checkerboard_color_final = add_selection_to_color(checkerboard_color_final, select_color)
+                pygame.draw.rect(boardSurf, checkerboard_color_final, square)
+
             if Square == 1:
                 theme_index = theme_board[subi][i]
                 theme = themes[theme_index]
                 theme_index, color = theme[0], theme[1]
+                color = add_selection_to_color(color, select_color)
 
                 if theme[0] == 0:
                     square = pygame.Rect((subi * Scale, i * Scale), (Scale, Scale))
@@ -230,7 +270,7 @@ def getScale(board, w, h):
         Scale = w / board_w
         Which = 2
 
-    return Scale, Which
+    return math.ceil(Scale), Which
 
 def isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h):
     IsCollidingWithBoardSurf = False
@@ -329,10 +369,10 @@ def showSelectionBoxSize(surf, board, ScaledHeldDownCells, HeldDownCells, font):
     surf.blit(height_text, height_text_pos)
 
 # Just copies that section of the board, so can use for zooming or copy/pasting
-def zoom(board, HeldDownCells):
+def zoom(board, theme_board, HeldDownCells):
     left, right, top, bottom = getCorners(HeldDownCells)
 
-    return board[left:right + 1, top:bottom + 1]
+    return board[left:right + 1, top:bottom + 1], theme_board[left:right + 1, top:bottom + 1]
 
 def cut(board, HeldDownCells, Fill=False):
     left, right, top, bottom = getCorners(HeldDownCells)
@@ -401,7 +441,7 @@ def fixSelectionBoxAfterLoad(board, HeldDownCells):
 
     return HeldDownCells, SelectionBoxPresent
 
-def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd, AutoAdjust={"Top": 0, "Bottom": 0, "Left": 0, "Right": 0}):
+def adjustBoardDimensions(board, theme_board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd, AutoAdjust={"Top": 0, "Bottom": 0, "Left": 0, "Right": 0}):
     t = AutoAdjust["Top"]
     b = AutoAdjust["Bottom"]
     l = AutoAdjust["Left"]
@@ -427,40 +467,46 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
             if t % 2 == 1 or AdjustBoardTuple[0] == 'Top':
                 EvenOrOdd ^= 1  # Same as doing EvenOrOdd = not EvenOrOdd
 
-            top_row = np.zeros((board.shape[0], max(1, t)))
+            top_row = np.zeros((board.shape[0], max(1, t)), dtype=int)
             board = np.append(top_row, board, axis=1)
+            theme_board = np.append(top_row, theme_board, axis=1)
             if hdc:
                 HeldDownCells[0] = (HeldDownCells[0][0], HeldDownCells[0][1] + 1 + t)
                 HeldDownCells[1] = (HeldDownCells[1][0], HeldDownCells[1][1] + 1 + t)
 
         if board.shape[1] < h and (AdjustBoardTuple[0] == 'Bottom' or b > 0):
-            bottom_row = np.zeros((board.shape[0], max(1, b)))
+            bottom_row = np.zeros((board.shape[0], max(1, b)), dtype=int)
             board = np.append(board, bottom_row, axis=1)
+            theme_board = np.append(theme_board, bottom_row, axis=1)
 
         if board.shape[0] < w and (AdjustBoardTuple[0] == 'Left' or l > 0):
             if l % 2 == 1 or AdjustBoardTuple[0] == 'Left':
                 EvenOrOdd ^= 1
 
-            left_column = np.zeros((max(1, l), board.shape[1]))
+            left_column = np.zeros((max(1, l), board.shape[1]), dtype=int)
             board = np.append(left_column, board, axis=0)
+            theme_board = np.append(left_column, theme_board, axis=0)
             if hdc:
                 HeldDownCells[0] = (HeldDownCells[0][0] + 1 + l, HeldDownCells[0][1])
                 HeldDownCells[1] = (HeldDownCells[1][0] + 1 + l, HeldDownCells[1][1])
 
         if board.shape[0] < w and (AdjustBoardTuple[0] == 'Right' or r > 0):
-            right_column = np.zeros((max(1, r), board.shape[1]))
+            right_column = np.zeros((max(1, r), board.shape[1]), dtype=int)
             board = np.append(board, right_column, axis=0)
+            theme_board = np.append(theme_board, right_column, axis=0)
 
     else:
         if board.shape[1] > 1:
             if AdjustBoardTuple[0] == 'Top':
                 EvenOrOdd ^= 1
                 board = board[:, 1:]
+                theme_board = theme_board[:, 1:]
                 if hdc:
                     HeldDownCells[0] = (HeldDownCells[0][0], max(HeldDownCells[0][1] - 1, 0))
                     HeldDownCells[1] = (HeldDownCells[1][0], max(HeldDownCells[1][1] - 1, 0))
             elif AdjustBoardTuple[0] == 'Bottom':
                 board = board[:, :-1]
+                theme_board = theme_board[:, :-1]
                 if hdc:
                     HeldDownCells[0] = (HeldDownCells[0][0], min(HeldDownCells[0][1], board.shape[1] - 1))
                     HeldDownCells[1] = (HeldDownCells[1][0], min(HeldDownCells[1][1], board.shape[1] - 1))
@@ -472,11 +518,13 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
             if AdjustBoardTuple[0] == 'Left':
                 EvenOrOdd ^= 1
                 board = board[1:, :]
+                theme_board = theme_board[1:, :]
                 if hdc:
                     HeldDownCells[0] = (max(HeldDownCells[0][0] - 1, 0), HeldDownCells[0][1])
                     HeldDownCells[1] = (max(HeldDownCells[1][0] - 1, 0), HeldDownCells[1][1])
             elif AdjustBoardTuple[0] == 'Right':
                 board = board[:-1, :]
+                theme_board = theme_board[:-1, :]
                 if hdc:
                     HeldDownCells[0] = (min(HeldDownCells[0][0], board.shape[0] - 1), HeldDownCells[0][1])
                     HeldDownCells[1] = (min(HeldDownCells[1][0], board.shape[0] - 1), HeldDownCells[1][1])
@@ -487,7 +535,7 @@ def adjustBoardDimensions(board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOd
     if initial_shape != board.shape:
         adjustments_made = True
 
-    return board, EvenOrOdd, adjustments_made
+    return board, theme_board, EvenOrOdd, adjustments_made
 
 def adjustBoardDimensionsFromDict(board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments):
     new_board = None
@@ -596,7 +644,7 @@ def getWidthOfElements(array):
 
     return total_width
 
-def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board):
+def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board, theme_board):
     save_path = str(save_path)
     save_path_dir = Path('/'.join(save_path.split('/')[:-1]))
     if os.path.exists(save_path_dir) is False:
@@ -608,7 +656,9 @@ def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board):
     metadata = PngInfo()
 
     board_string = convertArrayToString(board)
+    theme_board_string = convertArrayToString(theme_board)
     metadata.add_text("BoardArray", board_string)
+    metadata.add_text("ThemeBoardArray", theme_board_string)
     targetImage.save(save_path, pnginfo=metadata)
 
 def loadPNGWithBoardInfo(load_path, step_stack):
@@ -621,17 +671,22 @@ def loadPNGWithBoardInfo(load_path, step_stack):
 
     try:
         board_string = targetImage.text["BoardArray"]
+        board = convertStringToArray(board_string)
     except:
         return loaded, load_path + ' does not contain a board array'
 
-    board = convertStringToArray(board_string)
+    try:
+        theme_board_string = targetImage.text["ThemeBoardArray"]
+        theme_board = convertStringToArray(theme_board_string)
+    except:
+        theme_board = np.zeros(board.shape, dtype=int)
 
     step_stack.clear()
     step_stack.append(board)
 
     loaded = True
 
-    return loaded, 'Board loaded: ' + load_path
+    return loaded, 'Board loaded: ' + load_path, theme_board
 
 def convertArrayToString(array):
     return '\n'.join('\t'.join('%0.3f' % x for x in y) for y in array)
