@@ -6,6 +6,7 @@ import os
 import appdirs
 from pathlib import Path
 from collections import deque
+from get_shapes_dict import get_shapes_dict
 
 COLORCHANGED = pygame.event.custom_type()
 SETTINGSAPPLIED = pygame.event.custom_type()
@@ -36,6 +37,7 @@ def main():
     step_stack = deque([])
     running = True
 
+    Scale = None
     Continuous = True
     WasContinuous = True
     Update = True
@@ -74,7 +76,7 @@ def main():
     EvenOrOdd = 0
     time_delta_added = 0
 
-    themes = [[0, pygame.Color('Red')]]
+    themes = [[19, pygame.Color('Green'), pygame.Color('Blue'), pygame.Color('Purple'), pygame.Color('Red')]]
 
     save_location = None
     file_name_window = None
@@ -185,6 +187,10 @@ def main():
     step_stack.append(Board.copy())
 
     while running:
+        if Scale != helpers.getScale(Board, w, h):
+            Scale, Which = helpers.getScale(Board, w, h)
+            shapes_dict = get_shapes_dict(Scale, Board)
+
         time_delta = clock.tick(120) / 1000.0
         time_delta_stack.append(time_delta)
         if len(time_delta_stack) > 2000:
@@ -223,6 +229,12 @@ def main():
                     QuickSave = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_F6:
                     QuickLoad = True
+                elif event.type == pygame.KEYUP and event.key == pygame.K_LEFT:
+                    themes[0][0] = max(themes[0][0] - 1, 0)
+                    print('theme_int:', themes[0][0])
+                elif event.type == pygame.KEYUP and event.key == pygame.K_RIGHT:
+                    themes[0][0] = min(themes[0][0] + 1, 19)
+                    print('theme_int:', themes[0][0])
                 elif event.type == pygame.KEYUP and event.key == pygame.K_e:
                     if EditMode is False:
                         EditMode = True
@@ -670,7 +682,7 @@ def main():
             Load = False
 
         # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
-        CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
+        CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, shapes_dict, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)

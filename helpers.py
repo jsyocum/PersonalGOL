@@ -9,6 +9,7 @@ from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
 from pathlib import Path
+from get_shapes_dict import position_shape
 
 # Clears the console screen
 def cls():
@@ -47,7 +48,7 @@ def generateArray(height, width, likelihood):
 
     # Rotate the array. For some reason pygame.surfarray.make_surface flips it 90 degrees
     array = np.rot90(array)
-    theme_board = np.ones(array.shape, dtype=int)
+    theme_board = np.zeros(array.shape, dtype=int)
 
     return array, theme_board
 
@@ -112,32 +113,6 @@ def add_selection_to_color(color, select_color):
 
     return colors_added
 
-def get_polygon_corners(Scale, subi, i, theme_shape_int):
-    f_s = Scale  # Normally the scale is one pixel too long to add onto the top left position??
-
-    top_left = (subi * Scale, i * Scale)
-    top_right = (top_left[0] + f_s, top_left[1])
-    bottom_left = (top_left[0], top_left[1] + f_s)
-    bottom_right = (top_left[0] + f_s, top_left[1] + f_s)
-
-    top_center = (top_left[0] + f_s / 2, top_left[1])
-    bottom_center = (top_left[0] + f_s / 2, top_left[1] + f_s)
-    left_center = (top_left[0], top_left[1] + f_s / 2)
-    right_center = (top_left[0] + f_s, top_left[1] + f_s / 2)
-
-    match theme_shape_int:
-        case 0:  # square, handled in calling function
-            return None
-        case 1:  # 1/2 triangle, base at bottom left
-            corners = (top_left, bottom_left, bottom_right)
-        case 2:  # 1/2 triangle, base at top left
-            corners = (top_left, top_right, bottom_left)
-        case 3:  # 1/2 triangle, base at top right
-            corners = (top_left, top_right, bottom_right)
-        case 4:  # 1/2 triangle, base at bottom right
-            corners = (top_right, bottom_left, bottom_right)
-
-    return corners
 
 def get_random_theme_board(board):
     theme_board = np.zeros(board.shape, dtype=int)
@@ -152,7 +127,7 @@ def get_random_theme_board(board):
 # The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
-def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, EvenOrOdd, SelectedCells) -> pygame.surface:
+def complex_blit_array(board, theme_board, themes, shapes_dict, surf, EditMode, EditCheckerboardBrightness, EvenOrOdd, SelectedCells) -> pygame.surface:
     Scale = getScale(board, surf.get_width(), surf.get_height())[0]
     boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
     checkerboard_color = pygame.Color(EditCheckerboardBrightness, EditCheckerboardBrightness, EditCheckerboardBrightness)
@@ -184,16 +159,20 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
             if Square == 1:
                 theme_index = theme_board[subi][i]
                 theme = themes[theme_index]
-                theme_index, color = theme[0], theme[1]
-                color = add_selection_to_color(color, select_color)
 
-                if theme[0] == 0:
-                    square = pygame.Rect((subi * Scale, i * Scale), (Scale, Scale))
-                    pygame.draw.rect(boardSurf, color, square)
+                shapes = shapes_dict[theme[0]]
+                for s, shape in enumerate(shapes):
+                    color_for_shape = theme[s + 1]
+                    color_for_shape = add_selection_to_color(color_for_shape, select_color)
 
-                else:
-                    corners = get_polygon_corners(Scale, subi, i, theme[0])
-                    pygame.draw.polygon(boardSurf, color, corners)
+                    top_left = (subi * Scale, i * Scale)
+                    shape = position_shape(shape, top_left)
+                    if shape[1] is True:
+                        square = pygame.Rect(shape[0])
+                        pygame.draw.rect(boardSurf, color_for_shape, square)
+
+                    else:
+                        pygame.draw.polygon(boardSurf, color_for_shape, shape[0])
 
     blitBoardOnScreenEvenly(surf, boardSurf, EditMode)
 
@@ -692,7 +671,7 @@ def convertArrayToString(array):
     return '\n'.join('\t'.join('%0.3f' % x for x in y) for y in array)
 
 def convertStringToArray(string):
-    return np.array([[float(j) for j in i.split('\t')] for i in string.splitlines()])
+    return np.array([[int(j) for j in i.split('\t')] for i in string.splitlines()])
 
 def anyAliveElements(array):
     any = False
