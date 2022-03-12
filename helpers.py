@@ -202,6 +202,24 @@ def complex_blit_array(board, theme_board, themes, shapes_dict, surf, EditMode, 
 
     return boardSurf
 
+def get_example_themes(shapes_dict, theme_for_colors=None):
+    if theme_for_colors is None:
+        color_1 = pygame.Color(29, 125, 170)
+        color_2 = pygame.Color(29, 33, 170)
+        color_3 = pygame.Color(102, 29, 170)
+        color_4 = pygame.Color(142, 29, 170)
+    else:
+        color_1 = theme_for_colors[1]
+        color_2 = theme_for_colors[2]
+        color_3 = theme_for_colors[3]
+        color_4 = theme_for_colors[4]
+
+    example_themes = []
+    for p, pattern in enumerate(shapes_dict):
+        example_themes.append([p, color_1, color_2, color_3, color_4])
+
+    return example_themes
+
 def create_theme_surf(theme, diameter) -> pygame.surface:
     surf = pygame.Surface((diameter, diameter))
 

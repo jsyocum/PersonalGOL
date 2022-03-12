@@ -30,7 +30,7 @@ def main():
     surf = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     w = surf.get_width()
     h = surf.get_height()
-    manager = pygame_gui.UIManager((w, h), helpers.resource_path('LessDeadZoneButton.json'))
+    manager = pygame_gui.UIManager((w, h), helpers.resource_path('LessDeadZoneButton.json'), helpers.resource_path('InvisibleTextButton.json'))
 
     clock = pygame.time.Clock()
     time_delta_stack = deque([])
@@ -76,7 +76,7 @@ def main():
     EvenOrOdd = 0
     time_delta_added = 0
 
-    themes = [[19, pygame.Color('Green'), pygame.Color('Blue'), pygame.Color('Purple'), pygame.Color('Red')], [2, pygame.Color('Gray'), pygame.Color('Orange')]]
+    themes = [[19, pygame.Color('Green'), pygame.Color('Blue'), pygame.Color('Purple'), pygame.Color('Red')], [2, pygame.Color('Gray'), pygame.Color('Orange'), pygame.Color('Yellow'), pygame.Color('Brown')]]
 
     save_location = None
     file_name_window = None

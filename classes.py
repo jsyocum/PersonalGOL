@@ -6,7 +6,7 @@ from pygame_gui.core import ObjectID, UIElement, UIContainer
 from pygame_gui.core.interfaces import IContainerLikeInterface, IUIManagerInterface
 from pygame_gui.elements.ui_vertical_scroll_bar import UIVerticalScrollBar
 from pathlib import Path
-from typing import Union, Dict, Tuple, List
+from typing import Union, Dict, Tuple, List, Iterable
 from pathvalidate import sanitize_filename, sanitize_filepath
 from copy import deepcopy
 
@@ -656,12 +656,23 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.set_minimum_dimensions((400, 600))
         self.previousWindowDimensions = None
 
+        self.themes = themes
+        self.previous_themes = None
+        self.theme_index = None
+
         # self.sc = WrappedScrollContainer(relative_rect=pygame.Rect((0, 0), (self.get_real_width(), self.get_real_height())), manager=manager, container=self, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
-        self.header_text = pygame_gui.elements.ui_label.UILabel(text='Select a theme to edit or create a new one:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.header_text = pygame_gui.elements.UILabel(text='Select a theme to edit or create a new one:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
-        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 100), item_list=[], manager=manager, container=self, themes=themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
-        self.theme_list.set_list_item_height(diameter)
+        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 100), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
+        self.theme_list.set_list_item_height(diameter + 20)
+
+        self.choose_pattern_text = pygame_gui.elements.UILabel(text='Change pattern:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.header_text})
+
+        self.example_patterns_dict = helpers.get_shapes_dict(50)
+        patterns = helpers.get_example_themes(self.example_patterns_dict)
+        self.patterns_selection_list = theme_dropdown_list(options_list=[], themes=patterns, starting_option='', relative_rect=pygame.Rect(10, 5, 100, 30), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
+        self.patterns_selection_list.disable()
 
         self.create_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.theme_list.get_relative_rect().width, 30)), text='Create', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.theme_list})
 
@@ -680,6 +691,19 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         """
         handled = super().process_event(event)
 
+        if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list:
+            self.patterns_selection_list.enable()
+            self.theme_index = event.index
+
+            patterns = helpers.get_example_themes(self.example_patterns_dict, self.themes[self.theme_index])
+            self.patterns_selection_list.set_options_list(patterns)
+
+        if event.type == pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION and event.ui_element == self.theme_list and self.theme_list.get_single_selection() is None:
+            self.patterns_selection_list.disable()
+
+        if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.ui_element == self.patterns_selection_list:
+            self.themes[self.theme_index][0] = event.theme[0]
+
         # if (self.get_real_width(), self.get_real_height()) != self.previousWindowDimensions:
         #     # height_of_others = helpers.getHeightOfElements([self.header_text, self.create_button])
         #     # self.theme_list.set_dimensions((self.theme_list.get_relative_rect().width, self.get_real_height() - height_of_others))
@@ -689,6 +713,11 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         #
         #     self.previousWindowDimensions = (self, self.get_real_height())
 
+        if self.themes != self.previous_themes:
+            self.theme_list.rebuild_themes(self.themes)
+            self.patterns_selection_list.disable()
+            self.previous_themes = deepcopy(self.themes)
+
         return handled
 
     def get_real_width(self):
@@ -696,6 +725,317 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
     def get_real_height(self):
         return self.get_relative_rect().height - 58
+
+class theme_dropdown_list(pygame_gui.elements.UIDropDownMenu):
+    def __init__(self,
+                 options_list: List[str],
+                 starting_option: str,
+                 relative_rect: pygame.Rect,
+                 manager: IUIManagerInterface,
+                 container: Union[IContainerLikeInterface, None] = None,
+                 parent_element: UIElement = None,
+                 object_id: Union[ObjectID, str, None] = None,
+                 expansion_height_limit: Union[int, None] = None,
+                 anchors: Dict[str, str] = None,
+                 visible: int = 1,
+                 themes: [] = [],
+                 selected_theme: [] = []
+                 ):
+
+        super().__init__(relative_rect=relative_rect, manager=manager, container=container,
+                         # starting_height=0,
+                         options_list=options_list,
+                         starting_option=starting_option,
+                         anchors=anchors,
+                         visible=visible)
+
+        self._create_valid_ids(container=container,
+                               parent_element=parent_element,
+                               object_id=object_id,
+                               element_id='drop_down_menu')
+
+        self.selected_theme = selected_theme
+
+        self.options_list = helpers.convert_themes_array_to_strings(themes)
+        self.selected_option = starting_option
+        self.open_button_width = 20
+
+        self.expansion_height_limit = expansion_height_limit
+
+        self.border_width = None
+        self.shadow_width = None
+
+        self.background_colour = None
+        self.border_colour = None
+        self.disabled_background_colour = None
+        self.disabled_border_colour = None
+
+        self.shape = "rectangle"
+        self.shape_corner_radius = 2
+
+        self.current_state = None
+        self.background_rect = None
+        self.expand_direction = None
+
+        self.menu_states = {}
+        self.rebuild_from_changed_theme_data()
+        self.menu_states = {'closed': pygame_gui.elements.ui_drop_down_menu.UIClosedDropDownState(self,
+                                                                                                  self.selected_option,
+                                                                                                  self.background_rect,
+                                                                                                  self.open_button_width,
+                                                                                                  self.expand_direction,
+                                                                                                  self.ui_manager,
+                                                                                                  self,
+                                                                                                  self.element_ids,
+                                                                                                  self.object_ids,
+                                                                                                  self.visible),
+                            'expanded': theme_expanded_dropdown_list(self,
+                                                                     self.options_list,
+                                                                     self.selected_option,
+                                                                     self.background_rect,
+                                                                     self.open_button_width,
+                                                                     self.expand_direction,
+                                                                     self.ui_manager,
+                                                                     self,
+                                                                     self.element_ids,
+                                                                     self.object_ids
+                                                                     )}
+        self.current_state = self.menu_states['closed']
+        self.current_state.start(should_rebuild=True)
+
+    def set_options_list(self, themes):
+        self.options_list = helpers.convert_themes_array_to_strings(themes)
+
+        self.menu_states = {'closed': theme_closed_dropdown_list(self,
+                                                                 self.selected_option,
+                                                                 self.background_rect,
+                                                                 self.open_button_width,
+                                                                 self.expand_direction,
+                                                                 self.ui_manager,
+                                                                 self,
+                                                                 self.element_ids,
+                                                                 self.object_ids,
+                                                                 self.visible),
+                            'expanded': theme_expanded_dropdown_list(self,
+                                                                     self.options_list,
+                                                                     self.selected_option,
+                                                                     self.background_rect,
+                                                                     self.open_button_width,
+                                                                     self.expand_direction,
+                                                                     self.ui_manager,
+                                                                     self,
+                                                                     self.element_ids,
+                                                                     self.object_ids
+                                                                     )}
+
+    def process_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handles various interactions with the drop down menu by passing them along to the
+        active state.
+
+        :param event: The event to process.
+
+        :return: Return True if we want to consume this event so it is not passed on to the
+                 rest of the UI.
+
+        """
+        consumed_event = False
+        if self.is_enabled:
+            consumed_event = self.current_state.process_event(event)
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_object_id in ['#theme_manager_window.drop_down_menu.#selected_option', '#theme_manager_window.drop_down_menu.#expand_button'] and self.is_enabled is True:
+            self.current_state.should_transition = True
+
+        return consumed_event
+
+class theme_expanded_dropdown_list(pygame_gui.elements.ui_drop_down_menu.UIExpandedDropDownState):
+    def start(self, should_rebuild: bool = True):
+        """
+        Called each time we enter the expanded state. It creates the necessary elements, the
+        selected option, all the other available options and the close button.
+
+        """
+        self.should_transition = False
+
+        border_and_shadow = (self.drop_down_menu_ui.shadow_width +
+                             self.drop_down_menu_ui.border_width)
+        self.active_buttons = []
+        self.selected_option_button = pygame_gui.elements.UIButton(pygame.Rect((border_and_shadow, border_and_shadow),
+                                                                               (self.base_position_rect.width - self.close_button_width,
+                                                                                self.base_position_rect.height)),
+                                                                   '',
+                                                                   self.ui_manager,
+                                                                   self.ui_container,
+                                                                   starting_height=2,
+                                                                   parent_element=self.drop_down_menu_ui,
+                                                                   object_id=ObjectID('#selected_option', None))
+        self.drop_down_menu_ui.join_focus_sets(self.selected_option_button)
+        self.active_buttons.append(self.selected_option_button)
+
+        expand_button_symbol = '▼'
+
+        list_object_id = '#drop_down_options_list'
+        list_object_ids = self.drop_down_menu_ui.object_ids[:]
+        list_object_ids.append(list_object_id)
+        list_class_ids = self.drop_down_menu_ui.class_ids[:]
+        list_class_ids.append(None)
+        list_element_ids = self.drop_down_menu_ui.element_ids[:]
+        list_element_ids.append('selection_list')
+
+        final_ids = self.ui_manager.get_theme().build_all_combined_ids(list_element_ids,
+                                                                       list_class_ids,
+                                                                       list_object_ids)
+
+        self._calculate_options_list_sizes(final_ids)
+        if self.expand_direction is not None:
+            if self.expand_direction == 'up':
+                expand_button_symbol = '▲'
+
+                if self.drop_down_menu_ui.expansion_height_limit is None:
+                    self.drop_down_menu_ui.expansion_height_limit = self.base_position_rect.top
+
+                self.options_list_height = min(self.options_list_height,
+                                               self.drop_down_menu_ui.expansion_height_limit)
+
+                self.option_list_y_pos = self.base_position_rect.top - self.options_list_height
+
+            elif self.expand_direction == 'down':
+                expand_button_symbol = '▼'
+
+                if self.drop_down_menu_ui.expansion_height_limit is None:
+                    height_limit = (self.drop_down_menu_ui.ui_container.relative_rect.height -
+                                    self.base_position_rect.bottom)
+                    self.drop_down_menu_ui.expansion_height_limit = height_limit
+
+                self.options_list_height = min(self.options_list_height,
+                                               self.drop_down_menu_ui.expansion_height_limit)
+
+                self.option_list_y_pos = self.base_position_rect.bottom
+
+        if self.close_button_width > 0:
+            close_button_x = (border_and_shadow +
+                              self.base_position_rect.width -
+                              self.close_button_width)
+
+            self.close_button = pygame_gui.elements.UIButton(pygame.Rect((close_button_x,
+                                                                          border_and_shadow),
+                                                                         (self.close_button_width,
+                                                                          self.base_position_rect.height)),
+                                                             expand_button_symbol,
+                                                             self.ui_manager,
+                                                             self.ui_container,
+                                                             starting_height=2,
+                                                             parent_element=self.drop_down_menu_ui,
+                                                             object_id='#expand_button')
+            self.drop_down_menu_ui.join_focus_sets(self.close_button)
+            self.active_buttons.append(self.close_button)
+        # list_rect = pygame.Rect(self.drop_down_menu_ui.relative_rect.left,
+        #                         self.option_list_y_pos,
+        #                         (self.drop_down_menu_ui.relative_rect.width -
+        #                          self.close_button_width),
+        #                         self.options_list_height)
+        list_rect = pygame.Rect(self.drop_down_menu_ui.relative_rect.left,
+                                self.option_list_y_pos,
+                                100,
+                                self.options_list_height)
+
+        self.options_selection_list = theme_selection_list(list_rect,
+                                                           starting_height=3,
+                                                           item_list=[],
+                                                           allow_double_clicks=False,
+                                                           manager=self.ui_manager,
+                                                           parent_element=self.drop_down_menu_ui,
+                                                           container=self.drop_down_menu_ui.ui_container,
+                                                           anchors=self.drop_down_menu_ui.anchors,
+                                                           object_id='#drop_down_options_list',
+                                                           themes=helpers.convert_strings_to_themes_array(self.options_list),
+                                                           diameter=50)
+        self.options_selection_list.set_list_item_height(70)
+        self.drop_down_menu_ui.join_focus_sets(self.options_selection_list)
+
+        if should_rebuild:
+            self.rebuild()
+
+    def process_event(self, event: pygame.event.Event) -> bool:
+        """
+        Processes events for the closed state of the drop down.
+
+        :param event: The event to process.
+
+        :return: Return True if we want to consume this event so it is not passed on to the
+                 rest of the UI.
+
+        """
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element in self.active_buttons:
+            self.should_transition = True
+
+        if (event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and
+                event.ui_element == self.options_selection_list):
+            selection = self.options_selection_list.get_single_selection()
+            self.drop_down_menu_ui.selected_option = selection
+            self.should_transition = True
+
+            # new event
+            event_data = {'text': self.drop_down_menu_ui.selected_option,
+                          'theme': event.theme,
+                          'index': event.index,
+                          'ui_element': self.drop_down_menu_ui,
+                          'ui_object_id': self.drop_down_menu_ui.most_specific_combined_id}
+            pygame.event.post(pygame.event.Event(pygame_gui.UI_DROP_DOWN_MENU_CHANGED, event_data))
+
+        return False  # don't consume any events
+
+class theme_closed_dropdown_list(pygame_gui.elements.ui_drop_down_menu.UIClosedDropDownState):
+    def start(self, should_rebuild: bool = True):
+        """
+        Called each time we enter the closed state. It creates the necessary elements, the
+        selected option and the open button.
+        """
+        if should_rebuild:
+            self.rebuild()
+
+        self.should_transition = False
+
+        border_and_shadow = (self.drop_down_menu_ui.shadow_width +
+                             self.drop_down_menu_ui.border_width)
+        self.active_buttons = []
+        self.selected_option_button = pygame_gui.elements.UIButton(pygame.Rect((border_and_shadow, border_and_shadow),
+                                                                               (self.base_position_rect.width -
+                                                                                self.open_button_width,
+                                                                                self.base_position_rect.height)),
+                                                                   '',
+                                                                   self.ui_manager,
+                                                                   self.ui_container,
+                                                                   starting_height=2,
+                                                                   parent_element=self.drop_down_menu_ui,
+                                                                   object_id='#selected_option',
+                                                                   visible=self.visible)
+        self.drop_down_menu_ui.join_focus_sets(self.selected_option_button)
+        self.active_buttons.append(self.selected_option_button)
+
+        if self.open_button_width > 0:
+            open_button_x = (border_and_shadow +
+                             self.base_position_rect.width -
+                             self.open_button_width)
+            expand_button_symbol = '▼'
+            if self.expand_direction is not None:
+                if self.expand_direction == 'up':
+                    expand_button_symbol = '▲'
+                elif self.expand_direction == 'down':
+                    expand_button_symbol = '▼'
+            self.open_button = pygame_gui.elements.UIButton(pygame.Rect((open_button_x,
+                                                                         border_and_shadow),
+                                                                        (self.open_button_width,
+                                                                         self.base_position_rect.height)),
+                                                            expand_button_symbol,
+                                                            self.ui_manager,
+                                                            self.ui_container,
+                                                            starting_height=2,
+                                                            parent_element=self.drop_down_menu_ui,
+                                                            object_id='#expand_button',
+                                                            visible=self.visible)
+            self.drop_down_menu_ui.join_focus_sets(self.open_button)
+            self.active_buttons.append(self.open_button)
 
 class theme_selection_list(pygame_gui.elements.UISelectionList):
     def __init__(self,
@@ -716,7 +1056,7 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                      List[str], List[Tuple[str, str]],   # Multi-selection lists
                      None] = None,
                  themes: [] = [],
-                 diameter: int = 50,
+                 diameter: int = 50
                  ):
 
         super().__init__(relative_rect=relative_rect,
@@ -798,23 +1138,32 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                                               manager=self.ui_manager,
                                               parent_element=self,
                                               container=self.item_list_container,
-                                              object_id=ObjectID(object_id=item['object_id'],
-                                                                 class_id='@selection_list_item'),
                                               allow_double_clicks=self.allow_double_clicks,
                                               anchors={'left': 'left',
                                                        'right': 'right',
                                                        'top': 'top',
                                                        'bottom': 'top'})
 
-                        theme = helpers.convert_string_to_theme(item['text'])
-                        theme_surf = helpers.create_theme_surf(theme, self.diameter)
-                        button.set_theme_image(theme_surf)
-                        button.set_text('')
-
                         self.join_focus_sets(button)
                         item['button_element'] = button
+                        item['button_element'].index = index
+
                         if item['selected']:
                             item['button_element'].select()
+
+                    if type(item['button_element']) != theme_button:
+                        print(type(item['button_element']))
+                        old_button_focus_set = item['button_element']._focus_set
+                        item['button_element'] = theme_button(relative_rect=item['button_element'].get_relative_rect(),
+                                                              text=item['button_element'].text,
+                                                              manager=item['button_element'].ui_manager,
+                                                              parent_element=self,
+                                                              container=item['button_element'].ui_container,
+                                                              allow_double_clicks=self.allow_double_clicks)
+
+                        item['button_element'].index = index
+                        item['button_element']._focus_set = old_button_focus_set
+
                 else:
                     if item['button_element'] is not None:
                         item['button_element'].kill()
@@ -909,7 +1258,7 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                          'bottom': 'bottom'})
             self.join_focus_sets(self.item_list_container)
         item_y_height = 0
-        for item in self.item_list:
+        for index, item in enumerate(self.item_list):
             if item_y_height <= self.item_list_container.relative_rect.height:
                 button_rect = pygame.Rect(0, item_y_height,
                                           self.item_list_container.relative_rect.width,
@@ -919,27 +1268,186 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                                                       manager=self.ui_manager,
                                                       parent_element=self,
                                                       container=self.item_list_container,
-                                                      object_id=ObjectID(
-                                                          object_id=item['object_id'],
-                                                          class_id='@selection_list_item'),
                                                       allow_double_clicks=self.allow_double_clicks,
                                                       anchors={'left': 'left',
                                                                'right': 'right',
                                                                'top': 'top',
                                                                'bottom': 'top'})
 
-                theme = helpers.convert_string_to_theme(item['text'])
-                theme_surf = helpers.create_theme_surf(theme, self.diameter)
-                item['button_element'].set_theme_image(theme_surf)
-                item['button_element'].set_text('')
+                item['button_element'].index = index
 
                 self.join_focus_sets(item['button_element'])
                 item_y_height += self.list_item_height
             else:
                 break
 
+    def process_event(self, event: pygame.event.Event) -> bool:
+        """
+        Can be overridden, also handle resizing windows. Gives UI Windows access to pygame events.
+        Currently just blocks mouse click down events from passing through the panel.
+
+        :param event: The event to process.
+
+        :return: Should return True if this element makes use of this event.
+
+        """
+        if self.is_enabled and (
+                event.type in [pygame_gui.UI_BUTTON_PRESSED, pygame_gui.UI_BUTTON_DOUBLE_CLICKED]
+                and event.ui_element in self.item_list_container.elements):
+            for item in self.item_list:
+                if item['button_element'] == event.ui_element:
+                    if event.type == pygame_gui.UI_BUTTON_DOUBLE_CLICKED:
+                        # new event
+                        event_data = {
+                            'text': event.ui_element.text,
+                            'theme': event.ui_element.theme,
+                            'index': event.ui_element.index,
+                            'ui_element': self,
+                            'ui_object_id': self.most_specific_combined_id}
+                        pygame.event.post(
+                            pygame.event.Event(pygame_gui.UI_SELECTION_LIST_DOUBLE_CLICKED_SELECTION,
+                                               event_data))
+                    else:
+                        if item['selected']:
+                            item['selected'] = False
+                            event.ui_element.unselect()
+
+                            # new event
+                            event_data = {'text': event.ui_element.text,
+                                          'theme': event.ui_element.theme,
+                                          'index': event.ui_element.index,
+                                          'ui_element': self,
+                                          'ui_object_id': self.most_specific_combined_id}
+                            pygame.event.post(
+                                pygame.event.Event(pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION, event_data))
+
+                        else:
+                            item['selected'] = True
+                            event.ui_element.select()
+
+                            # new event
+                            event_data = {'text': event.ui_element.text,
+                                          'theme': event.ui_element.theme,
+                                          'index': event.ui_element.index,
+                                          'ui_element': self,
+                                          'ui_object_id': self.most_specific_combined_id}
+                            pygame.event.post(pygame.event.Event(pygame_gui.UI_SELECTION_LIST_NEW_SELECTION,
+                                                                 event_data))
+
+                elif not self.allow_multi_select:
+                    if item['selected']:
+                        item['selected'] = False
+                        if item['button_element'] is not None:
+                            item['button_element'].unselect()
+
+                            # new event
+                            event_data = {'text': item['text'],
+                                          'theme': event.ui_element.theme,
+                                          'index': event.ui_element.index,
+                                          'ui_element': self,
+                                          'ui_object_id': self.most_specific_combined_id}
+                            drop_down_changed_event = pygame.event.Event(
+                                pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION, event_data)
+                            pygame.event.post(drop_down_changed_event)
+
+        return False  # Don't consume any events
+
+    def rebuild_themes(self, themes):
+        self._raw_item_list = helpers.convert_themes_array_to_strings(themes)
+        self.rebuild()
+
 class theme_button(pygame_gui.elements.UIButton):
-    def set_theme_image(self, theme_surf):
+    def __init__(self, relative_rect: pygame.Rect,
+                 text: str,
+                 manager: IUIManagerInterface,
+                 container: Union[IContainerLikeInterface, None] = None,
+                 tool_tip_text: Union[str, None] = None,
+                 starting_height: int = 1,
+                 parent_element: UIElement = None,
+                 object_id: Union[ObjectID, str, None] = None,
+                 anchors: Dict[str, str] = None,
+                 allow_double_clicks: bool = False,
+                 generate_click_events_from: Iterable[int] = frozenset([pygame.BUTTON_LEFT]),
+                 visible: int = 1
+                 ):
+
+        super().__init__(relative_rect=relative_rect, manager=manager, container=container, text=text,
+                         starting_height=starting_height,
+                         # layer_thickness=1,
+                         anchors=anchors,
+                         visible=visible)
+
+        self._create_valid_ids(container=container,
+                               parent_element=parent_element,
+                               object_id=object_id,
+                               element_id='button')
+
+        self.text = ''
+
+        self.dynamic_width = False
+        self.dynamic_height = False
+        self.dynamic_dimensions_orig_top_left = relative_rect.topleft
+        # support for an optional 'tool tip' element attached to this button
+        self.tool_tip_text = tool_tip_text
+        self.tool_tip = None
+        self.ui_root_container = self.ui_manager.get_root_container()
+
+        # Some different states our button can be in, could use a state machine for this
+        # if we wanted.
+        self.held = False
+        self.pressed = False
+        self.is_selected = False
+        # Used to check button pressed without going through pygame.Event system
+        self.pressed_event = False
+
+        # time the hovering
+        self.hover_time = 0.0
+
+        # timer for double clicks
+        self.last_click_button = None
+        self.allow_double_clicks = allow_double_clicks
+        self.double_click_timer = self.ui_manager.get_double_click_time() + 1.0
+
+        self.generate_click_events_from = generate_click_events_from
+
+        self.text_surface = None
+        self.aligned_text_rect = None
+
+        self.set_image(None)
+
+        # default range at which we 'let go' of a button
+        self.hold_range = (0, 0)
+
+        # initialise theme parameters
+        self.colours = {}
+
+        self.font = None
+
+        self.normal_image = None
+        self.hovered_image = None
+        self.selected_image = None
+        self.disabled_image = None
+
+        self.tool_tip_delay = 1.0
+
+        self.text_horiz_alignment = 'center'
+        self.text_vert_alignment = 'center'
+        self.text_horiz_alignment_padding = 0
+        self.text_vert_alignment_padding = 0
+        self.text_horiz_alignment_method = 'rect'
+        self.shape = 'rectangle'
+        self.text_shadow_size = 0
+        self.text_shadow_offset = (0, 0)
+
+        self.state_transitions = {}
+
+        self.rebuild_from_changed_theme_data()
+
+        self.theme = helpers.convert_string_to_theme(text)
+        self.set_theme_image()
+
+    def set_theme_image(self):
+        theme_surf = helpers.create_theme_surf(self.theme, self.get_relative_rect().width - 20)
         self.normal_image = theme_surf
 
         surf_overlay = pygame.Surface(theme_surf.get_size(), pygame.SRCALPHA)
