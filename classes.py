@@ -649,13 +649,53 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         super().__init__(rect=rect, manager=manager,
                          window_display_title=window_title,
                          object_id=object_id,
-                         resizable=False,
+                         resizable=True,
                          visible=visible)
 
         self.set_dimensions((width, height))
+        self.set_minimum_dimensions((400, 600))
+        self.previousWindowDimensions = None
 
-        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, 300), item_list=[], manager=manager, container=self, themes=themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        # self.sc = WrappedScrollContainer(relative_rect=pygame.Rect((0, 0), (self.get_real_width(), self.get_real_height())), manager=manager, container=self, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
+
+        self.header_text = pygame_gui.elements.ui_label.UILabel(text='Select a theme to edit or create a new one:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+
+        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 100), item_list=[], manager=manager, container=self, themes=themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
         self.theme_list.set_list_item_height(diameter)
+
+        self.create_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (self.theme_list.get_relative_rect().width, 30)), text='Create', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.theme_list})
+
+        self.all_height_references = [self.header_text, self.theme_list, self.create_button]
+
+    def process_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handles events that this UI element is interested in. There are a lot of buttons in the
+        file dialog.
+
+        :param event: The pygame Event to process.
+
+        :return: True if event is consumed by this element and should not be passed on to other
+                 elements.
+
+        """
+        handled = super().process_event(event)
+
+        # if (self.get_real_width(), self.get_real_height()) != self.previousWindowDimensions:
+        #     # height_of_others = helpers.getHeightOfElements([self.header_text, self.create_button])
+        #     # self.theme_list.set_dimensions((self.theme_list.get_relative_rect().width, self.get_real_height() - height_of_others))
+        #
+        #     # self.height_total = helpers.getHeightOfElements(self.all_height_references)
+        #     # self.sc.set_scrollable_area_dimensions((self.get_real_width(), self.get_real_height()))
+        #
+        #     self.previousWindowDimensions = (self, self.get_real_height())
+
+        return handled
+
+    def get_real_width(self):
+        return self.get_relative_rect().width - 30
+
+    def get_real_height(self):
+        return self.get_relative_rect().height - 58
 
 class theme_selection_list(pygame_gui.elements.UISelectionList):
     def __init__(self,
@@ -897,11 +937,6 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                 item_y_height += self.list_item_height
             else:
                 break
-
-    # def rebuild_from_changed_theme_data(self, diameter):
-    #     super().rebuild_from_changed_theme_data()
-    #     self.diameter = diameter
-    #     self.list_item_height = diameter
 
 class theme_button(pygame_gui.elements.UIButton):
     def set_theme_image(self, theme_surf):

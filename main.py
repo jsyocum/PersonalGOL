@@ -163,7 +163,7 @@ def main():
     action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
     action_window.kill()
 
-    theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, themes=themes, diameter=75)
+    theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 595, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, diameter=75)
     theme_manager_window.kill()
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
@@ -357,7 +357,7 @@ def main():
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_theme_manager_button and show_theme_manager_button.text == 'Show theme manager':
                 show_theme_manager_button.set_text('Hide theme manager')
-                theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, themes=themes, diameter=75)
+                theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 595, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, diameter=75)
 
                 if show_controls_button.text == 'Hide controls':
                     show_controls_button.set_text('Show controls')
