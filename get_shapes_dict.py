@@ -12,7 +12,7 @@ def position_shape(shape, top_left):
 
     return positioned_shape
 
-def get_shapes_dict(Scale, board):
+def get_shapes_dict(Scale):
     top_left = (0, 0)
     top_right = (top_left[0] + Scale, top_left[1])
     bottom_left = (top_left[0], top_left[1] + Scale)

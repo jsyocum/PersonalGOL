@@ -2,10 +2,11 @@ import re
 import helpers
 import pygame
 import pygame_gui
-from pygame_gui.core import ObjectID
-from pygame_gui.core.interfaces import IUIManagerInterface
+from pygame_gui.core import ObjectID, UIElement, UIContainer
+from pygame_gui.core.interfaces import IContainerLikeInterface, IUIManagerInterface
+from pygame_gui.elements.ui_vertical_scroll_bar import UIVerticalScrollBar
 from pathlib import Path
-from typing import Union
+from typing import Union, Dict, Tuple, List
 from pathvalidate import sanitize_filename, sanitize_filepath
 from copy import deepcopy
 
@@ -628,3 +629,300 @@ class ActionWindow(pygame_gui.elements.UIWindow):
 
     def get_height(self):
         return self.get_relative_rect().height - 58
+
+class ThemeManagerWindow(pygame_gui.elements.UIWindow):
+    def __init__(self,
+                 rect: pygame.Rect,
+                 manager: IUIManagerInterface,
+                 window_title: str = 'Theme Manager',
+                 object_id: Union[ObjectID, str] = ObjectID('#theme_manager_window', None),
+                 visible: int = 1,
+                 width: int = 400,
+                 height: int = 600,
+                 w: int = 0,  # Pixel width of pygame window
+                 h: int = 0,  # Pixel height of pygame window
+                 config_dict: {} = {},
+                 themes: [] = [],
+                 diameter: int = 50
+                 ):
+
+        super().__init__(rect=rect, manager=manager,
+                         window_display_title=window_title,
+                         object_id=object_id,
+                         resizable=False,
+                         visible=visible)
+
+        self.set_dimensions((width, height))
+
+        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, 300), item_list=[], manager=manager, container=self, themes=themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.theme_list.set_list_item_height(diameter)
+
+class theme_selection_list(pygame_gui.elements.UISelectionList):
+    def __init__(self,
+                 relative_rect: pygame.Rect,
+                 item_list: Union[List[str], List[Tuple[str, str]]],
+                 manager: IUIManagerInterface,
+                 *,
+                 allow_multi_select: bool = False,
+                 allow_double_clicks: bool = True,
+                 container: Union[IContainerLikeInterface, None] = None,
+                 starting_height: int = 1,
+                 parent_element: UIElement = None,
+                 object_id: Union[ObjectID, str, None] = None,
+                 anchors: Dict[str, str] = None,
+                 visible: int = 1,
+                 default_selection: Union[
+                     str, Tuple[str, str],               # Single-selection lists
+                     List[str], List[Tuple[str, str]],   # Multi-selection lists
+                     None] = None,
+                 themes: [] = [],
+                 diameter: int = 50,
+                 ):
+
+        super().__init__(relative_rect=relative_rect,
+                         manager=manager,
+                         container=container,
+                         starting_height=starting_height,
+                         # layer_thickness=1,
+                         item_list=item_list,
+                         anchors=anchors,
+                         visible=visible)
+
+        self._create_valid_ids(container=container,
+                               parent_element=parent_element,
+                               object_id=object_id,
+                               element_id='selection_list')
+
+        self.diameter = diameter
+
+        self._parent_element = parent_element
+        self.list_and_scroll_bar_container = None
+        self.item_list_container = None
+        self._raw_item_list = helpers.convert_themes_array_to_strings(themes)
+        self._default_selection = default_selection
+        self.item_list = []
+        self.allow_multi_select = allow_multi_select
+        self.allow_double_clicks = allow_double_clicks
+
+        self.background_colour = None
+        self.border_colour = None
+        self.background_image = None
+        self.border_width = 1
+        self.shadow_width = 2
+        self.shape_corner_radius = 0
+        self.shape = 'rectangle'
+
+        self.scroll_bar = None
+        self.lowest_list_pos = 0
+        self.total_height_of_list = 0
+        self.list_item_height = diameter
+        self.scroll_bar_width = 20
+        self.current_scroll_bar_width = 0
+
+        self.rebuild_from_changed_theme_data()
+
+
+        if self._default_selection is not None:
+            self.set_default_selection()
+
+    def set_list_item_height(self, h):
+        self.list_item_height = h
+        self.rebuild()
+
+    def update(self, time_delta: float):
+        """
+        A method called every update cycle of our application. Designed to be overridden by
+        derived classes but also has a little functionality to make sure the panel's layer
+        'thickness' is accurate and to handle window resizing.
+
+        :param time_delta: time passed in seconds between one call to this method and the next.
+
+        """
+        super().update(time_delta)
+
+        if self.scroll_bar is not None and self.scroll_bar.check_has_moved_recently():
+            list_height_adjustment = min(self.scroll_bar.start_percentage * self.total_height_of_list,
+                                         self.lowest_list_pos)
+            for index, item in enumerate(self.item_list):
+                new_height = int((index * self.list_item_height) - list_height_adjustment)
+                if (-self.list_item_height <= new_height <= self.item_list_container.relative_rect.height):
+                    if item['button_element'] is not None:
+                        item['button_element'].set_relative_position((0, new_height))
+                    else:
+                        button_rect = pygame.Rect(0,
+                                                  new_height,
+                                                  self.item_list_container.relative_rect.width,
+                                                  self.list_item_height)
+                        button = theme_button(relative_rect=button_rect,
+                                              text=item['text'],
+                                              manager=self.ui_manager,
+                                              parent_element=self,
+                                              container=self.item_list_container,
+                                              object_id=ObjectID(object_id=item['object_id'],
+                                                                 class_id='@selection_list_item'),
+                                              allow_double_clicks=self.allow_double_clicks,
+                                              anchors={'left': 'left',
+                                                       'right': 'right',
+                                                       'top': 'top',
+                                                       'bottom': 'top'})
+
+                        theme = helpers.convert_string_to_theme(item['text'])
+                        theme_surf = helpers.create_theme_surf(theme, self.diameter)
+                        button.set_theme_image(theme_surf)
+                        button.set_text('')
+
+                        self.join_focus_sets(button)
+                        item['button_element'] = button
+                        if item['selected']:
+                            item['button_element'].select()
+                else:
+                    if item['button_element'] is not None:
+                        item['button_element'].kill()
+                        item['button_element'] = None
+
+    def set_item_list(self, new_item_list: Union[List[str], List[Tuple[str, str]]]):
+        """
+        Set a new string list (or tuple of strings & ids list) as the item list for this selection
+        list. This will change what is displayed in the list.
+
+        Tuples should be arranged like so:
+
+         (list_text, object_ID)
+
+         - list_text: displayed in the UI
+         - object_ID: used for theming and events
+
+        :param new_item_list: The new list to switch to. Can be a list of strings or tuples.
+
+        """
+        self._raw_item_list = new_item_list
+        self.item_list = []  # type: List[Dict]
+        for new_item in new_item_list:
+            if isinstance(new_item, str):
+                new_item_list_item = {'text': new_item,
+                                      'button_element': None,
+                                      'selected': False,
+                                      'object_id': '#item_list_item'}
+            elif isinstance(new_item, tuple):
+                new_item_list_item = {'text': new_item[0],
+                                      'button_element': None,
+                                      'selected': False,
+                                      'object_id': new_item[1]}
+            else:
+                raise ValueError('Invalid item list')
+
+            self.item_list.append(new_item_list_item)
+
+        self.total_height_of_list = self.list_item_height * len(self.item_list)
+        self.lowest_list_pos = (self.total_height_of_list - self.list_and_scroll_bar_container.relative_rect.height)
+        inner_visible_area_height = self.list_and_scroll_bar_container.relative_rect.height
+
+        if self.total_height_of_list > inner_visible_area_height:
+            # we need a scroll bar
+            self.current_scroll_bar_width = self.scroll_bar_width
+            percentage_visible = inner_visible_area_height / max(self.total_height_of_list, 1)
+
+            if self.scroll_bar is not None:
+                self.scroll_bar.reset_scroll_position()
+                self.scroll_bar.set_visible_percentage(percentage_visible)
+                self.scroll_bar.start_percentage = 0
+            else:
+                self.scroll_bar = UIVerticalScrollBar(pygame.Rect(-self.scroll_bar_width,
+                                                                  0,
+                                                                  self.scroll_bar_width,
+                                                                  inner_visible_area_height),
+                                                      visible_percentage=percentage_visible,
+                                                      manager=self.ui_manager,
+                                                      parent_element=self,
+                                                      container=self.list_and_scroll_bar_container,
+                                                      anchors={'left': 'right',
+                                                               'right': 'right',
+                                                               'top': 'top',
+                                                               'bottom': 'bottom'})
+                self.join_focus_sets(self.scroll_bar)
+        else:
+            if self.scroll_bar is not None:
+                self.scroll_bar.kill()
+                self.scroll_bar = None
+            self.current_scroll_bar_width = 0
+
+        # create button list container
+        if self.item_list_container is not None:
+            self.item_list_container.clear()
+            if (self.item_list_container.relative_rect.width != (self.list_and_scroll_bar_container.relative_rect.width - self.current_scroll_bar_width)):
+                container_dimensions = (self.list_and_scroll_bar_container.relative_rect.width - self.current_scroll_bar_width,
+                                        self.list_and_scroll_bar_container.relative_rect.height)
+                self.item_list_container.set_dimensions(container_dimensions)
+        else:
+            self.item_list_container = UIContainer(
+                pygame.Rect(0, 0,
+                            self.list_and_scroll_bar_container.relative_rect.width - self.current_scroll_bar_width,
+                            self.list_and_scroll_bar_container.relative_rect.height),
+                manager=self.ui_manager,
+                starting_height=0,
+                parent_element=self,
+                container=self.list_and_scroll_bar_container,
+                object_id='#item_list_container',
+                anchors={'left': 'left',
+                         'right': 'right',
+                         'top': 'top',
+                         'bottom': 'bottom'})
+            self.join_focus_sets(self.item_list_container)
+        item_y_height = 0
+        for item in self.item_list:
+            if item_y_height <= self.item_list_container.relative_rect.height:
+                button_rect = pygame.Rect(0, item_y_height,
+                                          self.item_list_container.relative_rect.width,
+                                          self.list_item_height)
+                item['button_element'] = theme_button(relative_rect=button_rect,
+                                                      text=item['text'],
+                                                      manager=self.ui_manager,
+                                                      parent_element=self,
+                                                      container=self.item_list_container,
+                                                      object_id=ObjectID(
+                                                          object_id=item['object_id'],
+                                                          class_id='@selection_list_item'),
+                                                      allow_double_clicks=self.allow_double_clicks,
+                                                      anchors={'left': 'left',
+                                                               'right': 'right',
+                                                               'top': 'top',
+                                                               'bottom': 'top'})
+
+                theme = helpers.convert_string_to_theme(item['text'])
+                theme_surf = helpers.create_theme_surf(theme, self.diameter)
+                item['button_element'].set_theme_image(theme_surf)
+                item['button_element'].set_text('')
+
+                self.join_focus_sets(item['button_element'])
+                item_y_height += self.list_item_height
+            else:
+                break
+
+    # def rebuild_from_changed_theme_data(self, diameter):
+    #     super().rebuild_from_changed_theme_data()
+    #     self.diameter = diameter
+    #     self.list_item_height = diameter
+
+class theme_button(pygame_gui.elements.UIButton):
+    def set_theme_image(self, theme_surf):
+        self.normal_image = theme_surf
+
+        surf_overlay = pygame.Surface(theme_surf.get_size(), pygame.SRCALPHA)
+        surf_overlay.fill((255, 255, 255, 70))
+        hovered_surf = theme_surf.copy()
+        hovered_surf.blit(surf_overlay, (0, 0))
+        self.hovered_image = hovered_surf
+
+        surf_overlay = pygame.Surface(theme_surf.get_size(), pygame.SRCALPHA)
+        surf_overlay.fill((0, 0, 0, 200))
+        disabled_surf = theme_surf.copy()
+        disabled_surf.blit(surf_overlay, (0, 0))
+        self.disabled_image = disabled_surf
+
+        surf_overlay = pygame.Surface(theme_surf.get_size(), pygame.SRCALPHA)
+        surf_overlay.fill((27, 69, 109, 150))
+        selected_surf = theme_surf.copy()
+        selected_surf.blit(surf_overlay, (0, 0))
+        self.selected_image = selected_surf
+
+        self.rebuild()

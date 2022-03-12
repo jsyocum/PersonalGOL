@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import os
+import ast
 import pygame
 import totalsize
 import math
@@ -9,7 +10,7 @@ from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
 from pathlib import Path
-from get_shapes_dict import position_shape
+from get_shapes_dict import position_shape, get_shapes_dict
 
 # Clears the console screen
 def cls():
@@ -36,6 +37,29 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+
+def convert_themes_array_to_strings(array):
+    strings_array = []
+    for theme in array:
+        strings_array.append(str(theme))
+
+    return strings_array
+
+def convert_strings_to_themes_array(strings_array):
+    array = []
+    for string in strings_array:
+        theme = convert_string_to_theme(string)
+        array.append(theme)
+
+    return array
+
+def convert_string_to_theme(string):
+    theme = ast.literal_eval(string)
+    for i, color in enumerate(theme):
+        if i > 0:
+            theme[i] = pygame.Color(color)
+
+    return theme
 
 # Generates a matrix of the specified height and width. Randomizes each cell as either 0 or 1.
 def generateArray(height, width, likelihood):
@@ -177,6 +201,35 @@ def complex_blit_array(board, theme_board, themes, shapes_dict, surf, EditMode, 
     blitBoardOnScreenEvenly(surf, boardSurf, EditMode)
 
     return boardSurf
+
+def create_theme_surf(theme, diameter) -> pygame.surface:
+    surf = pygame.Surface((diameter, diameter))
+
+    shapes_dict = get_shapes_dict(diameter)
+    shapes = shapes_dict[theme[0]]
+    for s, shape in enumerate(shapes):
+        color_for_shape = theme[s + 1]
+
+        if shape[1] is True:
+            square = pygame.Rect(shape[0])
+            pygame.draw.rect(surf, color_for_shape, square)
+
+        else:
+            pygame.draw.polygon(surf, color_for_shape, shape[0])
+
+    return surf
+
+def save_theme_surf_png(surf, theme_path, theme_index):
+    if os.path.exists(theme_path) is not True:
+        return None
+
+    save_path = Path(str(theme_path) + '/' + str(theme_index) + '.png')
+    pygame.image.save(surf, save_path)
+
+def create_and_save_themes(themes, diameter, theme_path):
+    for i, theme in enumerate(themes):
+        surf = create_theme_surf(theme, diameter)
+        save_theme_surf_png(surf, theme_path, i)
 
 def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[], EvenOrOdd=0):
     if RandomColorByPixel is False:

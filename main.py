@@ -1,5 +1,5 @@
 import helpers
-from classes import SettingsWindow, PNGFilePicker, ChooseFileNameWindow, ActionWindow
+from classes import SettingsWindow, PNGFilePicker, ChooseFileNameWindow, ActionWindow, ThemeManagerWindow
 import pygame
 import pygame_gui
 import os
@@ -76,7 +76,7 @@ def main():
     EvenOrOdd = 0
     time_delta_added = 0
 
-    themes = [[19, pygame.Color('Green'), pygame.Color('Blue'), pygame.Color('Purple'), pygame.Color('Red')]]
+    themes = [[19, pygame.Color('Green'), pygame.Color('Blue'), pygame.Color('Purple'), pygame.Color('Red')], [2, pygame.Color('Gray'), pygame.Color('Orange')]]
 
     save_location = None
     file_name_window = None
@@ -84,6 +84,7 @@ def main():
     config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
     config_file_path = Path(config_file_dir + '/config.ini')
     print('Config file path:', config_file_path)
+
 
     SavePath = ''
     quick_save_path = Path(config_file_dir + '/Patterns/quick_save.png')
@@ -99,6 +100,29 @@ def main():
         SavePath = DefaultSavePath
     else:
         SavePath = BackupSavePath
+
+
+    # theme_path = ''
+    # default_theme_path = Path(config_file_dir + '/Themes')
+    # if os.path.exists(default_theme_path) is not True:
+    #     default_theme_path.mkdir(parents=True, exist_ok=True)
+    #
+    # if os.path.exists(default_theme_path) is True:
+    #     theme_path = default_theme_path
+    # else:
+    #     backup_theme_path = os.path.expanduser("~/Desktop")
+    #     if os.path.exists(backup_theme_path) is not True:
+    #         backup_theme_path = Path(backup_theme_path.removesuffix("/Desktop") + "/OneDrive/Desktop")
+    #
+    #     backup_theme_path_full = Path(backup_theme_path + '/PersonalGOL Themes')
+    #     if os.path.exists(backup_theme_path_full) is not True:
+    #         backup_theme_path_full.mkdir(parents=True, exist_ok=True)
+    #
+    #     if os.path.exists(backup_theme_path_full) is True:
+    #         theme_path = backup_theme_path_full
+    #     else:
+    #         theme_path = backup_theme_path
+
 
     DefaultScale = 20
     DefaultMaxFps = 18
@@ -139,16 +163,19 @@ def main():
     action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
     action_window.kill()
 
+    theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, themes=themes, diameter=75)
+    theme_manager_window.kill()
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
     show_controls_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 50), (400, 50)), text='Show controls', manager=manager, visible=0)
     show_parameters_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 100), (400, 50)), text='Show settings', manager=manager, visible=0)
-    edit_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Enable edit mode (E)', manager=manager, visible=0)
-    save_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 200), (400, 50)), text='Save board', manager=manager, visible=0)
-    load_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 250), (400, 50)), text='Load board', manager=manager, visible=0)
-    quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 300), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
+    show_theme_manager_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 150), (400, 50)), text='Show theme manager', manager=manager, visible=0)
+    edit_mode_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 200), (400, 50)), text='Enable edit mode (E)', manager=manager, visible=0)
+    save_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 250), (400, 50)), text='Save board', manager=manager, visible=0)
+    load_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 300), (400, 50)), text='Load board', manager=manager, visible=0)
+    quit_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4 + 350), (400, 50)), text='Quit (F4)', manager=manager, visible=0)
 
-    all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, edit_mode_button, save_button, load_button, quit_game_button]
+    all_menu_buttons = [back_to_game_button, show_controls_button, show_parameters_button, show_theme_manager_button, edit_mode_button, save_button, load_button, quit_game_button]
 
     settings_window = SettingsWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, w=w, h=h, config_dict=config_dict, color=[color][0], COLORCHANGED=COLORCHANGED, SETTINGSAPPLIED=SETTINGSAPPLIED)
     settings_window.kill()
@@ -189,7 +216,7 @@ def main():
     while running:
         if Scale != helpers.getScale(Board, w, h):
             Scale, Which = helpers.getScale(Board, w, h)
-            shapes_dict = get_shapes_dict(Scale, Board)
+            shapes_dict = get_shapes_dict(Scale)
 
         time_delta = clock.tick(120) / 1000.0
         time_delta_stack.append(time_delta)
@@ -283,12 +310,10 @@ def main():
                 else:
                     Continuous = WasContinuous
 
-                    if SelectionBoxPresent is True:
-                        action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
-
                     action_window.show()
                     MenuOpen = CloseUIElements(all_menu_buttons)
                     settings_window.kill()
+                    theme_manager_window.kill()
 
                     if save_location is not None: save_location.kill()
                     if file_name_window is not None: file_name_window.kill()
@@ -303,6 +328,11 @@ def main():
 
                 if show_parameters_button.text == 'Hide settings':
                     show_parameters_button.set_text('Show settings')
+                    settings_window.kill()
+
+                if show_theme_manager_button.text == 'Hide theme manager':
+                    show_theme_manager_button.set_text('Show theme manager')
+                    theme_manager_window.kill()
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_controls_button:
                 show_controls_button.set_text('Show controls')
@@ -315,11 +345,32 @@ def main():
                 if show_controls_button.text == 'Hide controls':
                     show_controls_button.set_text('Show controls')
 
+                if show_theme_manager_button.text == 'Hide theme manager':
+                    show_theme_manager_button.set_text('Show theme manager')
+                    theme_manager_window.kill()
+
             elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_parameters_button:
                 settings_window.kill()
 
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == settings_window:
                 show_parameters_button.set_text('Show settings')
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_theme_manager_button and show_theme_manager_button.text == 'Show theme manager':
+                show_theme_manager_button.set_text('Hide theme manager')
+                theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, themes=themes, diameter=75)
+
+                if show_controls_button.text == 'Hide controls':
+                    show_controls_button.set_text('Show controls')
+
+                if show_parameters_button.text == 'Hide settings':
+                    show_parameters_button.set_text('Show settings')
+                    settings_window.kill()
+
+            elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_theme_manager_button:
+                theme_manager_window.kill()
+
+            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == theme_manager_window:
+                show_theme_manager_button.set_text('Show theme manager')
 
             if ((event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == edit_mode_button) or (MenuOpen is True and event.type == pygame.KEYUP and event.key == pygame.K_e and helpers.anyAliveElements(save_load_windows) is False)) and edit_mode_button.text == 'Enable edit mode (E)':
                 edit_mode_button.set_text('Disable edit mode (E)')
