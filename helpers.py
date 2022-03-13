@@ -220,6 +220,16 @@ def get_example_themes(shapes_dict, theme_for_colors=None):
 
     return example_themes
 
+def generate_random_color():
+    return pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
+
+def generate_random_theme(size_of_patterns, max_colors):
+    theme = [np.random.randint(0, size_of_patterns)]
+    for i in range(max_colors):
+        theme.append(generate_random_color())
+
+    return theme
+
 def create_theme_surf(theme, diameter) -> pygame.surface:
     surf = pygame.Surface((diameter, diameter))
 
@@ -252,7 +262,7 @@ def create_and_save_themes(themes, diameter, theme_path):
 def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[], EvenOrOdd=0):
     if RandomColorByPixel is False:
         if RandomColor is True:
-            color = pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
+            color = generate_random_color()
 
         colorAsInt = surf.map_rgb(color)
         coloredBoard = Board.copy() * colorAsInt
@@ -260,7 +270,7 @@ def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), Ra
         coloredBoard = Board.copy()
         for subi, SubArray in enumerate(coloredBoard):
             for i, Pixel in enumerate(SubArray):
-                coloredBoard[subi][i] = coloredBoard[subi][i] * surf.map_rgb(pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)))
+                coloredBoard[subi][i] = coloredBoard[subi][i] * surf.map_rgb(generate_random_color())
 
     if EditMode is True:
         for subi, SubArray in enumerate(coloredBoard):
