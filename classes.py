@@ -1,3 +1,4 @@
+import os
 import re
 import helpers
 import pygame
@@ -637,12 +638,14 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                  window_title: str = 'Theme Manager',
                  object_id: Union[ObjectID, str] = ObjectID('#theme_manager_window', None),
                  visible: int = 1,
-                 width: int = 400,
+                 width: int = 330,
                  height: int = 600,
                  w: int = 0,  # Pixel width of pygame window
                  h: int = 0,  # Pixel height of pygame window
                  config_dict: {} = {},
                  themes: [] = [],
+                 themes_file_path: str = '',
+                 config_file_dir: str = '',
                  diameter: int = 50
                  ):
 
@@ -653,7 +656,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                          visible=visible)
 
         self.set_dimensions((width, height))
-        self.set_minimum_dimensions((400, 600))
+        self.set_minimum_dimensions((330, 600))
         self.previousWindowDimensions = None
         self.w = w
         self.h = h
@@ -662,12 +665,15 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.previous_themes = None
         self.theme_index = 0
 
+        self.themes_file_path = themes_file_path
+        self.config_file_dir = config_file_dir
+
         # self.sc = WrappedScrollContainer(relative_rect=pygame.Rect((0, 0), (self.get_real_width(), self.get_real_height())), manager=manager, container=self, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
-        self.header_text = pygame_gui.elements.UILabel(text='Select a theme to edit or create a new one:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.header_text = pygame_gui.elements.UILabel(text='Select a theme to edit:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
 
-        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 130), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
+        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 195), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
         self.theme_list.set_list_item_height(diameter + 20)
 
 
@@ -707,14 +713,19 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.color_picker_killed = False
 
 
-        button_width = self.theme_list.get_relative_rect().width / 2 - 5
-        self.create_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 10), (button_width, 30)), text='+', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.theme_list})
-        self.delete_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 10), (button_width, 30)), text='-', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.create_button, 'top_target': self.theme_list})
+        button_width = self.theme_list.get_relative_rect().width / 2 - 2.5
+        self.create_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (button_width, 30)), text='+', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.theme_list})
+        self.delete_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 5), (button_width, 30)), text='-', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.create_button, 'top_target': self.theme_list})
         self.move_up_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (button_width, 30)), text='▲', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.create_button})
         self.move_down_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 5), (button_width, 30)), text='▼', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.move_up_button, 'top_target': self.create_button})
+        self.move_top_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (button_width, 30)), text='▲▲', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.move_up_button})
+        self.move_bottom_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 5), (button_width, 30)), text='▼▼', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.move_top_button, 'top_target': self.move_up_button})
 
-        self.all_theme_list_buttons = [self.create_button, self.delete_button, self.move_up_button, self.move_down_button]
+        self.all_theme_list_buttons = [self.create_button, self.delete_button, self.move_up_button, self.move_down_button, self.move_top_button, self.move_bottom_button]
         for button in self.all_theme_list_buttons[1:]: button.disable()
+
+        self.save_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (button_width, 30)), text='Save', manager=manager, container=self, object_id=pygame_gui.core.ObjectID(object_id='#less_dead_zone_button', class_id=None), anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.move_top_button})
+        self.load_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((5, 5), (button_width, 30)), text='Load', manager=manager, container=self, object_id=pygame_gui.core.ObjectID(object_id='#less_dead_zone_button', class_id=None), anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.save_button, 'top_target': self.move_top_button})
 
 
         self.all_height_references = [self.header_text, self.theme_list, self.create_button]
@@ -748,9 +759,11 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
             if self.theme_index == 0:
                 self.move_up_button.disable()
+                self.move_top_button.disable()
 
             if self.theme_index == len(self.themes) - 1:
                 self.move_down_button.disable()
+                self.move_bottom_button.disable()
 
             patterns = helpers.get_example_themes(self.example_patterns_dict, self.themes[self.theme_index])
             self.patterns_selection_list.set_options_list(patterns)
@@ -776,6 +789,26 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             self.themes.pop(self.theme_index)
             self.themes.insert(self.theme_index + 1, theme)
 
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_top_button:
+            theme = deepcopy(self.themes[self.theme_index])
+            self.themes.pop(self.theme_index)
+            self.themes.insert(0, theme)
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_bottom_button:
+            theme = deepcopy(self.themes[self.theme_index])
+            self.themes.pop(self.theme_index)
+            self.themes.insert(len(self.themes), theme)
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.save_button:
+            helpers.write_themes_file(self.config_file_dir, self.themes_file_path, self.themes)
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.load_button:
+            if os.path.isfile(self.themes_file_path) is True:
+                self.themes.clear()
+                for theme in helpers.read_themes_file(self.themes_file_path, 19):
+                    self.themes.append(theme)
+                print(self.themes)
+
         # Drop down menu stuff
         if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.ui_element == self.patterns_selection_list:
             self.themes[self.theme_index][0] = event.theme[0]
@@ -788,9 +821,11 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             self.theme_color_picker_dialog = pygame_gui.windows.UIColourPickerDialog(pygame.Rect((self.w / 2 - 80, self.h / 2 + 25), (420, 400)), manager=self.ui_manager, initial_colour=color, window_title='Pick a color...')
             for element in self.all_pick_color_buttons: element.disable()
 
-        if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == self.theme_color_picker_dialog and self.color_picker_killed is False:
-            self.themes[self.theme_index][self.color_button_pressed] = self.previous_color
-            for element in self.all_pick_color_buttons: element.enable()
+        try:
+            if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == self.theme_color_picker_dialog and self.color_picker_killed is False:
+                self.themes[self.theme_index][self.color_button_pressed] = self.previous_color
+                for element in self.all_pick_color_buttons: element.enable()
+        except: pass
 
         if self.color_picker_killed is True:
             for element in self.all_pick_color_buttons: element.enable()

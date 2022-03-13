@@ -809,6 +809,54 @@ def writeDict(config_file_path, config_dict):
 
     return config
 
+def read_themes_file(themes_file_path, max_patterns):
+    if os.path.isfile(themes_file_path) is not True:
+        pattern = 9
+        color_1 = pygame.Color(29, 125, 170)
+        color_2 = pygame.Color(29, 33, 170)
+        color_3 = pygame.Color(102, 29, 170)
+        color_4 = pygame.Color(142, 29, 170)
+
+        return [[pattern, color_1, color_2, color_3, color_4]]
+
+    themes_file = ConfigParser()
+    themes_file.read(themes_file_path)
+
+    themes = []
+    for section in themes_file.sections():
+        theme = []
+        theme.append(min(abs(themes_file.getint(section, 'Pattern')), max_patterns))
+        colors = themes_file.options(section)[1:]
+        for color in colors:
+            theme.append(pygame.Color(ast.literal_eval(themes_file.get(section, color))))
+
+        themes.append(theme)
+
+    return themes
+
+def write_themes_file(config_file_dir, themes_file_path, themes):
+    if os.path.exists(config_file_dir) is not True:
+        Path(config_file_dir).mkdir(parents=True, exist_ok=True)
+
+    if os.path.isfile(themes_file_path):
+        os.remove(themes_file_path)
+
+    themes_file = ConfigParser()
+    themes_file.read(themes_file_path)
+
+    for t, theme in enumerate(themes):
+        section_name = 'theme ' + str(t + 1)
+        themes_file.add_section(section_name)
+        themes_file.set(section_name, 'pattern', str(theme[0]))
+        for i, color in enumerate(theme[1:]):
+            friendly_color = (color.r, color.g, color.b)
+            themes_file.set(section_name, 'color ' + str(i + 1), str(friendly_color))
+
+    with open(themes_file_path, 'w') as f:
+        themes_file.write(f)
+
+    print('Wrote themes file:', themes_file_path)
+
 def quick_post(self, data_name, data, event_id):
     event_data = {data_name: data,
                   'ui_element': self,

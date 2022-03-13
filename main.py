@@ -17,7 +17,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: minor changes or bug fixes
-    version = '1.1.1'
+    version = '1.2.0'
 
     return version
 
@@ -76,14 +76,14 @@ def main():
     EvenOrOdd = 0
     time_delta_added = 0
 
-    themes = [[19, pygame.Color('Green'), pygame.Color('Blue'), pygame.Color('Purple'), pygame.Color('Red')], [2, pygame.Color('Gray'), pygame.Color('Orange'), pygame.Color('Yellow'), pygame.Color('Brown')]]
-
     save_location = None
     file_name_window = None
 
     config_file_dir = appdirs.user_data_dir("PersonalGOL", "jsyocum")
     config_file_path = Path(config_file_dir + '/config.ini')
+    themes_file_path = Path(config_file_dir + '/themes.ini')
     print('Config file path:', config_file_path)
+    print('Themes file path:', themes_file_path)
 
 
     SavePath = ''
@@ -100,28 +100,6 @@ def main():
         SavePath = DefaultSavePath
     else:
         SavePath = BackupSavePath
-
-
-    # theme_path = ''
-    # default_theme_path = Path(config_file_dir + '/Themes')
-    # if os.path.exists(default_theme_path) is not True:
-    #     default_theme_path.mkdir(parents=True, exist_ok=True)
-    #
-    # if os.path.exists(default_theme_path) is True:
-    #     theme_path = default_theme_path
-    # else:
-    #     backup_theme_path = os.path.expanduser("~/Desktop")
-    #     if os.path.exists(backup_theme_path) is not True:
-    #         backup_theme_path = Path(backup_theme_path.removesuffix("/Desktop") + "/OneDrive/Desktop")
-    #
-    #     backup_theme_path_full = Path(backup_theme_path + '/PersonalGOL Themes')
-    #     if os.path.exists(backup_theme_path_full) is not True:
-    #         backup_theme_path_full.mkdir(parents=True, exist_ok=True)
-    #
-    #     if os.path.exists(backup_theme_path_full) is True:
-    #         theme_path = backup_theme_path_full
-    #     else:
-    #         theme_path = backup_theme_path
 
 
     DefaultScale = 20
@@ -159,11 +137,13 @@ def main():
     helpers.initialConfigCheck(config_file_dir, config_file_path, config_dict)
     color = pygame.Color(config_dict["R"][0], config_dict["G"][0], config_dict["B"][0])
 
+    themes = helpers.read_themes_file(themes_file_path, 9)
+
 
     action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
     action_window.kill()
 
-    theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 595, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, diameter=75)
+    theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, config_file_dir=config_file_dir, themes_file_path=themes_file_path, diameter=75)
     theme_manager_window.kill()
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
@@ -357,7 +337,7 @@ def main():
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_theme_manager_button and show_theme_manager_button.text == 'Show theme manager':
                 show_theme_manager_button.set_text('Hide theme manager')
-                theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 595, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, diameter=75)
+                theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, config_file_dir=config_file_dir, themes_file_path=themes_file_path, diameter=75)
 
                 if show_controls_button.text == 'Hide controls':
                     show_controls_button.set_text('Show controls')
