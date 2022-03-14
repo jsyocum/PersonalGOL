@@ -704,7 +704,7 @@ def getWidthOfElements(array):
 
     return total_width
 
-def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board, theme_board):
+def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board, theme_board, themes):
     save_path = str(save_path)
     save_path_dir = Path('/'.join(save_path.split('/')[:-1]))
     if os.path.exists(save_path_dir) is False:
@@ -717,15 +717,19 @@ def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board, theme_board):
 
     board_string = convertArrayToString(board)
     theme_board_string = convertArrayToString(theme_board)
+    themes_string = convert_themes_array_to_strings(themes)
+
     metadata.add_text("BoardArray", board_string)
     metadata.add_text("ThemeBoardArray", theme_board_string)
+    metadata.add_text("ThemesArray", themes_string)
+
     targetImage.save(save_path, pnginfo=metadata)
 
-def loadPNGWithBoardInfo(load_path, step_stack):
+def loadPNGWithBoardInfo(load_path, step_stack, theme_board):
     load_path = str(load_path)
     loaded = False
     if load_path.endswith('.png') is False:
-        return loaded, load_path + ' is not a .png file'
+        return loaded, load_path + ' is not a .png file', theme_board
 
     targetImage = PngImageFile(load_path)
 
@@ -733,7 +737,7 @@ def loadPNGWithBoardInfo(load_path, step_stack):
         board_string = targetImage.text["BoardArray"]
         board = convertStringToArray(board_string)
     except:
-        return loaded, load_path + ' does not contain a board array'
+        return loaded, load_path + ' does not contain a board array', theme_board
 
     try:
         theme_board_string = targetImage.text["ThemeBoardArray"]
@@ -752,7 +756,7 @@ def convertArrayToString(array):
     return '\n'.join('\t'.join('%0.3f' % x for x in y) for y in array)
 
 def convertStringToArray(string):
-    return np.array([[int(j) for j in i.split('\t')] for i in string.splitlines()])
+    return np.array([[int(float(j)) for j in i.split('\t')] for i in string.splitlines()])
 
 def anyAliveElements(array):
     any = False

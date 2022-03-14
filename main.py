@@ -16,8 +16,8 @@ def get_version_number():
     # major.minor.patch
     # major: major changes, like a rewrite of the project
     # minor: new functionality
-    # patch: minor changes or bug fixes
-    version = '1.2.0'
+    # patch: small changes or bug fixes
+    version = '1.2.1'
 
     return version
 
@@ -685,7 +685,7 @@ def main():
         if QuickLoad is True:
             load_status_message = 'No quicksave exists to be loaded!'
             if os.path.exists(quick_save_path):
-                loaded, load_status_message, theme_board = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack)
+                loaded, load_status_message, theme_board = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, theme_board)
 
             if loaded is True:
                 Continuous = False
@@ -700,7 +700,7 @@ def main():
 
         if Load is True:
             load_status_message = ''
-            loaded, load_status_message, theme_board = helpers.loadPNGWithBoardInfo(load_path, step_stack)
+            loaded, load_status_message, theme_board = helpers.loadPNGWithBoardInfo(load_path, step_stack, theme_board)
             if loaded is True:
                 Continuous = False
                 WasContinuous = False

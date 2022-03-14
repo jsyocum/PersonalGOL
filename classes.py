@@ -664,6 +664,8 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.themes = themes
         self.previous_themes = None
         self.theme_index = 0
+        self.selected_index = -1
+        self.selected = False
 
         self.themes_file_path = themes_file_path
         self.config_file_dir = config_file_dir
@@ -744,7 +746,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         handled = super().process_event(event)
 
         # Theme list stuff
-        if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list:
+        if (event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list) or self.selected is True:
             try:
                 self.theme_color_picker_dialog.kill()
                 self.color_picker_killed = True
@@ -755,7 +757,9 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                 self.delete_button.disable()
 
             self.patterns_selection_list.enable()
-            self.theme_index = event.index
+
+            if self.selected is False:
+                self.theme_index = event.index
 
             if self.theme_index == 0:
                 self.move_up_button.disable()
@@ -768,6 +772,8 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             patterns = helpers.get_example_themes(self.example_patterns_dict, self.themes[self.theme_index])
             self.patterns_selection_list.set_options_list(patterns)
 
+            self.selected = False
+
         if event.type == pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION and event.ui_element == self.theme_list and self.theme_list.get_single_selection() is None:
             for button in self.all_theme_list_buttons[1:]: button.disable()
             self.patterns_selection_list.disable()
@@ -776,28 +782,40 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.create_button:
             self.themes.append(helpers.generate_random_theme(19, 4))
 
+            if self.theme_list.get_single_selection() is not None:
+                self.selected_index = self.theme_index
+
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.delete_button:
             self.themes.pop(self.theme_index)
+
+            if self.theme_index < len(self.themes):
+                self.selected_index = self.theme_index
+            else:
+                self.selected_index = self.theme_index - 1
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_up_button:
             theme = deepcopy(self.themes[self.theme_index])
             self.themes.pop(self.theme_index)
             self.themes.insert(self.theme_index - 1, theme)
+            self.selected_index = self.theme_index - 1
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_down_button:
             theme = deepcopy(self.themes[self.theme_index])
             self.themes.pop(self.theme_index)
             self.themes.insert(self.theme_index + 1, theme)
+            self.selected_index = self.theme_index + 1
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_top_button:
             theme = deepcopy(self.themes[self.theme_index])
             self.themes.pop(self.theme_index)
             self.themes.insert(0, theme)
+            self.selected_index = 0
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_bottom_button:
             theme = deepcopy(self.themes[self.theme_index])
             self.themes.pop(self.theme_index)
             self.themes.insert(len(self.themes), theme)
+            self.selected_index = len(self.themes) - 1
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.save_button:
             helpers.write_themes_file(self.config_file_dir, self.themes_file_path, self.themes)
@@ -807,7 +825,6 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                 self.themes.clear()
                 for theme in helpers.read_themes_file(self.themes_file_path, 19):
                     self.themes.append(theme)
-                print(self.themes)
 
         # Drop down menu stuff
         if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.ui_element == self.patterns_selection_list:
@@ -855,6 +872,14 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
         if self.themes != self.previous_themes:
             self.theme_list.rebuild_themes(self.themes)
+
+            if self.selected_index >= 0:
+                self.theme_list.item_list[self.selected_index]['selected'] = True
+                self.theme_list.item_list[self.selected_index]['button_element'].select()
+                self.theme_index = self.selected_index
+                self.selected_index = -1
+                self.selected = True
+
             self.previous_themes = deepcopy(self.themes)
 
             for button in self.all_theme_list_buttons[1:]: button.disable()
