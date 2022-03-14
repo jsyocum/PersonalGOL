@@ -30,7 +30,7 @@ def main():
     surf = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     w = surf.get_width()
     h = surf.get_height()
-    manager = pygame_gui.UIManager((w, h), helpers.resource_path('LessDeadZoneButton.json'))
+    manager = pygame_gui.UIManager((w, h), helpers.resource_path('CustomTheming.json'))
 
     clock = pygame.time.Clock()
     time_delta_stack = deque([])

@@ -675,7 +675,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.header_text = pygame_gui.elements.UILabel(text='Select a theme to edit:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
 
-        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 195), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
+        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 195), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, object_id=ObjectID("#95_selection_list", None), anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
         self.theme_list.set_list_item_height(diameter + 20)
 
 
@@ -819,6 +819,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.save_button:
             helpers.write_themes_file(self.config_file_dir, self.themes_file_path, self.themes)
+            self.theme_list.rebuild_and_set_scroll_bar_back()
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.load_button:
             if os.path.isfile(self.themes_file_path) is True:
@@ -875,7 +876,9 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
             if self.selected_index >= 0:
                 self.theme_list.item_list[self.selected_index]['selected'] = True
-                self.theme_list.item_list[self.selected_index]['button_element'].select()
+                if self.theme_list.item_list[self.selected_index]['button_element'] is not None:
+                    self.theme_list.item_list[self.selected_index]['button_element'].select()
+
                 self.theme_index = self.selected_index
                 self.selected_index = -1
                 self.selected = True
@@ -1266,6 +1269,12 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
         self.scroll_bar_width = 20
         self.current_scroll_bar_width = 0
 
+        self.selected_index = -1
+        self.special_rebuild = False
+        self.scroll_bar_start_pressed = False
+        self.scroll_top_start_pressed = False
+        self.scroll_bottom_start_pressed = False
+
         self.rebuild_from_changed_theme_data()
 
 
@@ -1287,7 +1296,8 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
         """
         super().update(time_delta)
 
-        if self.scroll_bar is not None and self.scroll_bar.check_has_moved_recently():
+        if self.scroll_bar is not None and (self.scroll_bar.check_has_moved_recently() or self.special_rebuild):
+            self.special_rebuild = False
             list_height_adjustment = min(self.scroll_bar.start_percentage * self.total_height_of_list,
                                          self.lowest_list_pos)
             for index, item in enumerate(self.item_list):
@@ -1295,6 +1305,9 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                 if (-self.list_item_height <= new_height <= self.item_list_container.relative_rect.height):
                     if item['button_element'] is not None:
                         item['button_element'].set_relative_position((0, new_height))
+                        if index == self.selected_index:
+                            item['selected'] = True
+                            item['button_element'].select()
                     else:
                         button_rect = pygame.Rect(0,
                                                   new_height,
@@ -1315,25 +1328,32 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                         item['button_element'] = button
                         item['button_element'].index = index
 
+                        if index == self.selected_index:
+                            item['selected'] = True
+
                         if item['selected']:
                             item['button_element'].select()
-
-                    if type(item['button_element']) != theme_button:
-                        old_button_focus_set = item['button_element']._focus_set
-                        item['button_element'] = theme_button(relative_rect=item['button_element'].get_relative_rect(),
-                                                              text=item['button_element'].text,
-                                                              manager=item['button_element'].ui_manager,
-                                                              parent_element=self,
-                                                              container=item['button_element'].ui_container,
-                                                              allow_double_clicks=self.allow_double_clicks)
-
-                        item['button_element'].index = index
-                        item['button_element']._focus_set = old_button_focus_set
 
                 else:
                     if item['button_element'] is not None:
                         item['button_element'].kill()
                         item['button_element'] = None
+
+                if item['button_element'] is not None and type(item['button_element']) != theme_button:
+                    old_button_focus_set = item['button_element']._focus_set
+                    item['button_element'] = theme_button(relative_rect=item['button_element'].get_relative_rect(),
+                                                          text=item['button_element'].text,
+                                                          manager=item['button_element'].ui_manager,
+                                                          parent_element=self,
+                                                          container=item['button_element'].ui_container,
+                                                          allow_double_clicks=self.allow_double_clicks)
+
+                    item['button_element'].index = index
+                    item['button_element']._focus_set = old_button_focus_set
+
+                    if index == self.selected_index:
+                        item['selected'] = True
+                        item['button_element'].select()
 
     def set_item_list(self, new_item_list: Union[List[str], List[Tuple[str, str]]]):
         """
@@ -1447,6 +1467,20 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
             else:
                 break
 
+    def rebuild_and_set_scroll_bar_back(self, manage_selected_index=True):
+        scroll_position = self.scroll_bar.scroll_position
+        self.special_rebuild = True
+        self.rebuild()
+        self.scroll_bar.scroll_position = scroll_position
+        self.scroll_bar.start_percentage = self.scroll_bar.scroll_position / self.scroll_bar.scrollable_height
+        self.scroll_bar.rebuild()
+        self.update(0)
+
+        if manage_selected_index is True and self.selected_index >= 0 and self.item_list[self.selected_index]['button_element'] is not None:
+            self.item_list[self.selected_index]['selected'] = True
+            self.item_list[self.selected_index]['button_element'].select()
+
+
     def process_event(self, event: pygame.event.Event) -> bool:
         """
         Can be overridden, also handle resizing windows. Gives UI Windows access to pygame events.
@@ -1475,6 +1509,7 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                                                event_data))
                     else:
                         if item['selected']:
+                            self.selected_index = -1
                             item['selected'] = False
                             event.ui_element.unselect()
 
@@ -1488,6 +1523,7 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                                 pygame.event.Event(pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION, event_data))
 
                         else:
+                            self.selected_index = event.ui_element.index
                             item['selected'] = True
                             event.ui_element.select()
 
@@ -1516,11 +1552,36 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                                 pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION, event_data)
                             pygame.event.post(drop_down_changed_event)
 
+
+        if self.scroll_bar.sliding_button.held is True:
+            self.scroll_bar_start_pressed = True
+
+        if self.scroll_bar.sliding_button.held is False and self.scroll_bar_start_pressed is True:
+            self.rebuild_and_set_scroll_bar_back()
+            self.scroll_bar_start_pressed = False
+
+
+        if self.scroll_bar.top_button.held is True:
+            self.scroll_top_start_pressed = True
+
+        if self.scroll_bar.top_button.held is False and self.scroll_top_start_pressed is True:
+            self.rebuild_and_set_scroll_bar_back()
+            self.scroll_top_start_pressed = False
+
+
+        if self.scroll_bar.bottom_button.held is True:
+            self.scroll_bottom_start_pressed = True
+
+        if self.scroll_bar.bottom_button.held is False and self.scroll_bottom_start_pressed is True:
+            self.rebuild_and_set_scroll_bar_back()
+            self.scroll_bottom_start_pressed = False
+
+
         return False  # Don't consume any events
 
     def rebuild_themes(self, themes):
         self._raw_item_list = helpers.convert_themes_array_to_strings(themes)
-        self.rebuild()
+        self.rebuild_and_set_scroll_bar_back(False)
 
 class theme_button(pygame_gui.elements.UIButton):
     def __init__(self, relative_rect: pygame.Rect,
