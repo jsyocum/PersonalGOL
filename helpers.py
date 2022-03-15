@@ -158,7 +158,7 @@ def add_selection_to_color(color, select_color):
 
 def get_random_theme_board(board):
     theme_board = np.zeros(board.shape, dtype=int)
-    chanceArray = range(0, 5)
+    chanceArray = range(5)
     for SubArray in theme_board:
         for i, cell in enumerate(SubArray):
             SubArray[i] = random.choice(chanceArray)
@@ -223,7 +223,7 @@ def get_example_themes(theme_for_colors=None):
         color_4 = theme_for_colors[4]
 
     example_themes = []
-    for int in range(0, get_max_patterns()):
+    for int in range(get_max_patterns() + 1):
         example_themes.append([int, color_1, color_2, color_3, color_4])
 
     return example_themes
@@ -231,9 +231,9 @@ def get_example_themes(theme_for_colors=None):
 def generate_random_color():
     return pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
 
-def generate_random_theme(size_of_patterns, max_colors):
-    theme = [np.random.randint(0, size_of_patterns)]
-    for i in range(max_colors):
+def generate_random_theme():
+    theme = [np.random.randint(0, get_max_patterns())]
+    for i in range(get_max_shapes()):
         theme.append(generate_random_color())
 
     return theme
@@ -853,7 +853,7 @@ def read_themes_file(themes_file_path):
                     except:
                         theme.append(generate_random_color())
             except:
-                for int in range(0, get_max_shapes()):
+                for int in range(get_max_shapes()):
                     theme.append(generate_random_color())
 
             themes.append(theme)

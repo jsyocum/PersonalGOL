@@ -182,10 +182,14 @@ def get_shape_points(pattern_int, tl, s):
             shape_points.append(((top_left, (Scale * 2 / 3, Scale / 2)), 'rectangle'))
             shape_points.append(((left_center(), (Scale * 2 / 3, Scale / 2)), 'rectangle'))
 
+        case 20:
+            shape_points.append(((top_right(), bottom_right(), left_center()), 'polygon'))
+            shape_points.append(((top_left, (Scale, Scale / 3)), 'rectangle'))
+
     return shape_points
 
 def get_max_patterns():
-    return 19
+    return 20
 
 def get_max_shapes():
     return 4
