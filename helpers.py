@@ -11,7 +11,7 @@ from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
 from pathlib import Path
-from get_shape_points import get_shape_points, get_max_patterns
+from get_shape_points import get_shape_points, get_max_patterns, get_max_shapes
 
 # Clears the console screen
 def cls():
@@ -46,6 +46,14 @@ def convert_themes_array_to_strings(array):
 
     return strings_array
 
+def convert_string_themes_array_to_real_array(string_array):
+    themes = ast.literal_eval(string_array)
+    themes[0] = ast.literal_eval(themes[0])
+    for theme in themes:
+        theme = convert_string_to_theme(theme)
+
+    return themes
+
 def convert_strings_to_themes_array(strings_array):
     array = []
     for string in strings_array:
@@ -55,7 +63,16 @@ def convert_strings_to_themes_array(strings_array):
     return array
 
 def convert_string_to_theme(string):
-    theme = ast.literal_eval(string)
+    if type(string) == str:
+        theme = ast.literal_eval(string)
+    else:
+        theme = string
+
+    theme = fix_colors_in_theme(theme)
+
+    return theme
+
+def fix_colors_in_theme(theme):
     for i, color in enumerate(theme):
         if i > 0:
             theme[i] = pygame.Color(color)
@@ -701,6 +718,7 @@ def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board, theme_board, themes
     board_string = convertArrayToString(board)
     theme_board_string = convertArrayToString(theme_board)
     themes_string = convert_themes_array_to_strings(themes)
+    themes_string = str(themes_string)
 
     metadata.add_text("BoardArray", board_string)
     metadata.add_text("ThemeBoardArray", theme_board_string)
@@ -708,11 +726,11 @@ def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board, theme_board, themes
 
     targetImage.save(save_path, pnginfo=metadata)
 
-def loadPNGWithBoardInfo(load_path, step_stack, theme_board):
+def loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes, load_themes=True):
     load_path = str(load_path)
     loaded = False
     if load_path.endswith('.png') is False:
-        return loaded, load_path + ' is not a .png file', theme_board
+        return loaded, load_path + ' is not a .png file', theme_board, themes
 
     targetImage = PngImageFile(load_path)
 
@@ -720,7 +738,7 @@ def loadPNGWithBoardInfo(load_path, step_stack, theme_board):
         board_string = targetImage.text["BoardArray"]
         board = convertStringToArray(board_string)
     except:
-        return loaded, load_path + ' does not contain a board array', theme_board
+        return loaded, load_path + ' does not contain a board array', theme_board, themes
 
     try:
         theme_board_string = targetImage.text["ThemeBoardArray"]
@@ -728,12 +746,19 @@ def loadPNGWithBoardInfo(load_path, step_stack, theme_board):
     except:
         theme_board = np.zeros(board.shape, dtype=int)
 
+    if load_themes is True:
+        try:
+            themes_string = targetImage.text["ThemesArray"]
+            themes = convert_string_themes_array_to_real_array(themes_string)
+        except:
+            print('No themes found in board metadata.')
+
     step_stack.clear()
     step_stack.append(board)
 
     loaded = True
 
-    return loaded, 'Board loaded: ' + load_path, theme_board
+    return loaded, 'Board loaded: ' + load_path, theme_board, themes
 
 def convertArrayToString(array):
     return '\n'.join('\t'.join('%0.3f' % x for x in y) for y in array)
@@ -797,27 +822,43 @@ def writeDict(config_file_path, config_dict):
     return config
 
 def read_themes_file(themes_file_path):
+    pattern = 9
+    color_1 = pygame.Color(29, 125, 170)
+    color_2 = pygame.Color(29, 33, 170)
+    color_3 = pygame.Color(102, 29, 170)
+    color_4 = pygame.Color(142, 29, 170)
+    default_theme = [[pattern, color_1, color_2, color_3, color_4]]
+
     if os.path.isfile(themes_file_path) is not True:
-        pattern = 9
-        color_1 = pygame.Color(29, 125, 170)
-        color_2 = pygame.Color(29, 33, 170)
-        color_3 = pygame.Color(102, 29, 170)
-        color_4 = pygame.Color(142, 29, 170)
+        return default_theme
 
-        return [[pattern, color_1, color_2, color_3, color_4]]
+    try:
+        themes_file = ConfigParser()
+        themes_file.read(themes_file_path)
 
-    themes_file = ConfigParser()
-    themes_file.read(themes_file_path)
+        themes = []
+        for section in themes_file.sections():
+            theme = []
 
-    themes = []
-    for section in themes_file.sections():
-        theme = []
-        theme.append(min(abs(themes_file.getint(section, 'Pattern')), get_max_patterns()))
-        colors = themes_file.options(section)[1:]
-        for color in colors:
-            theme.append(pygame.Color(ast.literal_eval(themes_file.get(section, color))))
+            try:
+                theme.append(min(abs(themes_file.getint(section, 'Pattern')), get_max_patterns()))
+            except:
+                theme.append(np.randint(0, get_max_patterns()))
 
-        themes.append(theme)
+            try:
+                colors = themes_file.options(section)[1:]
+                for color in colors:
+                    try:
+                        theme.append(pygame.Color(ast.literal_eval(themes_file.get(section, color))))
+                    except:
+                        theme.append(generate_random_color())
+            except:
+                for int in range(0, get_max_shapes()):
+                    theme.append(generate_random_color())
+
+            themes.append(theme)
+    except:
+        return default_theme
 
     return themes
 

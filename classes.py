@@ -712,6 +712,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.all_color_previews = [self.color_preview_1, self.color_preview_2, self.color_preview_3, self.color_preview_4]
         self.all_pick_color_buttons = [self.pick_color_button_1, self.pick_color_button_2, self.pick_color_button_3, self.pick_color_button_4]
         self.color_picker_killed = False
+        self.kill_color_picker = False
 
 
         button_width = self.theme_list.get_relative_rect().width / 2 - 2.5
@@ -744,13 +745,16 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         """
         handled = super().process_event(event)
 
-        # Theme list stuff
-        if (event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list) or self.selected is True:
+        if self.kill_color_picker is True:
+            self.kill_color_picker = False
+
             try:
                 self.theme_color_picker_dialog.kill()
                 self.color_picker_killed = True
             except: pass
 
+        # Theme list stuff
+        if (event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list) or self.selected is True:
             for button in self.all_theme_list_buttons[1:]: button.enable()
             if len(self.themes) == 1:
                 self.delete_button.disable()
@@ -759,6 +763,11 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
             if self.selected is False:
                 self.theme_index = event.index
+
+            try:
+                if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list and self.themes[self.theme_index] != self.theme_color_picker_dialog.opened_on_theme:
+                    self.kill_color_picker = True
+            except: pass
 
             if self.theme_index == 0:
                 self.move_up_button.disable()
@@ -787,12 +796,15 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                 self.selected_index = self.theme_index
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.delete_button:
+            print('here')
             self.themes.pop(self.theme_index)
 
             if self.theme_index < len(self.themes):
                 self.selected_index = self.theme_index
             else:
                 self.selected_index = self.theme_index - 1
+
+            self.kill_color_picker = True
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_up_button:
             theme = deepcopy(self.themes[self.theme_index])
@@ -840,16 +852,18 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             color = self.themes[self.theme_index][self.color_button_pressed]
             self.previous_color = deepcopy(color)
             self.theme_color_picker_dialog = pygame_gui.windows.UIColourPickerDialog(pygame.Rect((self.w / 2 - 80, self.h / 2 + 25), (420, 400)), manager=self.ui_manager, initial_colour=color, window_title='Pick a color...')
+            self.theme_color_picker_dialog.opened_on_theme = self.themes[self.theme_index]
             for element in self.all_pick_color_buttons: element.disable()
 
         try:
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == self.theme_color_picker_dialog and self.color_picker_killed is False:
-                self.themes[self.theme_index][self.color_button_pressed] = self.previous_color
+                self.theme_color_picker_dialog.opened_on_theme[self.color_button_pressed] = self.previous_color
                 for element in self.all_pick_color_buttons: element.enable()
         except: pass
 
         if self.color_picker_killed is True:
             for element in self.all_pick_color_buttons: element.enable()
+            self.color_picker_killed = False
 
         if event.type == pygame_gui.UI_COLOUR_PICKER_COLOUR_PICKED and event.ui_element == self.theme_color_picker_dialog:
             self.previous_color = event.colour

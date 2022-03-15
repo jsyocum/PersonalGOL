@@ -130,7 +130,9 @@ def main():
         "EditCheckerboardBrightness": [DefaultEditCheckerboardBrightness, 200],
         "SelectionMode": [SelMode, True],
         "Eraser": [EraseMode, False],
-        "AutoAdjust": [AutoAdjust, False]
+        "AutoAdjust": [AutoAdjust, False],
+        "LoadThemesFromBoard": [True, False],
+        "LoadThemesFromQuickLoad": [True, False]
     }
 
     helpers.initialConfigCheck(config_file_dir, config_file_path, config_dict)
@@ -369,7 +371,7 @@ def main():
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == file_name_window:
                 save_path = event.text
                 boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
-                helpers.savePNGWithBoardInfo(save_path, boardsurf_to_save, step_stack[-1], theme_board)
+                helpers.savePNGWithBoardInfo(save_path, boardsurf_to_save, step_stack[-1], theme_board, themes)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
                 save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=SavePath, allow_picking_directories=False)
@@ -677,13 +679,13 @@ def main():
         if QuickSave is True:
             print("Quicksaved to:", quick_save_path)
             boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
-            helpers.savePNGWithBoardInfo(quick_save_path, boardsurf_to_save, step_stack[-1], theme_board)
+            helpers.savePNGWithBoardInfo(quick_save_path, boardsurf_to_save, step_stack[-1], theme_board, themes)
             QuickSave = False
 
         if QuickLoad is True:
             load_status_message = 'No quicksave exists to be loaded!'
             if os.path.exists(quick_save_path):
-                loaded, load_status_message, theme_board = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, theme_board)
+                loaded, load_status_message, theme_board, themes = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, theme_board, themes)
 
             if loaded is True:
                 Continuous = False
@@ -698,7 +700,7 @@ def main():
 
         if Load is True:
             load_status_message = ''
-            loaded, load_status_message, theme_board = helpers.loadPNGWithBoardInfo(load_path, step_stack, theme_board)
+            loaded, load_status_message, theme_board, themes = helpers.loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes)
             if loaded is True:
                 Continuous = False
                 WasContinuous = False

@@ -186,3 +186,6 @@ def get_shape_points(pattern_int, tl, s):
 
 def get_max_patterns():
     return 19
+
+def get_max_shapes():
+    return 4
