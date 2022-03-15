@@ -872,17 +872,13 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             self.previousWindowDimensions = (self.get_real_width(), self.get_real_height())
 
         if self.themes != self.previous_themes:
-            self.theme_list.rebuild_themes(self.themes)
-
             if self.selected_index >= 0:
-                self.theme_list.item_list[self.selected_index]['selected'] = True
-                if self.theme_list.item_list[self.selected_index]['button_element'] is not None:
-                    self.theme_list.item_list[self.selected_index]['button_element'].select()
-
+                self.theme_list.selected_index = self.selected_index
                 self.theme_index = self.selected_index
                 self.selected_index = -1
                 self.selected = True
 
+            self.theme_list.rebuild_themes(self.themes)
             self.previous_themes = deepcopy(self.themes)
 
             for button in self.all_theme_list_buttons[1:]: button.disable()
@@ -1463,7 +1459,7 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
             else:
                 break
 
-    def rebuild_and_set_scroll_bar_back(self, manage_selected_index=True):
+    def rebuild_and_set_scroll_bar_back(self):
         if self.scroll_bar is not None:
             scroll_position = self.scroll_bar.scroll_position
             self.special_rebuild = True
@@ -1473,13 +1469,16 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
             self.scroll_bar.rebuild()
             self.update(0)
 
-        if manage_selected_index is True and self.selected_index >= 0 and self.item_list[self.selected_index]['button_element'] is not None:
+        else:
+            self.rebuild()
+
+        if self.selected_index >= 0 and self.item_list[self.selected_index]['button_element'] is not None:
             self.item_list[self.selected_index]['selected'] = True
             self.item_list[self.selected_index]['button_element'].select()
 
     def rebuild_themes(self, themes):
         self._raw_item_list = helpers.convert_themes_array_to_strings(themes)
-        self.rebuild_and_set_scroll_bar_back(False)
+        self.rebuild_and_set_scroll_bar_back()
 
     def set_list_item_height(self, h):
         self.list_item_height = h
