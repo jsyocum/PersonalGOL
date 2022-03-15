@@ -1281,10 +1281,6 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
         if self._default_selection is not None:
             self.set_default_selection()
 
-    def set_list_item_height(self, h):
-        self.list_item_height = h
-        self.rebuild()
-
     def update(self, time_delta: float):
         """
         A method called every update cycle of our application. Designed to be overridden by
@@ -1296,7 +1292,7 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
         """
         super().update(time_delta)
 
-        if self.scroll_bar is not None and (self.scroll_bar.check_has_moved_recently() or self.special_rebuild):
+        if self.scroll_bar is not None and (self.scroll_bar.check_has_moved_recently() or self.special_rebuild is True):
             self.special_rebuild = False
             list_height_adjustment = min(self.scroll_bar.start_percentage * self.total_height_of_list,
                                          self.lowest_list_pos)
@@ -1468,18 +1464,26 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                 break
 
     def rebuild_and_set_scroll_bar_back(self, manage_selected_index=True):
-        scroll_position = self.scroll_bar.scroll_position
-        self.special_rebuild = True
-        self.rebuild()
-        self.scroll_bar.scroll_position = scroll_position
-        self.scroll_bar.start_percentage = self.scroll_bar.scroll_position / self.scroll_bar.scrollable_height
-        self.scroll_bar.rebuild()
-        self.update(0)
+        if self.scroll_bar is not None:
+            scroll_position = self.scroll_bar.scroll_position
+            self.special_rebuild = True
+            self.rebuild()
+            self.scroll_bar.scroll_position = scroll_position
+            self.scroll_bar.start_percentage = self.scroll_bar.scroll_position / self.scroll_bar.scrollable_height
+            self.scroll_bar.rebuild()
+            self.update(0)
 
         if manage_selected_index is True and self.selected_index >= 0 and self.item_list[self.selected_index]['button_element'] is not None:
             self.item_list[self.selected_index]['selected'] = True
             self.item_list[self.selected_index]['button_element'].select()
 
+    def rebuild_themes(self, themes):
+        self._raw_item_list = helpers.convert_themes_array_to_strings(themes)
+        self.rebuild_and_set_scroll_bar_back(False)
+
+    def set_list_item_height(self, h):
+        self.list_item_height = h
+        self.rebuild()
 
     def process_event(self, event: pygame.event.Event) -> bool:
         """
@@ -1552,36 +1556,35 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                                 pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION, event_data)
                             pygame.event.post(drop_down_changed_event)
 
+        if self.scroll_bar is not None:
+            if self.scroll_bar.sliding_button is not None:
+                if self.scroll_bar.sliding_button.held is True:
+                    self.scroll_bar_start_pressed = True
 
-        if self.scroll_bar.sliding_button.held is True:
-            self.scroll_bar_start_pressed = True
-
-        if self.scroll_bar.sliding_button.held is False and self.scroll_bar_start_pressed is True:
-            self.rebuild_and_set_scroll_bar_back()
-            self.scroll_bar_start_pressed = False
-
-
-        if self.scroll_bar.top_button.held is True:
-            self.scroll_top_start_pressed = True
-
-        if self.scroll_bar.top_button.held is False and self.scroll_top_start_pressed is True:
-            self.rebuild_and_set_scroll_bar_back()
-            self.scroll_top_start_pressed = False
+                if self.scroll_bar.sliding_button.held is False and self.scroll_bar_start_pressed is True:
+                    self.rebuild_and_set_scroll_bar_back()
+                    self.scroll_bar_start_pressed = False
 
 
-        if self.scroll_bar.bottom_button.held is True:
-            self.scroll_bottom_start_pressed = True
+            if self.scroll_bar.top_button is not None:
+                if self.scroll_bar.top_button.held is True:
+                    self.scroll_top_start_pressed = True
 
-        if self.scroll_bar.bottom_button.held is False and self.scroll_bottom_start_pressed is True:
-            self.rebuild_and_set_scroll_bar_back()
-            self.scroll_bottom_start_pressed = False
+                if self.scroll_bar.top_button.held is False and self.scroll_top_start_pressed is True:
+                    self.rebuild_and_set_scroll_bar_back()
+                    self.scroll_top_start_pressed = False
+
+
+            if self.scroll_bar.bottom_button is not None:
+                if self.scroll_bar.bottom_button.held is True:
+                    self.scroll_bottom_start_pressed = True
+
+                if self.scroll_bar.bottom_button.held is False and self.scroll_bottom_start_pressed is True:
+                    self.rebuild_and_set_scroll_bar_back()
+                    self.scroll_bottom_start_pressed = False
 
 
         return False  # Don't consume any events
-
-    def rebuild_themes(self, themes):
-        self._raw_item_list = helpers.convert_themes_array_to_strings(themes)
-        self.rebuild_and_set_scroll_bar_back(False)
 
 class theme_button(pygame_gui.elements.UIButton):
     def __init__(self, relative_rect: pygame.Rect,
