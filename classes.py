@@ -771,6 +771,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             patterns = helpers.get_example_themes(self.themes[self.theme_index])
             self.patterns_selection_list.set_options_list(patterns)
 
+            self.selected_index = self.theme_index
             self.selected = False
 
         if event.type == pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION and event.ui_element == self.theme_list and self.theme_list.get_single_selection() is None:
@@ -824,8 +825,10 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.load_button:
             if os.path.isfile(self.themes_file_path) is True:
                 self.themes.clear()
-                for theme in helpers.read_themes_file(self.themes_file_path, 19):
+                for theme in helpers.read_themes_file(self.themes_file_path):
                     self.themes.append(theme)
+
+                self.selected_index = min(self.selected_index, len(self.themes) - 1)
 
         # Drop down menu stuff
         if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.ui_element == self.patterns_selection_list:
@@ -1473,9 +1476,11 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
         else:
             self.rebuild()
 
-        if self.selected_index >= 0 and self.item_list[self.selected_index]['button_element'] is not None:
-            self.item_list[self.selected_index]['selected'] = True
-            self.item_list[self.selected_index]['button_element'].select()
+        try:
+            if self.selected_index >= 0 and self.item_list[self.selected_index]['button_element'] is not None:
+                self.item_list[self.selected_index]['selected'] = True
+                self.item_list[self.selected_index]['button_element'].select()
+        except: pass
 
     def rebuild_themes(self, themes):
         self._raw_item_list = helpers.convert_themes_array_to_strings(themes)

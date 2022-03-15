@@ -16,7 +16,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.2.2'
+    version = '1.2.3'
 
     return version
 
@@ -136,7 +136,7 @@ def main():
     helpers.initialConfigCheck(config_file_dir, config_file_path, config_dict)
     color = pygame.Color(config_dict["R"][0], config_dict["G"][0], config_dict["B"][0])
 
-    themes = helpers.read_themes_file(themes_file_path, 9)
+    themes = helpers.read_themes_file(themes_file_path)
 
 
     action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])

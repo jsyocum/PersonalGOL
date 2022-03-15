@@ -796,7 +796,7 @@ def writeDict(config_file_path, config_dict):
 
     return config
 
-def read_themes_file(themes_file_path, max_patterns):
+def read_themes_file(themes_file_path):
     if os.path.isfile(themes_file_path) is not True:
         pattern = 9
         color_1 = pygame.Color(29, 125, 170)
@@ -812,7 +812,7 @@ def read_themes_file(themes_file_path, max_patterns):
     themes = []
     for section in themes_file.sections():
         theme = []
-        theme.append(min(abs(themes_file.getint(section, 'Pattern')), max_patterns))
+        theme.append(min(abs(themes_file.getint(section, 'Pattern')), get_max_patterns()))
         colors = themes_file.options(section)[1:]
         for color in colors:
             theme.append(pygame.Color(ast.literal_eval(themes_file.get(section, color))))
