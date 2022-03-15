@@ -6,7 +6,6 @@ import os
 import appdirs
 from pathlib import Path
 from collections import deque
-from get_shapes_dict import get_shapes_dict
 
 COLORCHANGED = pygame.event.custom_type()
 SETTINGSAPPLIED = pygame.event.custom_type()
@@ -17,7 +16,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.2.1'
+    version = '1.2.2'
 
     return version
 
@@ -196,7 +195,6 @@ def main():
     while running:
         if Scale != helpers.getScale(Board, w, h):
             Scale, Which = helpers.getScale(Board, w, h)
-            shapes_dict = get_shapes_dict(Scale)
 
         time_delta = clock.tick(120) / 1000.0
         time_delta_stack.append(time_delta)
@@ -713,7 +711,7 @@ def main():
             Load = False
 
         # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
-        CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, shapes_dict, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
+        CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)

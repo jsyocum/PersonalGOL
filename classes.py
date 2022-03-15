@@ -675,13 +675,12 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.header_text = pygame_gui.elements.UILabel(text='Select a theme to edit:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
 
-        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 195), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, object_id=ObjectID("#95_selection_list", None), anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
+        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 195), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
         self.theme_list.set_list_item_height(diameter + 20)
 
 
         self.choose_pattern_text = pygame_gui.elements.UILabel(text='Change pattern:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.header_text})
-        self.example_patterns_dict = helpers.get_shapes_dict(50)
-        patterns = helpers.get_example_themes(self.example_patterns_dict)
+        patterns = helpers.get_example_themes()
         self.patterns_selection_list = theme_dropdown_list(options_list=[], themes=patterns, starting_option='', relative_rect=pygame.Rect(10, 5, 100, 30), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
         self.patterns_selection_list.disable()
 
@@ -769,7 +768,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                 self.move_down_button.disable()
                 self.move_bottom_button.disable()
 
-            patterns = helpers.get_example_themes(self.example_patterns_dict, self.themes[self.theme_index])
+            patterns = helpers.get_example_themes(self.themes[self.theme_index])
             self.patterns_selection_list.set_options_list(patterns)
 
             self.selected = False
@@ -777,6 +776,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         if event.type == pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION and event.ui_element == self.theme_list and self.theme_list.get_single_selection() is None:
             for button in self.all_theme_list_buttons[1:]: button.disable()
             self.patterns_selection_list.disable()
+            self.selected_index = -1
 
         # Theme list buttons stuff
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.create_button:
@@ -875,7 +875,6 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             if self.selected_index >= 0:
                 self.theme_list.selected_index = self.selected_index
                 self.theme_index = self.selected_index
-                self.selected_index = -1
                 self.selected = True
 
             self.theme_list.rebuild_themes(self.themes)
@@ -1464,10 +1463,12 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
             scroll_position = self.scroll_bar.scroll_position
             self.special_rebuild = True
             self.rebuild()
-            self.scroll_bar.scroll_position = scroll_position
-            self.scroll_bar.start_percentage = self.scroll_bar.scroll_position / self.scroll_bar.scrollable_height
-            self.scroll_bar.rebuild()
-            self.update(0)
+
+            if self.scroll_bar is not None:
+                self.scroll_bar.scroll_position = scroll_position
+                self.scroll_bar.start_percentage = self.scroll_bar.scroll_position / self.scroll_bar.scrollable_height
+                self.scroll_bar.rebuild()
+                self.update(0)
 
         else:
             self.rebuild()

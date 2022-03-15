@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import os
+import time
 import ast
 import pygame
 import totalsize
@@ -10,7 +11,7 @@ from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
 from pathlib import Path
-from get_shapes_dict import position_shape, get_shapes_dict
+from get_shape_points import get_shape_points, get_max_patterns
 
 # Clears the console screen
 def cls():
@@ -151,7 +152,7 @@ def get_random_theme_board(board):
 # The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
-def complex_blit_array(board, theme_board, themes, shapes_dict, surf, EditMode, EditCheckerboardBrightness, EvenOrOdd, SelectedCells) -> pygame.surface:
+def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, EvenOrOdd, SelectedCells) -> pygame.surface:
     Scale = getScale(board, surf.get_width(), surf.get_height())[0]
     boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
     checkerboard_color = pygame.Color(EditCheckerboardBrightness, EditCheckerboardBrightness, EditCheckerboardBrightness)
@@ -184,25 +185,15 @@ def complex_blit_array(board, theme_board, themes, shapes_dict, surf, EditMode, 
                 theme_index = theme_board[subi][i]
                 theme = themes[theme_index]
 
-                shapes = shapes_dict[theme[0]]
-                for s, shape in enumerate(shapes):
-                    color_for_shape = theme[s + 1]
-                    color_for_shape = add_selection_to_color(color_for_shape, select_color)
-
-                    top_left = (subi * Scale, i * Scale)
-                    shape = position_shape(shape, top_left)
-                    if shape[1] is True:
-                        square = pygame.Rect(shape[0])
-                        pygame.draw.rect(boardSurf, color_for_shape, square)
-
-                    else:
-                        pygame.draw.polygon(boardSurf, color_for_shape, shape[0])
+                top_left = (subi * Scale, i * Scale)
+                shapes = get_shape_points(theme[0], top_left, Scale)
+                boardSurf = draw_theme_shapes(shapes, theme, boardSurf)
 
     blitBoardOnScreenEvenly(surf, boardSurf, EditMode)
 
     return boardSurf
 
-def get_example_themes(shapes_dict, theme_for_colors=None):
+def get_example_themes(theme_for_colors=None):
     if theme_for_colors is None:
         color_1 = pygame.Color(29, 125, 170)
         color_2 = pygame.Color(29, 33, 170)
@@ -215,8 +206,8 @@ def get_example_themes(shapes_dict, theme_for_colors=None):
         color_4 = theme_for_colors[4]
 
     example_themes = []
-    for p, pattern in enumerate(shapes_dict):
-        example_themes.append([p, color_1, color_2, color_3, color_4])
+    for int in range(0, get_max_patterns()):
+        example_themes.append([int, color_1, color_2, color_3, color_4])
 
     return example_themes
 
@@ -233,31 +224,23 @@ def generate_random_theme(size_of_patterns, max_colors):
 def create_theme_surf(theme, diameter) -> pygame.surface:
     surf = pygame.Surface((diameter, diameter))
 
-    shapes_dict = get_shapes_dict(diameter)
-    shapes = shapes_dict[theme[0]]
-    for s, shape in enumerate(shapes):
-        color_for_shape = theme[s + 1]
-
-        if shape[1] is True:
-            square = pygame.Rect(shape[0])
-            pygame.draw.rect(surf, color_for_shape, square)
-
-        else:
-            pygame.draw.polygon(surf, color_for_shape, shape[0])
+    shapes = get_shape_points(theme[0], (0, 0), diameter)
+    surf = draw_theme_shapes(shapes, theme, surf)
 
     return surf
 
-def save_theme_surf_png(surf, theme_path, theme_index):
-    if os.path.exists(theme_path) is not True:
-        return None
+def draw_theme_shapes(shapes, theme, surf):
+    for s, shape in enumerate(shapes):
+        color_for_shape = theme[s + 1]
 
-    save_path = Path(str(theme_path) + '/' + str(theme_index) + '.png')
-    pygame.image.save(surf, save_path)
+        if shape[1] == 'rectangle':
+            square = pygame.Rect(shape[0])
+            pygame.draw.rect(surf, color_for_shape, square)
 
-def create_and_save_themes(themes, diameter, theme_path):
-    for i, theme in enumerate(themes):
-        surf = create_theme_surf(theme, diameter)
-        save_theme_surf_png(surf, theme_path, i)
+        elif shape[1] == 'polygon':
+            pygame.draw.polygon(surf, color_for_shape, shape[0])
+
+    return surf
 
 def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[], EvenOrOdd=0):
     if RandomColorByPixel is False:
