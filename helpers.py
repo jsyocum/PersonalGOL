@@ -211,20 +211,18 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
     return boardSurf
 
 def get_example_themes(theme_for_colors=None):
+    colors_array = []
     if theme_for_colors is None:
-        color_1 = pygame.Color(29, 125, 170)
-        color_2 = pygame.Color(29, 33, 170)
-        color_3 = pygame.Color(102, 29, 170)
-        color_4 = pygame.Color(142, 29, 170)
+        for c in range(get_max_shapes() + 1):
+            colors_array.append(generate_random_color())
     else:
-        color_1 = theme_for_colors[1]
-        color_2 = theme_for_colors[2]
-        color_3 = theme_for_colors[3]
-        color_4 = theme_for_colors[4]
+        for color in theme_for_colors[1:]:
+            colors_array.append(color)
 
     example_themes = []
     for int in range(get_max_patterns() + 1):
-        example_themes.append([int, color_1, color_2, color_3, color_4])
+        example_themes.append(colors_array.copy())
+        example_themes[-1].insert(0, int)
 
     return example_themes
 

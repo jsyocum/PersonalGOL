@@ -191,10 +191,17 @@ def get_shape_points(pattern_int, tl, s):
             shape_points.append(((left_center(), bottom_left(), bottom_two_third(), center_two_third_x()), 'polygon'))
             shape_points.append(((top_two_third(), bottom_two_third(), bottom_right(), top_right()), 'polygon'))
 
+        case 20:
+            shape_points.append(((top_left(), left_center(), top_center()), 'polygon'))
+            shape_points.append(((top_center(), right_center(), top_right()), 'polygon'))
+            shape_points.append(((left_center(), bottom_left(), bottom_center()), 'polygon'))
+            shape_points.append(((bottom_center(), bottom_right(), right_center()), 'polygon'))
+            shape_points.append(((top_center(), left_center(), bottom_center(), right_center()), 'polygon'))
+
     return shape_points
 
 def get_max_patterns():
-    return 19
+    return 20
 
 def get_max_shapes():
-    return 4
+    return 5
