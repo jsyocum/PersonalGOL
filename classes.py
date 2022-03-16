@@ -790,7 +790,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
         # Theme list buttons stuff
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.create_button:
-            self.themes.append(helpers.generate_random_theme(19, 4))
+            self.themes.append(helpers.generate_random_theme())
 
             if self.theme_list.get_single_selection() is not None:
                 self.selected_index = self.theme_index

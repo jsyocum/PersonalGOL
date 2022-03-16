@@ -1,5 +1,6 @@
 import helpers
 from classes import SettingsWindow, PNGFilePicker, ChooseFileNameWindow, ActionWindow, ThemeManagerWindow
+from get_shape_points import get_max_patterns
 import pygame
 import pygame_gui
 import os
@@ -16,7 +17,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.2.3'
+    version = '1.2.4'
 
     return version
 
@@ -240,7 +241,7 @@ def main():
                     themes[0][0] = max(themes[0][0] - 1, 0)
                     print('theme_int:', themes[0][0])
                 elif event.type == pygame.KEYUP and event.key == pygame.K_RIGHT:
-                    themes[0][0] = min(themes[0][0] + 1, 19)
+                    themes[0][0] = min(themes[0][0] + 1, get_max_patterns())
                     print('theme_int:', themes[0][0])
                 elif event.type == pygame.KEYUP and event.key == pygame.K_e:
                     if EditMode is False:
@@ -370,8 +371,7 @@ def main():
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == file_name_window:
                 save_path = event.text
-                boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
-                helpers.savePNGWithBoardInfo(save_path, boardsurf_to_save, step_stack[-1], theme_board, themes)
+                helpers.savePNGWithBoardInfo(save_path, CurrentBoardSurf, step_stack[-1], theme_board, themes)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
                 save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=SavePath, allow_picking_directories=False)
@@ -649,6 +649,9 @@ def main():
         if AdjustBoard is True:
             Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), theme_board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
             helpers.appendToStepStack(Board, step_stack)
+            test_surf = helpers.complex_blit_array(Board, theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
+            print(helpers.getScale(Board, test_surf.get_width(), test_surf.get_height(), testing=True)[0])
+
 
             AdjustBoard = False
 
@@ -678,8 +681,7 @@ def main():
 
         if QuickSave is True:
             print("Quicksaved to:", quick_save_path)
-            boardsurf_to_save = helpers.updateScreenWithBoard(Board, surf, EditMode=True, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], Saving=True)
-            helpers.savePNGWithBoardInfo(quick_save_path, boardsurf_to_save, step_stack[-1], theme_board, themes)
+            helpers.savePNGWithBoardInfo(quick_save_path, CurrentBoardSurf, step_stack[-1], theme_board, themes)
             QuickSave = False
 
         if QuickLoad is True:

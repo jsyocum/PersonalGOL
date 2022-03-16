@@ -170,7 +170,7 @@ def get_random_theme_board(board):
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
 def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, EvenOrOdd, SelectedCells) -> pygame.surface:
-    Scale = getScale(board, surf.get_width(), surf.get_height())[0]
+    Scale = getScale(board, surf.get_width(), surf.get_height(), testing=False)[0]
     boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
     checkerboard_color = pygame.Color(EditCheckerboardBrightness, EditCheckerboardBrightness, EditCheckerboardBrightness)
 
@@ -308,7 +308,7 @@ def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), Ra
 
     return boardSurf
 
-def getScale(board, w, h):
+def getScale(board, w, h, testing=False):
     board_w = board.shape[0]
     board_h = board.shape[1]
 
@@ -330,7 +330,15 @@ def getScale(board, w, h):
         Scale = w / board_w
         Which = 2
 
-    return math.ceil(Scale), Which
+    if testing is False:
+        Scale = math.ceil(Scale)
+    else:
+        if math.ceil(Scale) % 2 == 1:
+            Scale = math.ceil(Scale) - 1
+        else:
+            Scale = math.ceil(Scale)
+
+    return Scale, Which
 
 def isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h):
     IsCollidingWithBoardSurf = False
