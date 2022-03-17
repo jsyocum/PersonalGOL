@@ -828,12 +828,7 @@ def writeDict(config_file_path, config_dict):
     return config
 
 def read_themes_file(themes_file_path):
-    pattern = 9
-    color_1 = pygame.Color(29, 125, 170)
-    color_2 = pygame.Color(29, 33, 170)
-    color_3 = pygame.Color(102, 29, 170)
-    color_4 = pygame.Color(142, 29, 170)
-    default_theme = [[pattern, color_1, color_2, color_3, color_4]]
+    default_theme = [generate_random_theme()]
 
     if os.path.isfile(themes_file_path) is not True:
         return default_theme
@@ -858,6 +853,16 @@ def read_themes_file(themes_file_path):
                         theme.append(pygame.Color(ast.literal_eval(themes_file.get(section, color))))
                     except:
                         theme.append(generate_random_color())
+
+                try:
+                    colors_length = len(colors)
+                except:
+                    colors_length = 0
+
+                if colors_length < get_max_shapes():
+                    for c in range(get_max_shapes() - colors_length):
+                        theme.append(generate_random_color())
+
             except:
                 for int in range(get_max_shapes()):
                     theme.append(generate_random_color())
