@@ -114,14 +114,10 @@ def applyRules(ogArray, step_stack):
     array = ogArray.copy()
     AliveCountArray = sumOfNeighbors(ogArray)
 
-    for subi, SubArray in enumerate(ogArray):
-        for i, cell in enumerate(SubArray):
-            if (cell == 1) and ((AliveCountArray[subi][i] <= 1) or (AliveCountArray[subi][i] > 3)):
-                array[subi][i] = 0
-            elif (cell == 0) and (AliveCountArray[subi][i] == 3):
-                array[subi][i] = 1
+    array[AliveCountArray < 2] = 0
+    array[AliveCountArray == 3] = 1
+    array[AliveCountArray > 3] = 0
 
-    appendToStepStack(array, step_stack)
     return array
 
 def appendToStepStack(Board, step_stack):

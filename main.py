@@ -576,13 +576,15 @@ def main():
                 helpers.appendToStepStack(Board, step_stack)
 
         if Continuous is False and Step is True:
-            helpers.applyRules(step_stack[-1], step_stack)
+            Board = helpers.applyRules(step_stack[-1], step_stack)
+            helpers.appendToStepStack(Board, step_stack)
             Step = False
         elif Continuous is False and StepBack is True:
             helpers.stepBack(step_stack)
             StepBack = False
         elif Continuous is True and Update is True:
-            helpers.applyRules(step_stack[-1], step_stack)
+            Board = helpers.applyRules(step_stack[-1], step_stack)
+            helpers.appendToStepStack(Board, step_stack)
             Step = False
             StepBack = False
             Update = False
@@ -590,7 +592,7 @@ def main():
         if NewBoard is True:
             width, height = helpers.determineWidthAndHeight(config_dict, w, h)
             Board, theme_board = helpers.generateArray(height, width, config_dict["Likelihood"][0])
-            step_stack.append(Board)
+            helpers.appendToStepStack(Board, step_stack)
 
             if len(HeldDownCells) == 2:
                 HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
