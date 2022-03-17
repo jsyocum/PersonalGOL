@@ -121,11 +121,15 @@ def applyRules(ogArray, step_stack):
     return array
 
 def appendToStepStack(Board, step_stack):
-    if not np.array_equal(Board, step_stack[-1]):
+    appended = False
+    if len(step_stack) == 0 or np.array_equal(Board, step_stack[-1]) is False:
         step_stack.append(Board.copy())
+        appended = True
 
     if totalsize.total_size(step_stack) > 1e+9:
         step_stack.popleft()
+
+    return appended
 
 def stepBack(step_stack):
     if len(step_stack) > 1:
@@ -160,6 +164,23 @@ def get_random_theme_board(board):
             SubArray[i] = random.choice(chanceArray)
 
     return theme_board
+
+def should_redraw_surf(Appended, theme_board, previous_theme_board, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells):
+    if Appended or edit_mode_changed or edit_checkerboard_brightness_changed:
+        return True
+
+    elif np.array_equal(HeldDownCells, previous_HeldDownCells) is False:
+        return True
+
+    # elif np.array_equal(themes, previous_themes) is False:
+    elif themes != previous_themes:
+        return True
+
+    elif np.array_equal(theme_board, previous_theme_board) is False:
+        return True
+
+    else:
+        return False
 
 # The theme_board is the same shape as the board. The default theme is 0, which is just a square of solid color.
 # The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
@@ -201,8 +222,6 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                 top_left = (subi * Scale, i * Scale)
                 shapes = get_shape_points(theme[0], top_left, Scale)
                 boardSurf = draw_theme_shapes(shapes, theme, boardSurf)
-
-    blitBoardOnScreenEvenly(surf, boardSurf, EditMode)
 
     return boardSurf
 

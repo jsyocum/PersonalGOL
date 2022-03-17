@@ -7,6 +7,7 @@ import os
 import appdirs
 from pathlib import Path
 from collections import deque
+from copy import deepcopy
 
 COLORCHANGED = pygame.event.custom_type()
 SETTINGSAPPLIED = pygame.event.custom_type()
@@ -76,6 +77,9 @@ def main():
     EvenOrOdd = 0
     time_delta_added = 0
 
+    edit_mode_changed = False
+    edit_checkerboard_brightness_changed = False
+
     save_location = None
     file_name_window = None
 
@@ -140,6 +144,7 @@ def main():
     color = pygame.Color(config_dict["R"][0], config_dict["G"][0], config_dict["B"][0])
 
     themes = helpers.read_themes_file(themes_file_path)
+    previous_themes = themes.copy()
 
 
     action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
@@ -163,6 +168,7 @@ def main():
     settings_window.kill()
 
     HeldDownCells = []
+    previous_HeldDownCells = []
     CopiedBoard = None
 
     sidebar_header_font = pygame.font.SysFont('arial', size=30, bold=True)
@@ -193,7 +199,8 @@ def main():
     else:
         Board, theme_board = helpers.generateArray(config_dict["CustomBoardSizeHeight"][0], config_dict["CustomBoardSizeWidth"][0], config_dict["Likelihood"][0])
 
-    step_stack.append(Board.copy())
+    Appended = helpers.appendToStepStack(Board, step_stack)
+    previous_theme_board = theme_board.copy()
 
     while running:
         if Scale != helpers.getScale(Board, w, h):
@@ -246,9 +253,11 @@ def main():
                 elif event.type == pygame.KEYUP and event.key == pygame.K_e:
                     if EditMode is False:
                         EditMode = True
+                        edit_mode_changed = True
                         edit_mode_button.set_text('Disable edit mode (E)')
                     elif EditMode is True:
                         EditMode = False
+                        edit_mode_changed = True
                         HeldDownCells = []
                         action_window.kill()
                         edit_mode_button.set_text('Enable edit mode (E)')
@@ -257,10 +266,12 @@ def main():
                         WasContinuous = True
                         Continuous = False
                         EditMode = True
+                        edit_mode_changed = True
                         edit_mode_button.set_text('Disable edit mode (E)')
                         action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
                     elif Continuous is False and EditMode is False:
                         EditMode = True
+                        edit_mode_changed = True
                         edit_mode_button.set_text('Disable edit mode (E)')
                         action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
                     elif EditMode is True and not action_window.alive():
@@ -356,10 +367,12 @@ def main():
             if ((event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == edit_mode_button) or (MenuOpen is True and event.type == pygame.KEYUP and event.key == pygame.K_e and helpers.anyAliveElements(save_load_windows) is False)) and edit_mode_button.text == 'Enable edit mode (E)':
                 edit_mode_button.set_text('Disable edit mode (E)')
                 EditMode = True
+                edit_mode_changed = True
 
             elif (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == edit_mode_button) or (MenuOpen is True and event.type == pygame.KEYUP and event.key == pygame.K_e and helpers.anyAliveElements(save_load_windows) is False):
                 edit_mode_button.set_text('Enable edit mode (E)')
                 EditMode = False
+                edit_mode_changed = True
                 HeldDownCells = []
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == save_button and helpers.anyAliveElements(save_load_windows) is False:
@@ -404,7 +417,7 @@ def main():
                         else:
                             Board[board_pos] = 0
 
-                        helpers.appendToStepStack(Board, step_stack)
+                        Appended = helpers.appendToStepStack(Board, step_stack)
 
                     HeldDownCells = []
 
@@ -435,7 +448,7 @@ def main():
                         else:
                             Board[board_pos] = 0
 
-                        helpers.appendToStepStack(Board, step_stack)
+                        Appended = helpers.appendToStepStack(Board, step_stack)
 
             if event.type == SETTINGSAPPLIED and event.ui_element == settings_window:
                 config_dict = event.config_dict
@@ -512,7 +525,7 @@ def main():
                 if IsColliding and not IsCollidingWithActionWindow:
                     board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
                     Board = helpers.paste(step_stack[-1].copy(), [board_pos, [board_pos[0] + 1, board_pos[1] + 1]], CopiedBoard)
-                    helpers.appendToStepStack(Board, step_stack)
+                    Appended = helpers.appendToStepStack(Board, step_stack)
 
             if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.fill_button) or (event.type == pygame.KEYUP and event.key == pygame.K_BACKSPACE and SelectionBoxPresent is True):
                 Fill = True
@@ -567,24 +580,26 @@ def main():
         if EditMode is True:
             if keys[pygame.K_UP]:
                 config_dict["EditCheckerboardBrightness"][0] = min(config_dict["EditCheckerboardBrightness"][0] + 1, MaxEditCheckerboardBrightness)
+                edit_checkerboard_brightness_changed = True
             elif keys[pygame.K_DOWN]:
                 config_dict["EditCheckerboardBrightness"][0] = max(config_dict["EditCheckerboardBrightness"][0] - 1, 0)
+                edit_checkerboard_brightness_changed = True
 
         if config_dict["AutoAdjust"][0] is True:
             if Continuous is True or (Continuous is False and Step is True):
                 Board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
-                helpers.appendToStepStack(Board, step_stack)
+                Appended = helpers.appendToStepStack(Board, step_stack)
 
         if Continuous is False and Step is True:
             Board = helpers.applyRules(step_stack[-1], step_stack)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
             Step = False
         elif Continuous is False and StepBack is True:
             helpers.stepBack(step_stack)
             StepBack = False
         elif Continuous is True and Update is True:
             Board = helpers.applyRules(step_stack[-1], step_stack)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
             Step = False
             StepBack = False
             Update = False
@@ -592,7 +607,7 @@ def main():
         if NewBoard is True:
             width, height = helpers.determineWidthAndHeight(config_dict, w, h)
             Board, theme_board = helpers.generateArray(height, width, config_dict["Likelihood"][0])
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
 
             if len(HeldDownCells) == 2:
                 HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
@@ -601,7 +616,7 @@ def main():
 
         if Zoom is True:
             Board, theme_board = helpers.zoom(step_stack[-1], theme_board, HeldDownCells)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
             HeldDownCells = []
 
             Zoom = False
@@ -609,7 +624,7 @@ def main():
         if Cut is True:
             CopiedBoard, none = helpers.zoom(step_stack[-1], theme_board, HeldDownCells)
             Board = helpers.cut(step_stack[-1].copy(), HeldDownCells)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
 
             Cut = False
 
@@ -620,37 +635,37 @@ def main():
 
         if Paste is True:
             Board = helpers.paste(step_stack[-1].copy(), HeldDownCells, CopiedBoard)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
 
             Paste = False
 
         if Fill is True:
             Board = helpers.cut(step_stack[-1].copy(), HeldDownCells, Fill=Fill)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
 
             Fill = False
 
         if Clear is True:
             Board = helpers.cut(step_stack[-1].copy(), HeldDownCells)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
 
             Clear = False
 
         if Rotate is True:
             Board = helpers.rotate(step_stack[-1].copy(), HeldDownCells)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
 
             Rotate = False
 
         if Flip is True:
             Board = helpers.flip(step_stack[-1].copy(), HeldDownCells)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
 
             Flip = False
 
         if AdjustBoard is True:
             Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), theme_board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
             test_surf = helpers.complex_blit_array(Board, theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
             print(helpers.getScale(Board, test_surf.get_width(), test_surf.get_height(), testing=True)[0])
 
@@ -666,12 +681,12 @@ def main():
 
         if ApplyAdjustments is True:
             Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), theme_board, (None, None), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
-            helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack)
 
             ApplyAdjustments = False
 
         if ClearHistory is True:
-            current_board = step_stack[-1]
+            current_board = step_stack[-1].copy()
             step_stack.clear()
             step_stack.append(current_board)
             ClearHistory = False
@@ -716,8 +731,22 @@ def main():
 
             Load = False
 
-        # CurrentBoardSurf = helpers.updateScreenWithBoard(step_stack[-1], surf, EditMode, color=color, RandomColorByPixel=config_dict["RandomColorByPixel"][0], DefaultEditCheckerboardBrightness=config_dict["EditCheckerboardBrightness"][0], SelectedCells=HeldDownCells, EvenOrOdd=EvenOrOdd)
-        CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
+        if helpers.should_redraw_surf(Appended, theme_board, previous_theme_board, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells):
+            Appended = False
+            edit_mode_changed = False
+            edit_checkerboard_brightness_changed = False
+
+            try: previous_theme_board = theme_board.copy()
+            except: pass
+            try: previous_themes = deepcopy(themes)
+            except: pass
+            try: previous_HeldDownCells = deepcopy(HeldDownCells)
+            except: pass
+
+            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
+
+        helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
+
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)
