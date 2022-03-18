@@ -135,6 +135,10 @@ def appendToStepStack(Board, step_stack):
 def stepBack(step_stack):
     if len(step_stack) > 1:
         step_stack.pop()
+        return True
+
+    else:
+        return False
 
 # Returns an array with the on characters in the place of the 1's and the off characters in the place of the 0's
 def interpretArray(ogArray, onChar, offChar):
@@ -188,7 +192,7 @@ def should_redraw_surf(Appended, theme_board, previous_theme_board, themes, prev
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
 def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, select_color, EvenOrOdd, SelectedCells) -> pygame.surface:
-    Scale = getScale(board, surf.get_width(), surf.get_height(), testing=False)[0]
+    Scale = getScale(board, surf.get_width(), surf.get_height())[0]
     boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
     checkerboard_color = pygame.Color(EditCheckerboardBrightness, EditCheckerboardBrightness, EditCheckerboardBrightness)
 
@@ -323,7 +327,7 @@ def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), Ra
 
     return boardSurf
 
-def getScale(board, w, h, testing=False):
+def getScale(board, w, h):
     board_w = board.shape[0]
     board_h = board.shape[1]
 
@@ -345,13 +349,8 @@ def getScale(board, w, h, testing=False):
         Scale = w / board_w
         Which = 2
 
-    if testing is False:
-        Scale = math.ceil(Scale)
-    else:
-        if math.ceil(Scale) % 2 == 1:
-            Scale = math.ceil(Scale) - 1
-        else:
-            Scale = math.ceil(Scale)
+
+    Scale = math.floor(Scale)
 
     return Scale, Which
 
@@ -620,12 +619,7 @@ def adjustBoardDimensions(board, theme_board, AdjustBoardTuple, w, h, HeldDownCe
 
     return board, theme_board, EvenOrOdd, adjustments_made
 
-def adjustBoardDimensionsFromDict(board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments):
-    new_board = None
-
-    return new_board, EvenOrOdd
-
-def autoAdjustBoardDimensions(board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments):
+def autoAdjustBoardDimensions(board, theme_board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments):
     AutoAdjust = {"Top": 0, "Bottom": 0, "Left": 0, "Right": 0}
 
     if 1 in board[:, 0]:
@@ -648,15 +642,20 @@ def autoAdjustBoardDimensions(board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustm
         AutoAdjust[side] = 1
         AutoAdjustments[side] += 1
 
-    board, EvenOrOdd, adjustments_made = adjustBoardDimensions(board, (None, False), w, h, HeldDownCells, EvenOrOdd, AutoAdjust)
+    board, theme_board, EvenOrOdd, adjustments_made = adjustBoardDimensions(board, theme_board, (None, False), w, h, HeldDownCells, EvenOrOdd, AutoAdjust)
 
-    return board, EvenOrOdd, AutoAdjustments
+    return board, theme_board, EvenOrOdd, AutoAdjustments
 
 def blitBoardOnScreenEvenly(surf, boardSurf, EditMode):
     if EditMode is False:
         surf.fill((0, 0, 0))
     else:
         surf.fill((30, 30, 30))
+
+    # if boardSurf.get_width() > surf.get_width() or boardSurf.get_height() > surf.get_height():
+    # new_size = (min(boardSurf.get_width(), surf.get_width()), min(boardSurf.get_height(), surf.get_height()))
+    # boardSurf = pygame.transform.scale(boardSurf, new_size)
+
     surf.blit(boardSurf, (surf.get_width() / 2 - boardSurf.get_width() / 2, surf.get_height() / 2 - boardSurf.get_height() / 2))
 
 def printLinesOfText(surf, left, top, spacing, lines):
@@ -753,7 +752,7 @@ def loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes, load_themes
     load_path = str(load_path)
     loaded = False
     if load_path.endswith('.png') is False:
-        return loaded, load_path + ' is not a .png file', theme_board, themes
+        return loaded, load_path + ' is not a .png file', theme_board, themes, False
 
     targetImage = PngImageFile(load_path)
 
@@ -761,7 +760,7 @@ def loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes, load_themes
         board_string = targetImage.text["BoardArray"]
         board = convertStringToArray(board_string)
     except:
-        return loaded, load_path + ' does not contain a board array', theme_board, themes
+        return loaded, load_path + ' does not contain a board array', theme_board, themes, False
 
     try:
         theme_board_string = targetImage.text["ThemeBoardArray"]
@@ -777,11 +776,11 @@ def loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes, load_themes
             print('No themes found in board metadata.')
 
     step_stack.clear()
-    step_stack.append(board)
+    Appended = appendToStepStack(board, step_stack)
 
     loaded = True
 
-    return loaded, 'Board loaded: ' + load_path, theme_board, themes
+    return loaded, 'Board loaded: ' + load_path, theme_board, themes, Appended
 
 def convertArrayToString(array):
     return '\n'.join('\t'.join('%0.3f' % x for x in y) for y in array)

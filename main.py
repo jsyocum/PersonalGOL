@@ -600,7 +600,7 @@ def main():
 
         if config_dict["AutoAdjust"][0] is True:
             if Continuous is True or (Continuous is False and Step is True):
-                Board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
+                Board, theme_board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), theme_board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
                 Appended = helpers.appendToStepStack(Board, step_stack)
 
         if Continuous is False and Step is True:
@@ -608,7 +608,7 @@ def main():
             Appended = helpers.appendToStepStack(Board, step_stack)
             Step = False
         elif Continuous is False and StepBack is True:
-            helpers.stepBack(step_stack)
+            Appended = helpers.stepBack(step_stack)
             StepBack = False
         elif Continuous is True and Update is True:
             Board = helpers.applyRules(step_stack[-1], step_stack)
@@ -714,7 +714,7 @@ def main():
         if QuickLoad is True:
             load_status_message = 'No quicksave exists to be loaded!'
             if os.path.exists(quick_save_path):
-                loaded, load_status_message, theme_board, themes = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, theme_board, themes)
+                loaded, load_status_message, theme_board, themes, Appended = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, theme_board, themes)
 
             if loaded is True:
                 Continuous = False
@@ -729,7 +729,7 @@ def main():
 
         if Load is True:
             load_status_message = ''
-            loaded, load_status_message, theme_board, themes = helpers.loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes)
+            loaded, load_status_message, theme_board, themes, Appended = helpers.loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes)
             if loaded is True:
                 Continuous = False
                 WasContinuous = False
