@@ -77,6 +77,8 @@ def main():
     EvenOrOdd = 0
     time_delta_added = 0
 
+    right_clickable_elements = []
+
     edit_mode_changed = False
     edit_checkerboard_brightness_changed = False
 
@@ -148,13 +150,12 @@ def main():
     themes = helpers.read_themes_file(themes_file_path)
     previous_themes = themes.copy()
 
-
     context_menu = None
 
     action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
     action_window.kill()
 
-    theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, config_file_dir=config_file_dir, themes_file_path=themes_file_path, diameter=75)
+    theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, config_file_dir=config_file_dir, themes_file_path=themes_file_path, diameter=75, right_clickable_elements=right_clickable_elements)
     theme_manager_window.kill()
 
     back_to_game_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((w / 2 - 200, h / 4), (400, 50)), text='Return (ESC)', manager=manager, visible=0)
@@ -353,7 +354,7 @@ def main():
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == show_theme_manager_button and show_theme_manager_button.text == 'Show theme manager':
                 show_theme_manager_button.set_text('Hide theme manager')
-                theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, config_file_dir=config_file_dir, themes_file_path=themes_file_path, diameter=75)
+                theme_manager_window = ThemeManagerWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (w, h)), manager=manager, w=w, h=h, themes=themes, config_file_dir=config_file_dir, themes_file_path=themes_file_path, diameter=75, right_clickable_elements=right_clickable_elements)
 
                 if show_controls_button.text == 'Hide controls':
                     show_controls_button.set_text('Show controls')
@@ -568,7 +569,11 @@ def main():
 
             if event.type == pygame.MOUSEBUTTONUP and event.button == 3:
                 mouse_pos = pygame.mouse.get_pos()
-                context_menu = helpers.create_context_menu(context_menu, ['testing', 'context menu', 'right here and now'], manager, mouse_pos)
+                right_clicked_element = helpers.get_right_clicked_element(mouse_pos, right_clickable_elements)
+                if right_clicked_element is not None:
+                    try:
+                        context_menu = helpers.create_context_menu(context_menu, right_clicked_element.context_menu_buttons, manager, mouse_pos)
+                    except: pass
 
             manager.process_events(event)
 

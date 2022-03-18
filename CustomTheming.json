@@ -1,9 +1,30 @@
 {
     "#less_dead_zone_button":
     {
-        "misc":
-        {
-            "text_horiz_alignment_padding": "0.5"
-        }
+      "misc":
+      {
+          "text_horiz_alignment_padding": "0.5"
+      }
+    },
+
+    "#context_menu":
+    {
+      "colours":
+      {
+        "dark_bg":"#21282D"
+      }
+    },
+
+    "#context_menu.@selection_list_item":
+    {
+      "colours":
+      {
+        "normal_bg": "#31312C"
+      },
+      "misc":
+      {
+        "text_horiz_alignment": "left",
+        "text_horiz_alignment_padding": "5"
+      }
     }
 }

@@ -3,6 +3,7 @@ import random
 import os
 import ast
 import pygame
+import pygame_gui
 import totalsize
 import math
 import sys
@@ -918,17 +919,31 @@ def quick_post(self, data_name, data, event_id):
                   'ui_object_id': self.most_specific_combined_id}
     pygame.event.post(pygame.event.Event(event_id, event_data))
 
-def set_scroll_container_min_h(self, scroll_bar):
+def set_scroll_container_min_h(self):
     while self.scroll_bar is not None:
         size = self.get_relative_rect().size
         self.set_dimensions((size[0], size[1] + 1))
         self.rebuild()
+
+def get_right_clicked_element(mouse_pos, right_clickable_elements):
+    if len(right_clickable_elements) == 0:
+        return None
+
+    for element in right_clickable_elements:
+        try:
+            if element.alive() and element.get_abs_rect().collidepoint(mouse_pos):
+                return element
+        except: pass
+
+    return None
 
 def create_context_menu(context_menu, button_list, manager, mouse_pos):
     try: context_menu.kill()
     except: pass
 
     height = min(len(button_list) * 20, 600)
-    context_menu = ContextMenu(relative_rect=pygame.Rect(mouse_pos, (300, height)), item_list=button_list, manager=manager)
+    rect = pygame.Rect(mouse_pos, (150, height))
+
+    context_menu = ContextMenu(relative_rect=rect, manager=manager, object_id=pygame_gui.core.ObjectID(object_id='#context_menu'), item_list=button_list)
 
     return context_menu

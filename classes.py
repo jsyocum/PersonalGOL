@@ -5,7 +5,7 @@ import pygame
 import pygame_gui
 from pygame_gui.core import ObjectID, UIElement, UIContainer
 from pygame_gui.core.interfaces import IContainerLikeInterface, IUIManagerInterface
-from pygame_gui.elements.ui_vertical_scroll_bar import UIVerticalScrollBar
+from pygame_gui.elements import UIVerticalScrollBar, UIButton
 from pathlib import Path
 from typing import Union, Dict, Tuple, List, Iterable
 from pathvalidate import sanitize_filename, sanitize_filepath
@@ -646,7 +646,8 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                  themes: [] = [],
                  themes_file_path: str = '',
                  config_file_dir: str = '',
-                 diameter: int = 50
+                 diameter: int = 50,
+                 right_clickable_elements: [] = []
                  ):
 
         super().__init__(rect=rect, manager=manager,
@@ -685,31 +686,37 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.patterns_selection_list.disable()
 
 
+        self.color_preview_context_menu_buttons = ['Copy', 'Paste']
         self.change_colors_text = pygame_gui.elements.UILabel(text='Change colors:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.patterns_selection_list})
 
         self.color_surf_1 = pygame.Surface((30, 30))
         self.color_surf_1.fill(self.themes[0][1])
         self.color_preview_1 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_1.get_size()), image_surface=self.color_surf_1, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.change_colors_text})
+        self.color_preview_1.context_menu_buttons = self.color_preview_context_menu_buttons
         self.pick_color_button_1 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_1, 'top_target': self.change_colors_text})
 
         self.color_surf_2 = pygame.Surface((30, 30))
         self.color_surf_2.fill(self.themes[0][2])
         self.color_preview_2 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_2.get_size()), image_surface=self.color_surf_2, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_preview_1})
+        self.color_preview_2.context_menu_buttons = self.color_preview_context_menu_buttons
         self.pick_color_button_2 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_2, 'top_target': self.color_preview_1})
 
         self.color_surf_3 = pygame.Surface((30, 30))
         self.color_surf_3.fill(self.themes[0][3])
         self.color_preview_3 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_3.get_size()), image_surface=self.color_surf_3, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_preview_2})
+        self.color_preview_3.context_menu_buttons = self.color_preview_context_menu_buttons
         self.pick_color_button_3 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_3, 'top_target': self.color_preview_2})
 
         self.color_surf_4 = pygame.Surface((30, 30))
         self.color_surf_4.fill(self.themes[0][4])
         self.color_preview_4 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_4.get_size()), image_surface=self.color_surf_4, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_preview_3})
+        self.color_preview_4.context_menu_buttons = self.color_preview_context_menu_buttons
         self.pick_color_button_4 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_4, 'top_target': self.color_preview_3})
 
         self.color_surf_5 = pygame.Surface((30, 30))
         self.color_surf_5.fill(self.themes[0][5])
         self.color_preview_5 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_5.get_size()), image_surface=self.color_surf_5, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_preview_4})
+        self.color_preview_5.context_menu_buttons = self.color_preview_context_menu_buttons
         self.pick_color_button_5 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_5, 'top_target': self.color_preview_4})
 
         self.previous_colors = deepcopy(themes[self.theme_index][1:])
@@ -719,6 +726,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.color_picker_killed = False
         self.kill_color_picker = False
 
+        for e in self.all_color_previews: right_clickable_elements.append(e)
 
         button_width = self.theme_list.get_relative_rect().width / 2 - 2.5
         self.create_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (button_width, 30)), text='+', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.theme_list})
@@ -1728,11 +1736,11 @@ class ContextMenu(pygame_gui.elements.UISelectionList):
     def process_event(self, event: pygame.event.Event) -> bool:
         super().process_event(event)
 
-        helpers.set_scroll_container_min_h(self, self.scroll_bar)
+        helpers.set_scroll_container_min_h(self)
 
         if event.type == pygame.MOUSEBUTTONUP:
             mouse_pos = pygame.mouse.get_pos()
-            if self.get_relative_rect().collidepoint(mouse_pos) is False:
+            if self.get_abs_rect().collidepoint(mouse_pos) is False:
                 self.kill()
 
         if event.type == pygame.KEYUP:
@@ -1742,3 +1750,120 @@ class ContextMenu(pygame_gui.elements.UISelectionList):
             self.kill()
 
         return False  # Don't consume any events
+
+    def set_item_list(self, new_item_list: Union[List[str], List[Tuple[str, str]]]):
+        """
+        Set a new string list (or tuple of strings & ids list) as the item list for this selection
+        list. This will change what is displayed in the list.
+
+        Tuples should be arranged like so:
+
+         (list_text, object_ID)
+
+         - list_text: displayed in the UI
+         - object_ID: used for theming and events
+
+        :param new_item_list: The new list to switch to. Can be a list of strings or tuples.
+
+        """
+        self._raw_item_list = new_item_list
+        self.item_list = []  # type: List[Dict]
+        for new_item in new_item_list:
+            if isinstance(new_item, str):
+                new_item_list_item = {'text': new_item,
+                                      'button_element': None,
+                                      'selected': False,
+                                      'object_id': '#item_list_item'}
+            elif isinstance(new_item, tuple):
+                new_item_list_item = {'text': new_item[0],
+                                      'button_element': None,
+                                      'selected': False,
+                                      'object_id': new_item[1]}
+            else:
+                raise ValueError('Invalid item list')
+
+            self.item_list.append(new_item_list_item)
+
+        self.total_height_of_list = self.list_item_height * len(self.item_list)
+        self.lowest_list_pos = (self.total_height_of_list -
+                                self.list_and_scroll_bar_container.relative_rect.height)
+        inner_visible_area_height = self.list_and_scroll_bar_container.relative_rect.height
+
+        if self.total_height_of_list > inner_visible_area_height:
+            # we need a scroll bar
+            self.current_scroll_bar_width = self.scroll_bar_width
+            percentage_visible = inner_visible_area_height / max(self.total_height_of_list, 1)
+
+            if self.scroll_bar is not None:
+                self.scroll_bar.reset_scroll_position()
+                self.scroll_bar.set_visible_percentage(percentage_visible)
+                self.scroll_bar.start_percentage = 0
+            else:
+                self.scroll_bar = UIVerticalScrollBar(pygame.Rect(-self.scroll_bar_width,
+                                                                  0,
+                                                                  self.scroll_bar_width,
+                                                                  inner_visible_area_height),
+                                                      visible_percentage=percentage_visible,
+                                                      manager=self.ui_manager,
+                                                      parent_element=self,
+                                                      container=self.list_and_scroll_bar_container,
+                                                      anchors={'left': 'right',
+                                                               'right': 'right',
+                                                               'top': 'top',
+                                                               'bottom': 'bottom'})
+                self.join_focus_sets(self.scroll_bar)
+        else:
+            if self.scroll_bar is not None:
+                self.scroll_bar.kill()
+                self.scroll_bar = None
+            self.current_scroll_bar_width = 0
+
+        # create button list container
+        if self.item_list_container is not None:
+            self.item_list_container.clear()
+            if (self.item_list_container.relative_rect.width !=
+                    (self.list_and_scroll_bar_container.relative_rect.width -
+                     self.current_scroll_bar_width)):
+                container_dimensions = (self.list_and_scroll_bar_container.relative_rect.width -
+                                        self.current_scroll_bar_width,
+                                        self.list_and_scroll_bar_container.relative_rect.height)
+                self.item_list_container.set_dimensions(container_dimensions)
+        else:
+            self.item_list_container = UIContainer(
+                pygame.Rect(0, 0,
+                            self.list_and_scroll_bar_container.relative_rect.width -
+                            self.current_scroll_bar_width,
+                            self.list_and_scroll_bar_container.relative_rect.height),
+                manager=self.ui_manager,
+                starting_height=10,
+                parent_element=self,
+                container=self.list_and_scroll_bar_container,
+                object_id='#item_list_container',
+                anchors={'left': 'left',
+                         'right': 'right',
+                         'top': 'top',
+                         'bottom': 'bottom'})
+            self.join_focus_sets(self.item_list_container)
+        item_y_height = 0
+        for item in self.item_list:
+            if item_y_height <= self.item_list_container.relative_rect.height:
+                button_rect = pygame.Rect(0, item_y_height,
+                                          self.item_list_container.relative_rect.width,
+                                          self.list_item_height)
+                item['button_element'] = UIButton(relative_rect=button_rect,
+                                                  text=item['text'],
+                                                  manager=self.ui_manager,
+                                                  parent_element=self,
+                                                  container=self.item_list_container,
+                                                  object_id=ObjectID(
+                                                      object_id=item['object_id'],
+                                                      class_id='@selection_list_item'),
+                                                  allow_double_clicks=self.allow_double_clicks,
+                                                  anchors={'left': 'left',
+                                                           'right': 'right',
+                                                           'top': 'top',
+                                                           'bottom': 'top'})
+                self.join_focus_sets(item['button_element'])
+                item_y_height += self.list_item_height
+            else:
+                break
