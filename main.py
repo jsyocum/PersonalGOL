@@ -110,6 +110,8 @@ def main():
     DefaultMaxFps = 18
     DefaultLikelihood = 5
 
+    select_color = pygame.Color(27, 69, 109)
+
     DefaultColorR = 255
     DefaultColorG = 255
     DefaultColorB = 255
@@ -146,6 +148,8 @@ def main():
     themes = helpers.read_themes_file(themes_file_path)
     previous_themes = themes.copy()
 
+
+    context_menu = None
 
     action_window = ActionWindow(rect=pygame.Rect((w / 2 - 525, h / 4 - 13), (330, 458)), manager=manager, width=w, height=h, SelMode=config_dict["SelectionMode"][0], EraserMode=config_dict["Eraser"][0], BOARDADJUSTBUTTON=BOARDADJUSTBUTTON, AutoAdjust=config_dict["AutoAdjust"][0])
     action_window.kill()
@@ -562,6 +566,10 @@ def main():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.clear_adjustments_button:
                 AutoAdjustments = dict.fromkeys(AutoAdjustments, 0)
 
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 3:
+                mouse_pos = pygame.mouse.get_pos()
+                context_menu = helpers.create_context_menu(context_menu, ['testing', 'context menu', 'right here and now'], manager, mouse_pos)
+
             manager.process_events(event)
 
         manager.update(time_delta)
@@ -666,9 +674,6 @@ def main():
         if AdjustBoard is True:
             Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), theme_board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
             Appended = helpers.appendToStepStack(Board, step_stack)
-            test_surf = helpers.complex_blit_array(Board, theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
-            print(helpers.getScale(Board, test_surf.get_width(), test_surf.get_height(), testing=True)[0])
-
 
             AdjustBoard = False
 
@@ -743,7 +748,7 @@ def main():
             try: previous_HeldDownCells = deepcopy(HeldDownCells)
             except: pass
 
-            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], EvenOrOdd, HeldDownCells)
+            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells)
 
         helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
 

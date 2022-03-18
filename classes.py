@@ -664,8 +664,8 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.themes = themes
         self.previous_themes = None
         self.theme_index = 0
-        self.selected_index = -1
-        self.selected = False
+        self.selected_index = 0
+        self.selected = True
 
         self.themes_file_path = themes_file_path
         self.config_file_dir = config_file_dir
@@ -1722,3 +1722,23 @@ class theme_button(pygame_gui.elements.UIButton):
         self.selected_image = selected_surf
 
         self.rebuild()
+
+
+class ContextMenu(pygame_gui.elements.UISelectionList):
+    def process_event(self, event: pygame.event.Event) -> bool:
+        super().process_event(event)
+
+        helpers.set_scroll_container_min_h(self, self.scroll_bar)
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            mouse_pos = pygame.mouse.get_pos()
+            if self.get_relative_rect().collidepoint(mouse_pos) is False:
+                self.kill()
+
+        if event.type == pygame.KEYUP:
+            self.kill()
+
+        if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self:
+            self.kill()
+
+        return False  # Don't consume any events

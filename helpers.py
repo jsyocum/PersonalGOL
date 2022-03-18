@@ -1,12 +1,12 @@
 import numpy as np
 import random
 import os
-import time
 import ast
 import pygame
 import totalsize
 import math
 import sys
+from classes import ContextMenu
 from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
@@ -186,20 +186,20 @@ def should_redraw_surf(Appended, theme_board, previous_theme_board, themes, prev
 # The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
-def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, EvenOrOdd, SelectedCells) -> pygame.surface:
+def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, select_color, EvenOrOdd, SelectedCells) -> pygame.surface:
     Scale = getScale(board, surf.get_width(), surf.get_height(), testing=False)[0]
     boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
     checkerboard_color = pygame.Color(EditCheckerboardBrightness, EditCheckerboardBrightness, EditCheckerboardBrightness)
 
     for subi, SubArray in enumerate(board):
         for i, Square in enumerate(SubArray):
-            select_color = pygame.Color('Black')
+            final_select_color = pygame.Color('Black')
             if len(SelectedCells) == 2:
                 x_1, y_1 = SelectedCells[0][0], SelectedCells[0][1]
                 x_2, y_2 = SelectedCells[1][0], SelectedCells[1][1]
                 if min(x_1, x_2) <= subi <= max(x_1, x_2):
                     if min(y_1, y_2) <= i <= max(y_1, y_2):
-                        select_color = pygame.Color(27, 69, 109)
+                        final_select_color = select_color
 
             if EditMode is True:
                 square = pygame.Rect((subi * Scale, i * Scale), (Scale, Scale))
@@ -212,7 +212,7 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                     if (i % 2) != EvenOrOdd:
                         checkerboard_color_final = checkerboard_color
 
-                checkerboard_color_final = add_selection_to_color(checkerboard_color_final, select_color)
+                checkerboard_color_final = add_selection_to_color(checkerboard_color_final, final_select_color)
                 pygame.draw.rect(boardSurf, checkerboard_color_final, square)
 
             if Square == 1:
@@ -221,7 +221,7 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
 
                 top_left = (subi * Scale, i * Scale)
                 shapes = get_shape_points(theme[0], top_left, Scale)
-                boardSurf = draw_theme_shapes(shapes, theme, boardSurf)
+                boardSurf = draw_theme_shapes(shapes, theme, boardSurf, final_select_color)
 
     return boardSurf
 
@@ -259,9 +259,10 @@ def create_theme_surf(theme, diameter) -> pygame.surface:
 
     return surf
 
-def draw_theme_shapes(shapes, theme, surf):
+def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black')):
     for s, shape in enumerate(shapes):
         color_for_shape = theme[s + 1]
+        color_for_shape = add_selection_to_color(color_for_shape, select_color)
 
         if shape[1] == 'rectangle':
             square = pygame.Rect(shape[0])
@@ -916,3 +917,18 @@ def quick_post(self, data_name, data, event_id):
                   'ui_element': self,
                   'ui_object_id': self.most_specific_combined_id}
     pygame.event.post(pygame.event.Event(event_id, event_data))
+
+def set_scroll_container_min_h(self, scroll_bar):
+    while self.scroll_bar is not None:
+        size = self.get_relative_rect().size
+        self.set_dimensions((size[0], size[1] + 1))
+        self.rebuild()
+
+def create_context_menu(context_menu, button_list, manager, mouse_pos):
+    try: context_menu.kill()
+    except: pass
+
+    height = min(len(button_list) * 20, 600)
+    context_menu = ContextMenu(relative_rect=pygame.Rect(mouse_pos, (300, height)), item_list=button_list, manager=manager)
+
+    return context_menu
