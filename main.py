@@ -204,8 +204,7 @@ def main():
     else:
         Board, theme_board = helpers.generateArray(config_dict["CustomBoardSizeHeight"][0], config_dict["CustomBoardSizeWidth"][0], config_dict["Likelihood"][0])
 
-    Appended = helpers.appendToStepStack(Board, step_stack)
-    previous_theme_board = theme_board.copy()
+    Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
     while running:
         if Scale != helpers.getScale(Board, w, h):
@@ -389,7 +388,7 @@ def main():
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == file_name_window:
                 save_path = event.text
-                helpers.savePNGWithBoardInfo(save_path, CurrentBoardSurf, step_stack[-1], theme_board, themes)
+                helpers.savePNGWithBoardInfo(save_path, CurrentBoardSurf, step_stack[-1][0], step_stack[-1][1], themes)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
                 save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=SavePath, allow_picking_directories=False)
@@ -415,14 +414,14 @@ def main():
                     mouse_pos = pygame.mouse.get_pos()
                     IsColliding, IsCollidingWithActionWindow, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h)
                     if IsColliding and not IsCollidingWithActionWindow:
-                        board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
-                        Board = step_stack[-1].copy()
+                        board_pos = helpers.getBoardPosition(step_stack[-1][0], rel_mouse_pos, w, h)
+                        Board = step_stack[-1][0].copy()
                         if Board[board_pos] == 0:
                             Board[board_pos] = 1
                         else:
                             Board[board_pos] = 0
 
-                        Appended = helpers.appendToStepStack(Board, step_stack)
+                        Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
                     HeldDownCells = []
 
@@ -436,7 +435,7 @@ def main():
                 mouse_pos = pygame.mouse.get_pos()
                 IsColliding, IsCollidingWithActionWindow, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h)
                 if IsColliding and not IsCollidingWithActionWindow:
-                    board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
+                    board_pos = helpers.getBoardPosition(step_stack[-1][0], rel_mouse_pos, w, h)
 
                     if config_dict["SelectionMode"][0] is True and Continuous is False:
                         if len(HeldDownCells) < 2 and board_pos not in HeldDownCells:
@@ -447,13 +446,13 @@ def main():
                             HeldDownCells[1] = board_pos
 
                     elif config_dict["SelectionMode"][0] is False:
-                        Board = step_stack[-1].copy()
+                        Board = step_stack[-1][0].copy()
                         if config_dict["Eraser"][0] is False:
                             Board[board_pos] = 1
                         else:
                             Board[board_pos] = 0
 
-                        Appended = helpers.appendToStepStack(Board, step_stack)
+                        Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             if event.type == SETTINGSAPPLIED and event.ui_element == settings_window:
                 config_dict = event.config_dict
@@ -491,8 +490,8 @@ def main():
                 action_window.eraser_mode_button.rebuild()
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.set_custom_board_size_entries_button:
-                current_width = step_stack[-1].shape[0]
-                current_height = step_stack[-1].shape[1]
+                current_width = step_stack[-1][0].shape[0]
+                current_height = step_stack[-1][0].shape[1]
 
                 config_dict["CustomBoardSizeWidth"][0] = current_width
                 config_dict["CustomBoardSizeHeight"][0] = current_height
@@ -504,12 +503,12 @@ def main():
 
             if keys[pygame.K_LCTRL] and event.type == pygame.KEYUP and event.key == pygame.K_a and MenuOpen is False and EditMode is True and config_dict["SelectionMode"][0] is True:
                 if SelectionBoxPresent is False:
-                    HeldDownCells = [(0, 0), (step_stack[-1].shape[0] - 1, step_stack[-1].shape[1] - 1)]
+                    HeldDownCells = [(0, 0), (step_stack[-1][0].shape[0] - 1, step_stack[-1][0].shape[1] - 1)]
                     SelectionBoxPresent = True
 
                 else:
-                    if HeldDownCells != [(0, 0), (step_stack[-1].shape[0] - 1, step_stack[-1].shape[1] - 1)]:
-                        HeldDownCells = [(0, 0), (step_stack[-1].shape[0] - 1, step_stack[-1].shape[1] - 1)]
+                    if HeldDownCells != [(0, 0), (step_stack[-1][0].shape[0] - 1, step_stack[-1][0].shape[1] - 1)]:
+                        HeldDownCells = [(0, 0), (step_stack[-1][0].shape[0] - 1, step_stack[-1][0].shape[1] - 1)]
 
                     else:
                         HeldDownCells = []
@@ -528,9 +527,9 @@ def main():
                 mouse_pos = pygame.mouse.get_pos()
                 IsColliding, IsCollidingWithActionWindow, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h)
                 if IsColliding and not IsCollidingWithActionWindow:
-                    board_pos = helpers.getBoardPosition(step_stack[-1], rel_mouse_pos, w, h)
-                    Board = helpers.paste(step_stack[-1].copy(), [board_pos, [board_pos[0] + 1, board_pos[1] + 1]], CopiedBoard)
-                    Appended = helpers.appendToStepStack(Board, step_stack)
+                    board_pos = helpers.getBoardPosition(step_stack[-1][0], rel_mouse_pos, w, h)
+                    Board = helpers.paste(step_stack[-1][0].copy(), [board_pos, [board_pos[0] + 1, board_pos[1] + 1]], CopiedBoard)
+                    Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.fill_button) or (event.type == pygame.KEYUP and event.key == pygame.K_BACKSPACE and SelectionBoxPresent is True):
                 Fill = True
@@ -600,19 +599,19 @@ def main():
 
         if config_dict["AutoAdjust"][0] is True:
             if Continuous is True or (Continuous is False and Step is True):
-                Board, theme_board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1].copy(), theme_board, w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
-                Appended = helpers.appendToStepStack(Board, step_stack)
+                Board, theme_board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1][0].copy(), step_stack[-1][1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
+                Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
         if Continuous is False and Step is True:
-            Board = helpers.applyRules(step_stack[-1], step_stack)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board = helpers.applyRules(step_stack[-1][0], step_stack)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
             Step = False
         elif Continuous is False and StepBack is True:
             Appended = helpers.stepBack(step_stack)
             StepBack = False
         elif Continuous is True and Update is True:
-            Board = helpers.applyRules(step_stack[-1], step_stack)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board = helpers.applyRules(step_stack[-1][0], step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
             Step = False
             StepBack = False
             Update = False
@@ -620,65 +619,65 @@ def main():
         if NewBoard is True:
             width, height = helpers.determineWidthAndHeight(config_dict, w, h)
             Board, theme_board = helpers.generateArray(height, width, config_dict["Likelihood"][0])
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
             if len(HeldDownCells) == 2:
-                HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
+                HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1][0], HeldDownCells)
 
             NewBoard = False
 
         if Zoom is True:
-            Board, theme_board = helpers.zoom(step_stack[-1], theme_board, HeldDownCells)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board, theme_board = helpers.zoom(step_stack[-1][0], step_stack[-1][1], HeldDownCells)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
             HeldDownCells = []
 
             Zoom = False
 
         if Cut is True:
-            CopiedBoard, none = helpers.zoom(step_stack[-1], theme_board, HeldDownCells)
-            Board = helpers.cut(step_stack[-1].copy(), HeldDownCells)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            CopiedBoard, none = helpers.zoom(step_stack[-1][0], step_stack[-1][1], HeldDownCells)
+            Board = helpers.cut(step_stack[-1][0].copy(), HeldDownCells)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Cut = False
 
         if Copy is True:
-            CopiedBoard, none = helpers.zoom(step_stack[-1], theme_board, HeldDownCells)
+            CopiedBoard, none = helpers.zoom(step_stack[-1][0], step_stack[-1][1], HeldDownCells)
 
             Copy = False
 
         if Paste is True:
-            Board = helpers.paste(step_stack[-1].copy(), HeldDownCells, CopiedBoard)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board = helpers.paste(step_stack[-1][0].copy(), HeldDownCells, CopiedBoard)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Paste = False
 
         if Fill is True:
-            Board = helpers.cut(step_stack[-1].copy(), HeldDownCells, Fill=Fill)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board = helpers.cut(step_stack[-1][0].copy(), HeldDownCells, Fill=Fill)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Fill = False
 
         if Clear is True:
-            Board = helpers.cut(step_stack[-1].copy(), HeldDownCells)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board = helpers.cut(step_stack[-1][0].copy(), HeldDownCells)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Clear = False
 
         if Rotate is True:
-            Board = helpers.rotate(step_stack[-1].copy(), HeldDownCells)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board = helpers.rotate(step_stack[-1][0].copy(), HeldDownCells)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Rotate = False
 
         if Flip is True:
-            Board = helpers.flip(step_stack[-1].copy(), HeldDownCells)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board = helpers.flip(step_stack[-1][0].copy(), HeldDownCells)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Flip = False
 
         if AdjustBoard is True:
-            Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), theme_board, AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1][0].copy(), step_stack[-1][1].copy(), AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
             AdjustBoard = False
 
@@ -690,15 +689,15 @@ def main():
             action_window.clear_adjustments_button.disable()
 
         if ApplyAdjustments is True:
-            Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1].copy(), theme_board, (None, None), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
-            Appended = helpers.appendToStepStack(Board, step_stack)
+            Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1][0].copy(), step_stack[-1][1].copy(), (None, None), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
             ApplyAdjustments = False
 
         if ClearHistory is True:
-            current_board = step_stack[-1].copy()
+            current_boards = deepcopy(step_stack[-1])
             step_stack.clear()
-            step_stack.append(current_board)
+            helpers.appendToStepStack(current_boards[0], current_boards[1], step_stack)
             ClearHistory = False
 
         if os.path.exists(DefaultSavePath) is True:
@@ -708,20 +707,20 @@ def main():
 
         if QuickSave is True:
             print("Quicksaved to:", quick_save_path)
-            helpers.savePNGWithBoardInfo(quick_save_path, CurrentBoardSurf, step_stack[-1], theme_board, themes)
+            helpers.savePNGWithBoardInfo(quick_save_path, CurrentBoardSurf, step_stack[-1][0], step_stack[-1][1], themes)
             QuickSave = False
 
         if QuickLoad is True:
             load_status_message = 'No quicksave exists to be loaded!'
             if os.path.exists(quick_save_path):
-                loaded, load_status_message, theme_board, themes, Appended = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, theme_board, themes)
+                loaded, load_status_message, themes, Appended = helpers.loadPNGWithBoardInfo(quick_save_path, step_stack, themes)
 
             if loaded is True:
                 Continuous = False
                 WasContinuous = False
 
                 if len(HeldDownCells) == 2:
-                    HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
+                    HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1][0], HeldDownCells)
 
             print(load_status_message)
 
@@ -729,31 +728,29 @@ def main():
 
         if Load is True:
             load_status_message = ''
-            loaded, load_status_message, theme_board, themes, Appended = helpers.loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes)
+            loaded, load_status_message, themes, Appended = helpers.loadPNGWithBoardInfo(load_path, step_stack, themes)
             if loaded is True:
                 Continuous = False
                 WasContinuous = False
 
                 if len(HeldDownCells) == 2:
-                    HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1], HeldDownCells)
+                    HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1][0], HeldDownCells)
 
             print(load_status_message)
 
             Load = False
 
-        if helpers.should_redraw_surf(Appended, theme_board, previous_theme_board, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells):
+        if helpers.should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells):
             Appended = False
             edit_mode_changed = False
             edit_checkerboard_brightness_changed = False
 
-            try: previous_theme_board = theme_board.copy()
-            except: pass
             try: previous_themes = deepcopy(themes)
             except: pass
             try: previous_HeldDownCells = deepcopy(HeldDownCells)
             except: pass
 
-            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1], theme_board, themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells)
+            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells)
 
         helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
 
@@ -761,9 +758,9 @@ def main():
             if show_controls_button.text == 'Hide controls':
                 helpers.showControls(surf, w, h, controls_rect, controls_header_text, controls_text_array)
 
-        ScaledHeldDownCells = helpers.getScaledHeldDownCells(step_stack[-1], CurrentBoardSurf, HeldDownCells, w, h)
+        ScaledHeldDownCells = helpers.getScaledHeldDownCells(step_stack[-1][0], CurrentBoardSurf, HeldDownCells, w, h)
         if len(ScaledHeldDownCells) == 2:
-            helpers.showSelectionBoxSize(surf, step_stack[-1].copy(), ScaledHeldDownCells, HeldDownCells, sidebar_header_font)
+            helpers.showSelectionBoxSize(surf, step_stack[-1][0].copy(), ScaledHeldDownCells, HeldDownCells, sidebar_header_font)
 
         config_dict["R"][0], config_dict["G"][0], config_dict["B"][0] = color.r, color.g, color.b
 

@@ -121,11 +121,24 @@ def applyRules(ogArray, step_stack):
 
     return array
 
-def appendToStepStack(Board, step_stack):
+def appendToStepStack(board, theme_board, step_stack):
     appended = False
-    if len(step_stack) == 0 or np.array_equal(Board, step_stack[-1]) is False:
-        step_stack.append(Board.copy())
+    step = []
+
+    if len(step_stack) == 0 or np.array_equal(board, step_stack[-1][0]) is False:
+        step.append(board.copy())
         appended = True
+    else:
+        step.append(step_stack[-1][0].copy())
+
+    if len(step_stack) == 0 or np.array_equal(theme_board, step_stack[-1][1]) is False:
+        step.append(theme_board.copy())
+        appended = True
+    else:
+        step.append(step_stack[-1][1].copy())
+
+    if appended is True:
+        step_stack.append(step)
 
     if totalsize.total_size(step_stack) > 1e+9:
         step_stack.popleft()
@@ -170,7 +183,7 @@ def get_random_theme_board(board):
 
     return theme_board
 
-def should_redraw_surf(Appended, theme_board, previous_theme_board, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells):
+def should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells):
     if Appended or edit_mode_changed or edit_checkerboard_brightness_changed:
         return True
 
@@ -179,9 +192,6 @@ def should_redraw_surf(Appended, theme_board, previous_theme_board, themes, prev
 
     # elif np.array_equal(themes, previous_themes) is False:
     elif themes != previous_themes:
-        return True
-
-    elif np.array_equal(theme_board, previous_theme_board) is False:
         return True
 
     else:
@@ -748,11 +758,11 @@ def savePNGWithBoardInfo(save_path, CurrentBoardSurf, board, theme_board, themes
 
     targetImage.save(save_path, pnginfo=metadata)
 
-def loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes, load_themes=True):
+def loadPNGWithBoardInfo(load_path, step_stack, themes, load_themes=True):
     load_path = str(load_path)
     loaded = False
     if load_path.endswith('.png') is False:
-        return loaded, load_path + ' is not a .png file', theme_board, themes, False
+        return loaded, load_path + ' is not a .png file', themes, False
 
     targetImage = PngImageFile(load_path)
 
@@ -760,7 +770,7 @@ def loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes, load_themes
         board_string = targetImage.text["BoardArray"]
         board = convertStringToArray(board_string)
     except:
-        return loaded, load_path + ' does not contain a board array', theme_board, themes, False
+        return loaded, load_path + ' does not contain a board array', themes, False
 
     try:
         theme_board_string = targetImage.text["ThemeBoardArray"]
@@ -776,11 +786,11 @@ def loadPNGWithBoardInfo(load_path, step_stack, theme_board, themes, load_themes
             print('No themes found in board metadata.')
 
     step_stack.clear()
-    Appended = appendToStepStack(board, step_stack)
+    Appended = appendToStepStack(board, theme_board, step_stack)
 
     loaded = True
 
-    return loaded, 'Board loaded: ' + load_path, theme_board, themes, Appended
+    return loaded, 'Board loaded: ' + load_path, themes, Appended
 
 def convertArrayToString(array):
     return '\n'.join('\t'.join('%0.3f' % x for x in y) for y in array)
