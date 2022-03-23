@@ -192,6 +192,7 @@ def get_shape_points(pattern_int, tl, s):
             shape_points.append(((top_two_third(), bottom_two_third(), bottom_right(), top_right()), 'polygon'))
 
         case 20:
+            # Diamond in the middle with separately drawn corners
             shape_points.append(((top_left(), left_center(), top_center()), 'polygon'))
             shape_points.append(((top_center(), right_center(), top_right()), 'polygon'))
             shape_points.append(((left_center(), bottom_left(), bottom_center()), 'polygon'))

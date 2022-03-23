@@ -190,7 +190,6 @@ def should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edi
     elif np.array_equal(HeldDownCells, previous_HeldDownCells) is False:
         return True
 
-    # elif np.array_equal(themes, previous_themes) is False:
     elif themes != previous_themes:
         return True
 
@@ -208,33 +207,39 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
 
     for subi, SubArray in enumerate(board):
         for i, Square in enumerate(SubArray):
+            top_left = (subi * Scale, i * Scale)
             final_select_color = pygame.Color('Black')
+            draw_checker = False
+
             if len(SelectedCells) == 2:
                 x_1, y_1 = SelectedCells[0][0], SelectedCells[0][1]
                 x_2, y_2 = SelectedCells[1][0], SelectedCells[1][1]
                 if min(x_1, x_2) <= subi <= max(x_1, x_2):
                     if min(y_1, y_2) <= i <= max(y_1, y_2):
                         final_select_color = select_color
+                        draw_checker = True
 
-            if EditMode is True:
-                square = pygame.Rect((subi * Scale, i * Scale), (Scale, Scale))
+            if EditMode is True and Square == 0:
                 checkerboard_color_final = pygame.Color('Black')
 
                 if (subi % 2) == 0:
                     if (i % 2) == EvenOrOdd:
                         checkerboard_color_final = checkerboard_color
+                        draw_checker = True
                 else:
                     if (i % 2) != EvenOrOdd:
                         checkerboard_color_final = checkerboard_color
+                        draw_checker = True
 
-                checkerboard_color_final = add_selection_to_color(checkerboard_color_final, final_select_color)
-                pygame.draw.rect(boardSurf, checkerboard_color_final, square)
+                if draw_checker is True:
+                    square = get_shape_points(0, top_left, Scale)[0][0]
+                    checkerboard_color_final = add_selection_to_color(checkerboard_color_final, final_select_color)
+                    pygame.draw.polygon(boardSurf, checkerboard_color_final, square)
 
             if Square == 1:
                 theme_index = theme_board[subi][i]
                 theme = themes[theme_index]
 
-                top_left = (subi * Scale, i * Scale)
                 shapes = get_shape_points(theme[0], top_left, Scale)
                 boardSurf = draw_theme_shapes(shapes, theme, boardSurf, final_select_color)
 
