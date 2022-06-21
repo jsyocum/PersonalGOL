@@ -790,7 +790,6 @@ def loadPNGWithBoardInfo(load_path, step_stack, themes, load_themes=True):
         except:
             print('No themes found in board metadata.')
 
-    step_stack.clear()
     Appended = appendToStepStack(board, theme_board, step_stack)
 
     loaded = True
