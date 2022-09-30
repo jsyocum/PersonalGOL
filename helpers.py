@@ -68,6 +68,13 @@ def move_item_in_list(list, index, move_int, bottom_or_top='none'):
 
     return list, new_index
 
+def determine_slider_button_text_and_limit(lower_limit, upper_limit, value):
+    if value > lower_limit:
+        return '[X]', upper_limit
+
+    else:
+        return '[ ]', lower_limit
+
 def convert_themes_array_to_strings(array):
     strings_array = []
     for theme in array:

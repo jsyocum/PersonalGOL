@@ -126,9 +126,9 @@ def main():
     MaxEditCheckerboardBrightness = 200
 
     config_dict = {
-        "Scale": [DefaultScale, 80],
-        "MaxFps": [DefaultMaxFps, 50],
-        "Likelihood": [DefaultLikelihood, 30],
+        "Scale": [DefaultScale, 200],
+        "MaxFps": [DefaultMaxFps, 1000],
+        "Likelihood": [DefaultLikelihood, 100],
         "R": [DefaultColorR, 255],
         "G": [DefaultColorG, 255],
         "B": [DefaultColorB, 255],
