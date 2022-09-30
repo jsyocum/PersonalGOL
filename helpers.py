@@ -12,6 +12,7 @@ from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
 from pathlib import Path
+from copy import deepcopy
 from get_shape_points import get_shape_points, get_max_patterns, get_max_shapes
 
 # Clears the console screen
@@ -39,6 +40,33 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+
+def move_item_in_list(list, index, move_int, bottom_or_top='none'):
+    bottom_or_top = bottom_or_top.lower()
+    index_item = deepcopy(list[index])
+    list.pop(index)
+
+    new_index = deepcopy(index) + move_int
+
+    # Check to make sure new_index is within bounds
+    if new_index < 0:
+        new_index = 0
+    elif new_index > len(list):
+        new_index = len(list)
+
+    if bottom_or_top != 'none':
+        if bottom_or_top != 'bottom' and bottom_or_top != 'top':
+            print(bottom_or_top, ' is not a valid argument for move_item_in_list function. Must be either bottom or top.')
+
+        elif bottom_or_top == 'bottom':
+            new_index = 0
+
+        elif bottom_or_top == 'top':
+            new_index = len(list)
+
+    list.insert(new_index, index_item)
+
+    return list, new_index
 
 def convert_themes_array_to_strings(array):
     strings_array = []

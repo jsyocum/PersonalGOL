@@ -821,28 +821,16 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             self.kill_color_picker = True
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_up_button:
-            theme = deepcopy(self.themes[self.theme_index])
-            self.themes.pop(self.theme_index)
-            self.themes.insert(self.theme_index - 1, theme)
-            self.selected_index = self.theme_index - 1
+            self.themes, self.selected_index = helpers.move_item_in_list(self.themes, self.theme_index, -1)
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_down_button:
-            theme = deepcopy(self.themes[self.theme_index])
-            self.themes.pop(self.theme_index)
-            self.themes.insert(self.theme_index + 1, theme)
-            self.selected_index = self.theme_index + 1
+            self.themes, self.selected_index = helpers.move_item_in_list(self.themes, self.theme_index, 1)
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_top_button:
-            theme = deepcopy(self.themes[self.theme_index])
-            self.themes.pop(self.theme_index)
-            self.themes.insert(0, theme)
-            self.selected_index = 0
+            self.themes, self.selected_index = helpers.move_item_in_list(self.themes, self.theme_index, 0, 'bottom')
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.move_bottom_button:
-            theme = deepcopy(self.themes[self.theme_index])
-            self.themes.pop(self.theme_index)
-            self.themes.insert(len(self.themes), theme)
-            self.selected_index = len(self.themes) - 1
+            self.themes, self.selected_index = helpers.move_item_in_list(self.themes, self.theme_index, 0, 'top')
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.save_button:
             helpers.write_themes_file(self.config_file_dir, self.themes_file_path, self.themes)
