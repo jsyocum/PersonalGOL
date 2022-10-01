@@ -692,44 +692,37 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.color_preview_context_menu_buttons = ['Copy', 'Paste']
         self.change_colors_text = pygame_gui.elements.UILabel(text='Change colors:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.patterns_selection_list})
 
-        self.color_surf_1 = pygame.Surface((30, 30))
-        self.color_surf_1.fill(self.themes[0][1])
-        self.color_preview_1 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_1.get_size()), image_surface=self.color_surf_1, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.change_colors_text})
-        self.color_preview_1.context_menu_buttons = self.color_preview_context_menu_buttons
-        self.pick_color_button_1 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_1, 'top_target': self.change_colors_text})
 
-        self.color_surf_2 = pygame.Surface((30, 30))
-        self.color_surf_2.fill(self.themes[0][2])
-        self.color_preview_2 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_2.get_size()), image_surface=self.color_surf_2, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_preview_1})
-        self.color_preview_2.context_menu_buttons = self.color_preview_context_menu_buttons
-        self.pick_color_button_2 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_2, 'top_target': self.color_preview_1})
+        self.color_surfs = []
+        self.color_previews = []
+        self.pick_color_buttons = []
+        for color in self.themes[0][1:]:
+            self.color_surfs.append(pygame.Surface((30, 30)))
+            self.color_surfs[-1].fill(color)
 
-        self.color_surf_3 = pygame.Surface((30, 30))
-        self.color_surf_3.fill(self.themes[0][3])
-        self.color_preview_3 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_3.get_size()), image_surface=self.color_surf_3, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_preview_2})
-        self.color_preview_3.context_menu_buttons = self.color_preview_context_menu_buttons
-        self.pick_color_button_3 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_3, 'top_target': self.color_preview_2})
+            if len(self.color_surfs) == 1:
+                color_preview_anchors = {'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.change_colors_text}
+            else:
+                color_preview_anchors = {'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_previews[-1]}
 
-        self.color_surf_4 = pygame.Surface((30, 30))
-        self.color_surf_4.fill(self.themes[0][4])
-        self.color_preview_4 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_4.get_size()), image_surface=self.color_surf_4, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_preview_3})
-        self.color_preview_4.context_menu_buttons = self.color_preview_context_menu_buttons
-        self.pick_color_button_4 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_4, 'top_target': self.color_preview_3})
+            color_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surfs[-1].get_size()), image_surface=self.color_surfs[-1], manager=manager, container=self, anchors=color_preview_anchors)
+            color_preview.context_menu_buttons = self.color_preview_context_menu_buttons
+            self.color_previews.append(color_preview)
 
-        self.color_surf_5 = pygame.Surface((30, 30))
-        self.color_surf_5.fill(self.themes[0][5])
-        self.color_preview_5 = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surf_5.get_size()), image_surface=self.color_surf_5, manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_preview_4})
-        self.color_preview_5.context_menu_buttons = self.color_preview_context_menu_buttons
-        self.pick_color_button_5 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_preview_5, 'top_target': self.color_preview_4})
+            if len(self.color_surfs) == 1:
+                pick_color_button_anchors = {'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_previews[-1], 'top_target': self.change_colors_text}
+            else:
+                pick_color_button_anchors = {'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_previews[-1], 'top_target': self.color_previews[-2]}
+
+            pick_color_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors=pick_color_button_anchors)
+            self.pick_color_buttons.append(pick_color_button)
+
 
         self.previous_colors = deepcopy(themes[self.theme_index][1:])
-        self.all_color_surfs = [self.color_surf_1, self.color_surf_2, self.color_surf_3, self.color_surf_4, self.color_surf_5]
-        self.all_color_previews = [self.color_preview_1, self.color_preview_2, self.color_preview_3, self.color_preview_4, self.color_preview_5]
-        self.all_pick_color_buttons = [self.pick_color_button_1, self.pick_color_button_2, self.pick_color_button_3, self.pick_color_button_4, self.pick_color_button_5]
         self.color_picker_killed = False
         self.kill_color_picker = False
 
-        for e in self.all_color_previews: right_clickable_elements.append(e)
+        for e in self.color_previews: right_clickable_elements.append(e)
 
         button_width = self.theme_list.get_relative_rect().width / 2 - 2.5
         self.create_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (button_width, 30)), text='+', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.theme_list})
@@ -858,22 +851,22 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             self.themes[self.theme_index][0] = event.theme[0]
 
         # Color stuff
-        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element in self.all_pick_color_buttons:
-            self.color_button_pressed = self.all_pick_color_buttons.index(event.ui_element) + 1
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element in self.pick_color_buttons:
+            self.color_button_pressed = self.pick_color_buttons.index(event.ui_element) + 1
             color = self.themes[self.theme_index][self.color_button_pressed]
             self.previous_color = deepcopy(color)
             self.theme_color_picker_dialog = pygame_gui.windows.UIColourPickerDialog(pygame.Rect((self.w / 2 - 80, self.h / 2 + 25), (420, 400)), manager=self.ui_manager, initial_colour=color, window_title='Pick a color...')
             self.theme_color_picker_dialog.opened_on_theme = self.themes[self.theme_index]
-            for element in self.all_pick_color_buttons: element.disable()
+            for element in self.pick_color_buttons: element.disable()
 
         try:
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == self.theme_color_picker_dialog and self.color_picker_killed is False:
                 self.theme_color_picker_dialog.opened_on_theme[self.color_button_pressed] = self.previous_color
-                for element in self.all_pick_color_buttons: element.enable()
+                for element in self.pick_color_buttons: element.enable()
         except: pass
 
         if self.color_picker_killed is True:
-            for element in self.all_pick_color_buttons: element.enable()
+            for element in self.pick_color_buttons: element.enable()
             self.color_picker_killed = False
 
         if event.type == pygame_gui.UI_COLOUR_PICKER_COLOUR_PICKED and event.ui_element == self.theme_color_picker_dialog:
@@ -882,8 +875,8 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         try:
             if self.previous_colors != self.themes[self.theme_index][1:]:
                 for t, theme_color in enumerate(self.themes[self.theme_index][1:]):
-                    self.all_color_surfs[t].fill(theme_color)
-                    self.all_color_previews[t].set_image(self.all_color_surfs[t])
+                    self.color_surfs[t].fill(theme_color)
+                    self.color_previews[t].set_image(self.color_surfs[t])
 
                 self.previous_colors = deepcopy(self.themes[self.theme_index][1:])
         except: pass
