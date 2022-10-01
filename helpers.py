@@ -961,6 +961,34 @@ def write_themes_file(config_file_dir, themes_file_path, themes):
 
     print('Wrote themes file:', themes_file_path)
 
+def build_theme_colors(self, element):
+    manager = element.__getattribute__('manager')
+
+    self.color_surfs = []
+    self.color_previews = []
+    self.pick_color_buttons = []
+
+    for color in self.themes[0][1:]:
+        self.color_surfs.append(pygame.Surface((30, 30)))
+        self.color_surfs[-1].fill(color)
+
+        if len(self.color_surfs) == 1:
+            color_preview_anchors = {'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.change_colors_text}
+        else:
+            color_preview_anchors = {'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.color_previews[-1]}
+
+        color_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surfs[-1].get_size()), image_surface=self.color_surfs[-1], manager=manager, container=self, anchors=color_preview_anchors)
+        color_preview.context_menu_buttons = self.color_preview_context_menu_buttons
+        self.color_previews.append(color_preview)
+
+        if len(self.color_surfs) == 1:
+            pick_color_button_anchors = {'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_previews[-1], 'top_target': self.change_colors_text}
+        else:
+            pick_color_button_anchors = {'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.color_previews[-1], 'top_target': self.color_previews[-2]}
+
+        pick_color_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors=pick_color_button_anchors)
+        self.pick_color_buttons.append(pick_color_button)
+
 def quick_post(self, data_name, data, event_id):
     event_data = {data_name: data,
                   'ui_element': self,
