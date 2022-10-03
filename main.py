@@ -572,7 +572,7 @@ def main():
                 if right_clicked_element is not None:
                     try:
                         context_menu = helpers.create_context_menu(context_menu, right_clicked_element, manager, mouse_pos)
-                    except: pass
+                    except Exception as e: print(e)
 
             manager.process_events(event)
 
@@ -746,9 +746,9 @@ def main():
             edit_checkerboard_brightness_changed = False
 
             try: previous_themes = deepcopy(themes)
-            except: pass
+            except Exception as e: print(e)
             try: previous_HeldDownCells = deepcopy(HeldDownCells)
-            except: pass
+            except Exception as e: print(e)
 
             CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells)
 

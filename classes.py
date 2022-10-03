@@ -738,7 +738,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             try:
                 self.theme_color_picker_dialog.kill()
                 self.color_picker_killed = True
-            except: pass
+            except Exception as e: print(e)
 
         # Theme list stuff
         if (event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list) or self.selected is True:
@@ -754,7 +754,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             try:
                 if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list and self.themes[self.theme_index] != self.theme_color_picker_dialog.opened_on_theme:
                     self.kill_color_picker = True
-            except: pass
+            except Exception as e: print(e)
 
             if self.theme_index == 0:
                 self.move_up_button.disable()
@@ -841,7 +841,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == self.theme_color_picker_dialog and self.color_picker_killed is False:
                 self.theme_color_picker_dialog.opened_on_theme[self.color_button_pressed] = self.previous_color
                 for element in self.pick_color_buttons: element.enable()
-        except: pass
+        except Exception as e: print(e)
 
         if self.color_picker_killed is True:
             for element in self.pick_color_buttons: element.enable()
@@ -851,35 +851,37 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             self.previous_color = event.colour
 
         # Color preview context menu stuff
-        if event.type == self.color_preview_context_menu_button_event_types[0]:  # 'Copy' context menu option
-            color_preview_right_clicked = event.right_clicked_element
-            self.copied_color = color_preview_right_clicked.image.get_at((0, 0))
+        try:
+            if event.type == self.color_preview_context_menu_button_event_types[0]:  # 'Copy' context menu option
+                color_preview_right_clicked = event.right_clicked_element
+                self.copied_color = color_preview_right_clicked.image.get_at((0, 0))
 
-        if event.type == self.color_preview_context_menu_button_event_types[1]:  # 'Paste' context menu option
-            if self.copied_color is not None:
+            if event.type == self.color_preview_context_menu_button_event_types[1]:  # 'Paste' context menu option
+                if self.copied_color is not None:
+                    color_preview_right_clicked = event.right_clicked_element
+                    color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+                    self.themes[self.theme_index][color_preview_index] = self.copied_color
+
+            if event.type == self.color_preview_context_menu_button_event_types[2]:  # 'Move up' context menu option
                 color_preview_right_clicked = event.right_clicked_element
                 color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
-                self.themes[self.theme_index][color_preview_index] = self.copied_color
+                helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, -1, bottom_offset=1)
 
-        if event.type == self.color_preview_context_menu_button_event_types[2]:  # 'Move up' context menu option
-            color_preview_right_clicked = event.right_clicked_element
-            color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
-            helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, -1, bottom_offset=1)
+            if event.type == self.color_preview_context_menu_button_event_types[3]:  # 'Move down' context menu option
+                color_preview_right_clicked = event.right_clicked_element
+                color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+                helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 1)
 
-        if event.type == self.color_preview_context_menu_button_event_types[3]:  # 'Move down' context menu option
-            color_preview_right_clicked = event.right_clicked_element
-            color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
-            helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 1)
+            if event.type == self.color_preview_context_menu_button_event_types[4]:  # 'Move top' context menu option
+                color_preview_right_clicked = event.right_clicked_element
+                color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+                helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 0, bottom_offset=1, bottom_or_top='bottom')
 
-        if event.type == self.color_preview_context_menu_button_event_types[4]:  # 'Move top' context menu option
-            color_preview_right_clicked = event.right_clicked_element
-            color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
-            helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 0, bottom_offset=1, bottom_or_top='bottom')
-
-        if event.type == self.color_preview_context_menu_button_event_types[5]:  # 'Move bottom' context menu option
-            color_preview_right_clicked = event.right_clicked_element
-            color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
-            helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 0, bottom_or_top='top')
+            if event.type == self.color_preview_context_menu_button_event_types[5]:  # 'Move bottom' context menu option
+                color_preview_right_clicked = event.right_clicked_element
+                color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+                helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 0, bottom_or_top='top')
+        except Exception as e: print(e)
 
         try:
             if self.previous_colors != self.themes[self.theme_index][1:]:
@@ -891,7 +893,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                     helpers.build_theme_colors(self, self.theme_list.ui_manager)
 
                 self.previous_colors = deepcopy(self.themes[self.theme_index][1:])
-        except: pass
+        except Exception as e: print(e)
 
         if (self.get_real_width(), self.get_real_height()) != self.previousWindowDimensions:
             # height_of_others = helpers.getHeightOfElements([self.header_text, self.create_button])
@@ -1510,7 +1512,7 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
             if self.selected_index >= 0 and self.item_list[self.selected_index]['button_element'] is not None:
                 self.item_list[self.selected_index]['selected'] = True
                 self.item_list[self.selected_index]['button_element'].select()
-        except: pass
+        except Exception as e: print(e)
 
     def rebuild_themes(self, themes):
         self._raw_item_list = helpers.convert_themes_array_to_strings(themes)
