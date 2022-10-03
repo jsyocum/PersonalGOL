@@ -961,14 +961,24 @@ def write_themes_file(config_file_dir, themes_file_path, themes):
 
     print('Wrote themes file:', themes_file_path)
 
-def build_theme_colors(self, element):
-    manager = element.__getattribute__('manager')
+def kill_elements(elements):
+    if len(elements) > 0:
+        for element in elements:
+            element.kill()
+
+def build_theme_colors(self, manager):
+    try: kill_elements(self.color_surfs)
+    except: pass
+    try: kill_elements(self.color_previews)
+    except: pass
+    try: kill_elements(self.pick_color_buttons)
+    except: pass
 
     self.color_surfs = []
     self.color_previews = []
     self.pick_color_buttons = []
 
-    for color in self.themes[0][1:]:
+    for color in self.themes[self.theme_index][1:]:
         self.color_surfs.append(pygame.Surface((30, 30)))
         self.color_surfs[-1].fill(color)
 
@@ -988,6 +998,8 @@ def build_theme_colors(self, element):
 
         pick_color_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (-1, 30)), text='...', manager=manager, container=self, anchors=pick_color_button_anchors)
         self.pick_color_buttons.append(pick_color_button)
+
+        for e in self.color_previews: self.right_clickable_elements.append(e)
 
 def quick_post(self, data_name, data, event_id):
     event_data = {data_name: data,

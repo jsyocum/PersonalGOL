@@ -674,6 +674,8 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.themes_file_path = themes_file_path
         self.config_file_dir = config_file_dir
 
+        self.right_clickable_elements = right_clickable_elements
+
         # self.sc = WrappedScrollContainer(relative_rect=pygame.Rect((0, 0), (self.get_real_width(), self.get_real_height())), manager=manager, container=self, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
         self.header_text = pygame_gui.elements.UILabel(text='Select a theme to edit:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
@@ -692,13 +694,13 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.color_preview_context_menu_buttons = ['Copy', 'Paste']
         self.change_colors_text = pygame_gui.elements.UILabel(text='Change colors:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.patterns_selection_list})
 
-        helpers.build_theme_colors(self, self.theme_list)
+        helpers.build_theme_colors(self, manager)
 
         self.previous_colors = deepcopy(themes[self.theme_index][1:])
         self.color_picker_killed = False
         self.kill_color_picker = False
 
-        for e in self.color_previews: right_clickable_elements.append(e)
+        # for e in self.color_previews: right_clickable_elements.append(e)
 
         button_width = self.theme_list.get_relative_rect().width / 2 - 2.5
         self.create_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (button_width, 30)), text='+', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.theme_list})
@@ -855,7 +857,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                         self.color_surfs[t].fill(theme_color)
                         self.color_previews[t].set_image(self.color_surfs[t])
                 else:
-                    helpers.build_theme_colors(self, self.theme_list)
+                    helpers.build_theme_colors(self, self.theme_list.ui_manager)
 
                 self.previous_colors = deepcopy(self.themes[self.theme_index][1:])
         except: pass
