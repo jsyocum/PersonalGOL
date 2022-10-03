@@ -675,6 +675,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.config_file_dir = config_file_dir
 
         self.right_clickable_elements = right_clickable_elements
+        self.copied_color = None
 
         # self.sc = WrappedScrollContainer(relative_rect=pygame.Rect((0, 0), (self.get_real_width(), self.get_real_height())), manager=manager, container=self, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
@@ -690,8 +691,9 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.patterns_selection_list = theme_dropdown_list(options_list=[], themes=patterns, starting_option='', relative_rect=pygame.Rect(10, 5, 100, 30), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
         self.patterns_selection_list.disable()
 
+        self.color_preview_context_menu_buttons = ['Copy', 'Paste', 'Move up', 'Move down', 'Move top', 'Move bottom']
+        self.color_preview_context_menu_button_event_types = helpers.create_context_menu_button_event_types(self.color_preview_context_menu_buttons)
 
-        self.color_preview_context_menu_buttons = ['Copy', 'Paste']
         self.change_colors_text = pygame_gui.elements.UILabel(text='Change colors:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.patterns_selection_list})
 
         helpers.build_theme_colors(self, manager)
@@ -699,8 +701,6 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.previous_colors = deepcopy(themes[self.theme_index][1:])
         self.color_picker_killed = False
         self.kill_color_picker = False
-
-        # for e in self.color_previews: right_clickable_elements.append(e)
 
         button_width = self.theme_list.get_relative_rect().width / 2 - 2.5
         self.create_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((10, 5), (button_width, 30)), text='+', manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'top_target': self.theme_list})
@@ -849,6 +849,37 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
         if event.type == pygame_gui.UI_COLOUR_PICKER_COLOUR_PICKED and event.ui_element == self.theme_color_picker_dialog:
             self.previous_color = event.colour
+
+        # Color preview context menu stuff
+        if event.type == self.color_preview_context_menu_button_event_types[0]:  # 'Copy' context menu option
+            color_preview_right_clicked = event.right_clicked_element
+            self.copied_color = color_preview_right_clicked.image.get_at((0, 0))
+
+        if event.type == self.color_preview_context_menu_button_event_types[1]:  # 'Paste' context menu option
+            if self.copied_color is not None:
+                color_preview_right_clicked = event.right_clicked_element
+                color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+                self.themes[self.theme_index][color_preview_index] = self.copied_color
+
+        if event.type == self.color_preview_context_menu_button_event_types[2]:  # 'Move up' context menu option
+            color_preview_right_clicked = event.right_clicked_element
+            color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+            helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, -1, bottom_offset=1)
+
+        if event.type == self.color_preview_context_menu_button_event_types[3]:  # 'Move down' context menu option
+            color_preview_right_clicked = event.right_clicked_element
+            color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+            helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 1)
+
+        if event.type == self.color_preview_context_menu_button_event_types[4]:  # 'Move top' context menu option
+            color_preview_right_clicked = event.right_clicked_element
+            color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+            helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 0, bottom_offset=1, bottom_or_top='bottom')
+
+        if event.type == self.color_preview_context_menu_button_event_types[5]:  # 'Move bottom' context menu option
+            color_preview_right_clicked = event.right_clicked_element
+            color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+            helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 0, bottom_or_top='top')
 
         try:
             if self.previous_colors != self.themes[self.theme_index][1:]:
@@ -1720,6 +1751,10 @@ class ContextMenu(pygame_gui.elements.UISelectionList):
             self.kill()
 
         if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self:
+            context_menu_button_selected_index = self.right_clicked_element.context_menu_buttons.index(event.text)
+            right_clicked_element_event_ID = self.right_clicked_element.context_menu_button_types[context_menu_button_selected_index]
+            helpers.quick_post(self, 'right_clicked_element', self.right_clicked_element, right_clicked_element_event_ID)
+
             self.kill()
 
         return False  # Don't consume any events

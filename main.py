@@ -571,7 +571,7 @@ def main():
                 right_clicked_element = helpers.get_right_clicked_element(mouse_pos, right_clickable_elements)
                 if right_clicked_element is not None:
                     try:
-                        context_menu = helpers.create_context_menu(context_menu, right_clicked_element.context_menu_buttons, manager, mouse_pos)
+                        context_menu = helpers.create_context_menu(context_menu, right_clicked_element, manager, mouse_pos)
                     except: pass
 
             manager.process_events(event)

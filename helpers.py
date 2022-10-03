@@ -41,7 +41,7 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-def move_item_in_list(list, index, move_int, bottom_or_top='none'):
+def move_item_in_list(list, index, move_int, bottom_offset=0, top_offset=0, bottom_or_top='none'):
     bottom_or_top = bottom_or_top.lower()
     index_item = deepcopy(list[index])
     list.pop(index)
@@ -49,20 +49,20 @@ def move_item_in_list(list, index, move_int, bottom_or_top='none'):
     new_index = deepcopy(index) + move_int
 
     # Check to make sure new_index is within bounds
-    if new_index < 0:
-        new_index = 0
-    elif new_index > len(list):
-        new_index = len(list)
+    if new_index < 0 + bottom_offset:
+        new_index = 0 + bottom_offset
+    elif new_index > len(list) - top_offset:
+        new_index = len(list) - top_offset
 
     if bottom_or_top != 'none':
         if bottom_or_top != 'bottom' and bottom_or_top != 'top':
             print(bottom_or_top, ' is not a valid argument for move_item_in_list function. Must be either bottom or top.')
 
         elif bottom_or_top == 'bottom':
-            new_index = 0
+            new_index = 0 + bottom_offset
 
         elif bottom_or_top == 'top':
-            new_index = len(list)
+            new_index = len(list) - top_offset
 
     list.insert(new_index, index_item)
 
@@ -989,6 +989,7 @@ def build_theme_colors(self, manager):
 
         color_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 5), self.color_surfs[-1].get_size()), image_surface=self.color_surfs[-1], manager=manager, container=self, anchors=color_preview_anchors)
         color_preview.context_menu_buttons = self.color_preview_context_menu_buttons
+        color_preview.context_menu_button_types = self.color_preview_context_menu_button_event_types
         self.color_previews.append(color_preview)
 
         if len(self.color_surfs) == 1:
@@ -1025,13 +1026,21 @@ def get_right_clicked_element(mouse_pos, right_clickable_elements):
 
     return None
 
-def create_context_menu(context_menu, button_list, manager, mouse_pos):
+def create_context_menu_button_event_types(buttons):
+    button_event_types = []
+    for button in buttons:
+        button_event_types.append(pygame.event.custom_type())
+
+    return button_event_types
+
+def create_context_menu(context_menu, right_clicked_element, manager, mouse_pos):
     try: context_menu.kill()
     except: pass
 
-    height = min(len(button_list) * 20, 600)
+    height = min(len(right_clicked_element.context_menu_buttons) * 20, 600)
     rect = pygame.Rect(mouse_pos, (150, height))
 
-    context_menu = ContextMenu(relative_rect=rect, manager=manager, object_id=pygame_gui.core.ObjectID(object_id='#context_menu'), item_list=button_list)
+    context_menu = ContextMenu(relative_rect=rect, manager=manager, object_id=pygame_gui.core.ObjectID(object_id='#context_menu'), item_list=right_clicked_element.context_menu_buttons)
+    context_menu.right_clicked_element = right_clicked_element
 
     return context_menu
