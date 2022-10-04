@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import os
+import traceback
 import ast
 import pygame
 import pygame_gui
@@ -856,7 +857,7 @@ def initialConfigCheck(config_file_dir, config_file_path, config_dict):
         config = ConfigParser()
         config.read(config_file_path)
         try: config.add_section('main')
-        except Exception as e: print(e)
+        except: pass
 
         for key in config_dict:
             try:
@@ -886,7 +887,8 @@ def writeDict(config_file_path, config_dict):
     config.read(config_file_path)
 
     try: config.add_section('main')
-    except Exception as e: print(e)
+    except: pass
+
     for key in config_dict:
         config.set('main', key, str(config_dict[key][0]))
 
@@ -968,11 +970,11 @@ def kill_elements(elements):
 
 def build_theme_colors(self, manager):
     try: kill_elements(self.color_surfs)
-    except Exception as e: print(e)
+    except: pass
     try: kill_elements(self.color_previews)
-    except Exception as e: print(e)
+    except: pass
     try: kill_elements(self.pick_color_buttons)
-    except Exception as e: print(e)
+    except: pass
 
     self.color_surfs = []
     self.color_previews = []
@@ -1022,7 +1024,7 @@ def get_right_clicked_element(mouse_pos, right_clickable_elements):
         try:
             if element.alive() and element.get_abs_rect().collidepoint(mouse_pos):
                 return element
-        except Exception as e: print(e)
+        except: pass
 
     return None
 
@@ -1035,7 +1037,7 @@ def create_context_menu_button_event_types(buttons):
 
 def create_context_menu(context_menu, right_clicked_element, manager, mouse_pos):
     try: context_menu.kill()
-    except Exception as e: print(e)
+    except: pass
 
     height = min(len(right_clicked_element.context_menu_buttons) * 20, 600)
     rect = pygame.Rect(mouse_pos, (150, height))

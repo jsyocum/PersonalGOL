@@ -4,6 +4,7 @@ from get_shape_points import get_max_patterns
 import pygame
 import pygame_gui
 import os
+import traceback
 import appdirs
 from pathlib import Path
 from collections import deque
@@ -572,7 +573,7 @@ def main():
                 if right_clicked_element is not None:
                     try:
                         context_menu = helpers.create_context_menu(context_menu, right_clicked_element, manager, mouse_pos)
-                    except Exception as e: print(e)
+                    except Exception: traceback.print_exc()
 
             manager.process_events(event)
 
@@ -746,9 +747,9 @@ def main():
             edit_checkerboard_brightness_changed = False
 
             try: previous_themes = deepcopy(themes)
-            except Exception as e: print(e)
+            except Exception: traceback.print_exc()
             try: previous_HeldDownCells = deepcopy(HeldDownCells)
-            except Exception as e: print(e)
+            except Exception: traceback.print_exc()
 
             CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells)
 

@@ -1,5 +1,6 @@
 import os
 import re
+import traceback
 import helpers
 import pygame
 import pygame_gui
@@ -7,6 +8,7 @@ from pygame_gui.core import ObjectID, UIElement, UIContainer
 from pygame_gui.core.interfaces import IContainerLikeInterface, IUIManagerInterface
 from pygame_gui.elements import UIVerticalScrollBar, UIButton
 from pathlib import Path
+import numpy as np
 from typing import Union, Dict, Tuple, List, Iterable
 from pathvalidate import sanitize_filename, sanitize_filepath
 from copy import deepcopy
@@ -676,13 +678,17 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
         self.right_clickable_elements = right_clickable_elements
         self.copied_color = None
+        self.copied_theme = None
 
         # self.sc = WrappedScrollContainer(relative_rect=pygame.Rect((0, 0), (self.get_real_width(), self.get_real_height())), manager=manager, container=self, anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
         self.header_text = pygame_gui.elements.UILabel(text='Select a theme to edit:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
 
-        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 195), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
+        self.theme_context_menu_buttons = ['Copy', 'Paste', 'Paste above', 'Paste below', 'Randomize pattern', 'Randomize colors']
+        self.theme_context_menu_button_types = helpers.create_context_menu_button_event_types(self.theme_context_menu_buttons)
+
+        self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 195), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, right_clickable_elements=right_clickable_elements, context_menu_buttons=self.theme_context_menu_buttons, context_menu_button_types=self.theme_context_menu_button_types, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
         self.theme_list.set_list_item_height(diameter + 20)
 
 
@@ -691,7 +697,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.patterns_selection_list = theme_dropdown_list(options_list=[], themes=patterns, starting_option='', relative_rect=pygame.Rect(10, 5, 100, 30), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
         self.patterns_selection_list.disable()
 
-        self.color_preview_context_menu_buttons = ['Copy', 'Paste', 'Move up', 'Move down', 'Move top', 'Move bottom']
+        self.color_preview_context_menu_buttons = ['Copy', 'Paste', 'Move up', 'Move down', 'Move top', 'Move bottom', 'Randomize color']
         self.color_preview_context_menu_button_event_types = helpers.create_context_menu_button_event_types(self.color_preview_context_menu_buttons)
 
         self.change_colors_text = pygame_gui.elements.UILabel(text='Change colors:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.patterns_selection_list})
@@ -738,7 +744,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             try:
                 self.theme_color_picker_dialog.kill()
                 self.color_picker_killed = True
-            except Exception as e: print(e)
+            except: pass
 
         # Theme list stuff
         if (event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list) or self.selected is True:
@@ -754,7 +760,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             try:
                 if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list and self.themes[self.theme_index] != self.theme_color_picker_dialog.opened_on_theme:
                     self.kill_color_picker = True
-            except Exception as e: print(e)
+            except: pass
 
             if self.theme_index == 0:
                 self.move_up_button.disable()
@@ -841,7 +847,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == self.theme_color_picker_dialog and self.color_picker_killed is False:
                 self.theme_color_picker_dialog.opened_on_theme[self.color_button_pressed] = self.previous_color
                 for element in self.pick_color_buttons: element.enable()
-        except Exception as e: print(e)
+        except Exception: traceback.print_exc()
 
         if self.color_picker_killed is True:
             for element in self.pick_color_buttons: element.enable()
@@ -852,36 +858,95 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
         # Color preview context menu stuff
         try:
-            if event.type == self.color_preview_context_menu_button_event_types[0]:  # 'Copy' context menu option
+            if event.type == self.color_preview_context_menu_button_event_types[self.color_preview_context_menu_buttons.index('Copy')]:  # 'Copy' context menu option
                 color_preview_right_clicked = event.right_clicked_element
                 self.copied_color = color_preview_right_clicked.image.get_at((0, 0))
 
-            if event.type == self.color_preview_context_menu_button_event_types[1]:  # 'Paste' context menu option
+            if event.type == self.color_preview_context_menu_button_event_types[self.color_preview_context_menu_buttons.index('Paste')]:  # 'Paste' context menu option
                 if self.copied_color is not None:
                     color_preview_right_clicked = event.right_clicked_element
                     color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
-                    self.themes[self.theme_index][color_preview_index] = self.copied_color
+                    self.themes[self.theme_index][color_preview_index] = deepcopy(self.copied_color)
 
-            if event.type == self.color_preview_context_menu_button_event_types[2]:  # 'Move up' context menu option
+            if event.type == self.color_preview_context_menu_button_event_types[self.color_preview_context_menu_buttons.index('Move up')]:  # 'Move up' context menu option
                 color_preview_right_clicked = event.right_clicked_element
                 color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
                 helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, -1, bottom_offset=1)
 
-            if event.type == self.color_preview_context_menu_button_event_types[3]:  # 'Move down' context menu option
+            if event.type == self.color_preview_context_menu_button_event_types[self.color_preview_context_menu_buttons.index('Move down')]:  # 'Move down' context menu option
                 color_preview_right_clicked = event.right_clicked_element
                 color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
                 helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 1)
 
-            if event.type == self.color_preview_context_menu_button_event_types[4]:  # 'Move top' context menu option
+            if event.type == self.color_preview_context_menu_button_event_types[self.color_preview_context_menu_buttons.index('Move top')]:  # 'Move top' context menu option
                 color_preview_right_clicked = event.right_clicked_element
                 color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
                 helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 0, bottom_offset=1, bottom_or_top='bottom')
 
-            if event.type == self.color_preview_context_menu_button_event_types[5]:  # 'Move bottom' context menu option
+            if event.type == self.color_preview_context_menu_button_event_types[self.color_preview_context_menu_buttons.index('Move bottom')]:  # 'Move bottom' context menu option
                 color_preview_right_clicked = event.right_clicked_element
                 color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
                 helpers.move_item_in_list(self.themes[self.theme_index], color_preview_index, 0, bottom_or_top='top')
-        except Exception as e: print(e)
+
+            if event.type == self.color_preview_context_menu_button_event_types[self.color_preview_context_menu_buttons.index('Randomize color')]:  # 'Randomize color' context menu option
+                color_preview_right_clicked = event.right_clicked_element
+                color_preview_index = self.color_previews.index(color_preview_right_clicked) + 1
+
+                og_color = self.themes[self.theme_index][color_preview_index]
+                while True:
+                    new_color = helpers.generate_random_color()
+                    if new_color != og_color:
+                        self.themes[self.theme_index][color_preview_index] = new_color
+                        break
+
+        except Exception: traceback.print_exc()
+
+
+        # Theme list context menu stuff
+        try:
+            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Copy')]:  # 'Copy' context menu option
+                theme_button_right_clicked = event.right_clicked_element
+                self.copied_theme = self.themes[theme_button_right_clicked.index]
+
+            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Paste')]:  # 'Paste' context menu option
+                if self.copied_theme is not None:
+                    theme_button_right_clicked = event.right_clicked_element
+                    self.themes[theme_button_right_clicked.index] = deepcopy(self.copied_theme)
+                    self.selected_index = theme_button_right_clicked.index
+
+            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Paste above')]:  # 'Paste above' context menu option
+                if self.copied_theme is not None:
+                    theme_button_right_clicked = event.right_clicked_element
+                    self.themes.insert(theme_button_right_clicked.index, deepcopy(self.copied_theme))
+                    self.selected_index = theme_button_right_clicked.index
+
+            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Paste below')]:  # 'Paste below' context menu option
+                if self.copied_theme is not None:
+                    theme_button_right_clicked = event.right_clicked_element
+                    self.themes.insert(theme_button_right_clicked.index + 1, deepcopy(self.copied_theme))
+                    self.selected_index = theme_button_right_clicked.index + 1
+
+            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Randomize pattern')]:  # 'Randomize pattern' context menu option
+                theme_button_right_clicked = event.right_clicked_element
+                self.selected_index = theme_button_right_clicked.index
+
+                og_pattern = deepcopy(self.themes[theme_button_right_clicked.index][0])
+                while helpers.get_max_patterns() > 1:
+                    new_pattern = np.random.randint(0, helpers.get_max_patterns())
+                    if new_pattern != og_pattern:
+                        self.themes[theme_button_right_clicked.index][0] = new_pattern
+                        break
+
+            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Randomize colors')]:  # 'Randomize colors' context menu option
+                theme_button_right_clicked = event.right_clicked_element
+                self.selected_index = theme_button_right_clicked.index
+
+                for c, color in enumerate(self.themes[theme_button_right_clicked.index]):
+                    if c > 0:
+                        self.themes[theme_button_right_clicked.index][c] = helpers.generate_random_color()
+
+        except Exception: traceback.print_exc()
+
 
         try:
             if self.previous_colors != self.themes[self.theme_index][1:]:
@@ -893,7 +958,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                     helpers.build_theme_colors(self, self.theme_list.ui_manager)
 
                 self.previous_colors = deepcopy(self.themes[self.theme_index][1:])
-        except Exception as e: print(e)
+        except Exception: traceback.print_exc()
 
         if (self.get_real_width(), self.get_real_height()) != self.previousWindowDimensions:
             # height_of_others = helpers.getHeightOfElements([self.header_text, self.create_button])
@@ -1256,6 +1321,9 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                      List[str], List[Tuple[str, str]],   # Multi-selection lists
                      None] = None,
                  themes: [] = [],
+                 right_clickable_elements: [] = [],
+                 context_menu_buttons: [] = [],
+                 context_menu_button_types: [] = [],
                  diameter: int = 50
                  ):
 
@@ -1273,6 +1341,9 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                                object_id=object_id,
                                element_id='selection_list')
 
+        self.right_clickable_elements = right_clickable_elements
+        self.themes_context_menu_buttons = context_menu_buttons
+        self.themes_context_menu_button_types = context_menu_button_types
         self.diameter = diameter
 
         self._parent_element = parent_element
@@ -1360,6 +1431,10 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                         if item['selected']:
                             item['button_element'].select()
 
+                        item['button_element'].context_menu_buttons = self.themes_context_menu_buttons
+                        item['button_element'].context_menu_button_types = self.themes_context_menu_button_types
+                        self.right_clickable_elements.append(item['button_element'])
+
                 else:
                     if item['button_element'] is not None:
                         item['button_element'].kill()
@@ -1380,6 +1455,10 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
                     if index == self.selected_index:
                         item['selected'] = True
                         item['button_element'].select()
+
+                    item['button_element'].context_menu_buttons = self.themes_context_menu_buttons
+                    item['button_element'].context_menu_button_types = self.themes_context_menu_button_types
+                    self.right_clickable_elements.append(item['button_element'])
 
     def set_item_list(self, new_item_list: Union[List[str], List[Tuple[str, str]]]):
         """
@@ -1488,6 +1567,10 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
 
                 item['button_element'].index = index
 
+                item['button_element'].context_menu_buttons = self.themes_context_menu_buttons
+                item['button_element'].context_menu_button_types = self.themes_context_menu_button_types
+                self.right_clickable_elements.append(item['button_element'])
+
                 self.join_focus_sets(item['button_element'])
                 item_y_height += self.list_item_height
             else:
@@ -1512,7 +1595,7 @@ class theme_selection_list(pygame_gui.elements.UISelectionList):
             if self.selected_index >= 0 and self.item_list[self.selected_index]['button_element'] is not None:
                 self.item_list[self.selected_index]['selected'] = True
                 self.item_list[self.selected_index]['button_element'].select()
-        except Exception as e: print(e)
+        except Exception: traceback.print_exc()
 
     def rebuild_themes(self, themes):
         self._raw_item_list = helpers.convert_themes_array_to_strings(themes)
