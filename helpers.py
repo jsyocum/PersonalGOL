@@ -273,7 +273,7 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                     pygame.draw.polygon(boardSurf, checkerboard_color_final, square)
 
             if Square == 1:
-                theme_index = theme_board[subi][i]
+                theme_index = max(min(theme_board[subi][i], len(themes) - 1), 0)
                 theme = themes[theme_index]
 
                 shapes = get_shape_points(theme[0], top_left, Scale)
