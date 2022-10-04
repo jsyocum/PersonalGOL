@@ -685,7 +685,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.header_text = pygame_gui.elements.UILabel(text='Select a theme to edit:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
 
 
-        self.theme_context_menu_buttons = ['Copy', 'Paste', 'Paste above', 'Paste below', 'Randomize pattern', 'Randomize colors']
+        self.theme_context_menu_buttons = ['Copy', 'Paste', 'Paste above', 'Paste below', 'Randomize pattern', 'Randomize colors', 'Randomize pattern and colors']
         self.theme_context_menu_button_types = helpers.create_context_menu_button_event_types(self.theme_context_menu_buttons)
 
         self.theme_list = theme_selection_list(relative_rect=pygame.Rect(10, 10, diameter * 1.5, self.get_real_height() - 195), item_list=[], manager=manager, container=self, themes=self.themes, diameter=diameter, right_clickable_elements=right_clickable_elements, context_menu_buttons=self.theme_context_menu_buttons, context_menu_button_types=self.theme_context_menu_button_types, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'bottom', 'top_target': self.header_text})
@@ -1920,6 +1920,7 @@ class ContextMenu(pygame_gui.elements.UISelectionList):
                 container_dimensions = (self.list_and_scroll_bar_container.relative_rect.width -
                                         self.current_scroll_bar_width,
                                         self.list_and_scroll_bar_container.relative_rect.height)
+
                 self.item_list_container.set_dimensions(container_dimensions)
         else:
             self.item_list_container = UIContainer(

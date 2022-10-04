@@ -1039,8 +1039,12 @@ def create_context_menu(context_menu, right_clicked_element, manager, mouse_pos)
     try: context_menu.kill()
     except: pass
 
+    max_chars = 0
+    for button in right_clicked_element.context_menu_buttons:
+        max_chars = max(max_chars, len(button))
+    width = max(max_chars * 9, 150)
     height = min(len(right_clicked_element.context_menu_buttons) * 20, 600)
-    rect = pygame.Rect(mouse_pos, (150, height))
+    rect = pygame.Rect(mouse_pos, (width, height))
 
     context_menu = ContextMenu(relative_rect=rect, manager=manager, object_id=pygame_gui.core.ObjectID(object_id='#context_menu'), item_list=right_clicked_element.context_menu_buttons)
     context_menu.right_clicked_element = right_clicked_element
