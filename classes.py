@@ -1,12 +1,15 @@
 import os
 import re
+import webbrowser
 import traceback
+import warnings
 import helpers
 import pygame
 import pygame_gui
 from pygame_gui.core import ObjectID, UIElement, UIContainer
 from pygame_gui.core.interfaces import IContainerLikeInterface, IUIManagerInterface
-from pygame_gui.elements import UIVerticalScrollBar, UIButton
+from pygame_gui.elements import UIVerticalScrollBar, UIButton, UISelectionList, UITextEntryLine
+from pygame_gui.windows.ui_confirmation_dialog import UIConfirmationDialog
 from pathlib import Path
 import numpy as np
 from typing import Union, Dict, Tuple, List, Iterable
@@ -347,6 +350,61 @@ class WrappedScrollContainer(pygame_gui.elements.ui_scrolling_container.UIScroll
         return self.get_relative_rect().height - 58
 
 class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
+    def __init__(self,
+                 rect: pygame.Rect,
+                 manager: IUIManagerInterface,
+                 window_title: str = 'pygame-gui.file_dialog_title_bar',
+                 initial_file_path: Union[str, None] = None,
+                 object_id: Union[ObjectID, str] = ObjectID('#file_dialog', None),
+                 allow_existing_files_only: bool = False,
+                 allow_picking_directories: bool = False,
+                 visible: int = 1,
+                 config_file_dir: str = ''
+                 ):
+
+        super().__init__(rect, manager,
+                         window_title=window_title,
+                         # window_display_title=window_title,
+                         object_id=object_id,
+                         # resizable=True,
+                         visible=visible)
+
+        self.config_file_dir = config_file_dir
+
+        self.open_in_explorer_button = UIButton(relative_rect=pygame.Rect(96, 10, 20, 20), text='↖', tool_tip_text='Open current path in explorer', manager=self.ui_manager, container=self, object_id='#open_in_explorer_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.config_directory_button = UIButton(relative_rect=pygame.Rect(116, 10, 20, 20), text='⚙', tool_tip_text='Open the game\'s appdata directory which houses config files', manager=self.ui_manager, container=self, object_id='#config_directory_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+
+    def process_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handles events that this UI element is interested in. There are a lot of buttons in the
+        file dialog.
+
+        :param event: The pygame Event to process.
+
+        :return: True if event is consumed by this element and should not be passed on to other
+                 elements.
+
+        """
+        handled = super().process_event(event)
+
+        self._process_ok_cancel_events(event)
+        self._process_confirmation_dialog_events(event)
+        self._process_mini_file_operation_button_events(event)
+        self._process_file_path_entry_events(event)
+        self._process_file_list_events(event)
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.open_in_explorer_button:
+            try:
+                webbrowser.open(self.current_directory_path)
+            except Exception: traceback.print_exc()
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.config_directory_button:
+            try:
+                webbrowser.open(self.config_file_dir)
+            except Exception: traceback.print_exc()
+
+        return handled
+
     def update_current_file_list(self):
         """
         Updates the currently displayed list of files and directories. Usually called when the
@@ -369,6 +427,53 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
             self.update_current_file_list()
         else:
             self.last_valid_directory_path = self.current_directory_path
+
+    def update_file_selection_list_for_preview(self):
+        try: self.image_preview.kill()
+        except: pass
+
+        if self.file_selection_list.get_single_selection() is not None and self.file_selection_list.get_single_selection().lower().endswith('.png'):
+            self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 190))
+            image_surface = pygame.image.load(self.current_file_path)
+            self.image_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 10), (90, 90)), image_surface=image_surface, manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'right_target': self.file_selection_list, 'top_target': self.file_selection_list})
+        else:
+            self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130))
+
+    def _process_file_list_events(self, event):
+        """
+        Handle events coming from the file/folder list.
+
+        :param event: event to check.
+
+        """
+        if (event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and
+                event.ui_element == self.file_selection_list):
+            new_selection_file_path = Path(self.current_directory_path) / event.text
+            if self._validate_path_exists_and_of_allowed_type(new_selection_file_path,
+                                                              self.allow_picking_directories):
+                self.current_file_path = new_selection_file_path
+                self.file_path_text_line.set_text(str(self.current_file_path))
+                self._highlight_file_name_for_editing()
+                self.ok_button.enable()
+                if self._validate_path_exists_and_of_allowed_type(self.current_file_path,
+                                                                  allow_directories=False):
+                    self.delete_button.enable()
+                else:
+                    self.delete_button.disable()
+            else:
+                self.ok_button.disable()
+                self.delete_button.disable()
+
+            self.update_file_selection_list_for_preview()
+
+        if (event.type == pygame_gui.UI_SELECTION_LIST_DOUBLE_CLICKED_SELECTION
+                and event.ui_element == self.file_selection_list):
+            new_directory_file_path = Path(self.current_directory_path) / event.text
+            self._change_directory_path(new_directory_file_path)
+            self.update_file_selection_list_for_preview()
+
+        if event.type == pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION and event.ui_element == self.file_selection_list:
+            self.update_file_selection_list_for_preview()
 
 class ChooseFileNameWindow(pygame_gui.elements.UIWindow):
     def __init__(self,

@@ -26,5 +26,30 @@
         "text_horiz_alignment": "left",
         "text_horiz_alignment_padding": "5"
       }
+    },
+
+    "#config_directory_button":
+    {
+      "prototype": "#file_dialog_icon_buttons",
+      "images":
+      {
+        "normal_image":
+        {
+          "path": "data/icons/gear_icon.png"
+        }
+      },
+      "misc":
+      {
+          "text_vert_alignment_padding": "0"
+      }
+    },
+
+    "#open_in_explorer_button":
+    {
+      "prototype": "#file_dialog_icon_buttons",
+      "misc":
+      {
+          "text_vert_alignment_padding": "0"
+      }
     }
 }
