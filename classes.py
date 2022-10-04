@@ -926,7 +926,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                     self.themes.insert(theme_button_right_clicked.index + 1, deepcopy(self.copied_theme))
                     self.selected_index = theme_button_right_clicked.index + 1
 
-            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Randomize pattern')]:  # 'Randomize pattern' context menu option
+            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Randomize pattern')] or event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Randomize pattern and colors')]:  # 'Randomize pattern' context menu option
                 theme_button_right_clicked = event.right_clicked_element
                 self.selected_index = theme_button_right_clicked.index
 
@@ -937,7 +937,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                         self.themes[theme_button_right_clicked.index][0] = new_pattern
                         break
 
-            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Randomize colors')]:  # 'Randomize colors' context menu option
+            if event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Randomize colors')] or event.type == self.theme_context_menu_button_types[self.theme_context_menu_buttons.index('Randomize pattern and colors')]:  # 'Randomize colors' context menu option
                 theme_button_right_clicked = event.right_clicked_element
                 self.selected_index = theme_button_right_clicked.index
 
@@ -958,7 +958,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                     helpers.build_theme_colors(self, self.theme_list.ui_manager)
 
                 self.previous_colors = deepcopy(self.themes[self.theme_index][1:])
-        except Exception: traceback.print_exc()
+        except: pass
 
         if (self.get_real_width(), self.get_real_height()) != self.previousWindowDimensions:
             # height_of_others = helpers.getHeightOfElements([self.header_text, self.create_button])
