@@ -359,7 +359,8 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
                  allow_existing_files_only: bool = False,
                  allow_picking_directories: bool = False,
                  visible: int = 1,
-                 config_file_dir: str = ''
+                 config_file_dir: str = '',
+                 SavePath: str = ''
                  ):
 
         super().__init__(rect, manager,
@@ -370,9 +371,16 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
                          visible=visible)
 
         self.config_file_dir = config_file_dir
+        self.save_path = SavePath
 
-        self.open_in_explorer_button = UIButton(relative_rect=pygame.Rect(96, 10, 20, 20), text='↖', tool_tip_text='Open current path in explorer', manager=self.ui_manager, container=self, object_id='#open_in_explorer_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
-        self.config_directory_button = UIButton(relative_rect=pygame.Rect(116, 10, 20, 20), text='⚙', tool_tip_text='Open the game\'s appdata directory which houses config files', manager=self.ui_manager, container=self, object_id='#config_directory_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.config_directory_button = UIButton(relative_rect=pygame.Rect(96, 10, 20, 20), text='⚙', tool_tip_text='Open the game\'s appdata directory which houses config files', manager=self.ui_manager, container=self, object_id='#config_directory_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.jump_to_patterns_directory_button = UIButton(relative_rect=pygame.Rect(116, 10, 20, 20), text='⌆', tool_tip_text='Jump to the default patterns directory if it exists', manager=self.ui_manager, container=self, object_id='#jump_to_patterns_directory_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+        self.open_in_explorer_button = UIButton(relative_rect=pygame.Rect(136, 10, 20, 20), text='↖', tool_tip_text='Open current path in explorer', manager=self.ui_manager, container=self, object_id='#open_in_explorer_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+
+        self.previous_window_size = (self.get_abs_rect().width, self.get_abs_rect().height)
+
+        if self.save_path.is_dir():
+            self._change_directory_path(self.save_path)
 
     def process_event(self, event: pygame.event.Event) -> bool:
         """
@@ -393,15 +401,23 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
         self._process_file_path_entry_events(event)
         self._process_file_list_events(event)
 
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.config_directory_button:
+            try:
+                webbrowser.open(self.config_file_dir)
+            except Exception: traceback.print_exc()
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.jump_to_patterns_directory_button:
+            if self.save_path.is_dir():
+                self._change_directory_path(self.save_path)
+
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.open_in_explorer_button:
             try:
                 webbrowser.open(self.current_directory_path)
             except Exception: traceback.print_exc()
 
-        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.config_directory_button:
-            try:
-                webbrowser.open(self.config_file_dir)
-            except Exception: traceback.print_exc()
+        if (self.get_abs_rect().width, self.get_abs_rect().height) != self.previous_window_size:
+            self.previous_window_size = (self.get_abs_rect().width, self.get_abs_rect().height)
+            self.update_image_preview_size()
 
         return handled
 
@@ -433,11 +449,24 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
         except: pass
 
         if self.file_selection_list.get_single_selection() is not None and self.file_selection_list.get_single_selection().lower().endswith('.png'):
-            self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 190))
-            image_surface = pygame.image.load(self.current_file_path)
-            self.image_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, 10), (90, 90)), image_surface=image_surface, manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'right_target': self.file_selection_list, 'top_target': self.file_selection_list})
+
+            self.preview_image_surface = pygame.image.load(self.current_file_path)
+            self.wh_ratio = self.preview_image_surface.get_width() / self.preview_image_surface.get_height()
+            height = self.get_abs_rect().height / 4
+            width = min(self.ok_button.get_abs_rect().left - self.file_selection_list.get_abs_rect().left - 10, height * self.wh_ratio)
+            self.image_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, (-1 * height) - 10), (width, height)), image_surface=self.preview_image_surface, manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'bottom', 'bottom': 'bottom', 'right_target': self.file_selection_list})
+            self.file_selection_list.anchors = {'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom', 'bottom_target': self.image_preview}
+            self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30))
         else:
+            self.file_selection_list.anchors = {'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'}
             self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130))
+
+    def update_image_preview_size(self):
+        height = self.get_abs_rect().height / 4
+        width = min(self.ok_button.get_abs_rect().left - self.file_selection_list.get_abs_rect().left - 10, height * self.wh_ratio)
+        self.image_preview.set_dimensions((width, height))
+        self.image_preview.set_relative_position((10, (-1 * height) - 10))
+        self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30))
 
     def _process_file_list_events(self, event):
         """

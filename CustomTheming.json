@@ -44,6 +44,22 @@
       }
     },
 
+    "#jump_to_patterns_directory_button":
+    {
+      "prototype": "#file_dialog_icon_buttons",
+      "images":
+      {
+        "normal_image":
+        {
+          "path": "data/icons/default_save_path_icon.png"
+        }
+      },
+      "misc":
+      {
+          "text_vert_alignment_padding": "0"
+      }
+    },
+
     "#open_in_explorer_button":
     {
       "prototype": "#file_dialog_icon_buttons",
