@@ -417,7 +417,18 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
 
         if (self.get_abs_rect().width, self.get_abs_rect().height) != self.previous_window_size:
             self.previous_window_size = (self.get_abs_rect().width, self.get_abs_rect().height)
-            self.update_image_preview_size()
+            if self.file_selection_list.get_single_selection() is not None and self.file_selection_list.get_single_selection().lower().endswith('.png'):
+                self.update_image_preview_size()
+
+            selected_item_text = self.file_selection_list.get_single_selection()
+            self._change_directory_path(Path(self.current_directory_path))
+
+            try:
+                if selected_item_text is not None:
+                    selected_index = next((i for i, item in enumerate(self.file_selection_list.item_list) if item['text'] == selected_item_text), None)
+                    self.file_selection_list.item_list[selected_index]['selected'] = True
+                    self.file_selection_list.item_list[selected_index]['button_element'].select()
+            except: pass
 
         return handled
 
@@ -449,12 +460,12 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
         except: pass
 
         if self.file_selection_list.get_single_selection() is not None and self.file_selection_list.get_single_selection().lower().endswith('.png'):
-
             self.preview_image_surface = pygame.image.load(self.current_file_path)
             self.wh_ratio = self.preview_image_surface.get_width() / self.preview_image_surface.get_height()
-            height = self.get_abs_rect().height / 4
+            height = self.get_abs_rect().height / 3
             width = min(self.ok_button.get_abs_rect().left - self.file_selection_list.get_abs_rect().left - 10, height * self.wh_ratio)
             self.image_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, (-1 * height) - 10), (width, height)), image_surface=self.preview_image_surface, manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'bottom', 'bottom': 'bottom', 'right_target': self.file_selection_list})
+
             self.file_selection_list.anchors = {'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom', 'bottom_target': self.image_preview}
             self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30))
         else:
@@ -462,7 +473,7 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
             self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130))
 
     def update_image_preview_size(self):
-        height = self.get_abs_rect().height / 4
+        height = self.get_abs_rect().height / 3
         width = min(self.ok_button.get_abs_rect().left - self.file_selection_list.get_abs_rect().left - 10, height * self.wh_ratio)
         self.image_preview.set_dimensions((width, height))
         self.image_preview.set_relative_position((10, (-1 * height) - 10))
