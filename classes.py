@@ -433,11 +433,11 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
             except Exception: traceback.print_exc()
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.jump_to_patterns_directory_button:
-            if self.save_path.is_dir():
+            if self.save_path.is_dir() and Path(self.current_directory_path) != self.save_path:
                 self._change_directory_path(self.save_path)
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.save_favorite_button:
-            self.config_dict["FavoriteDir"][0] = str(self.current_directory_path)
+            self.config_dict["FavoriteDir"][0] = self.current_directory_path
             self.jump_to_favorite_button.enable()
             for e in [self.save_favorite_button, self.jump_to_favorite_button]:
                 try: self.right_clickable_elements.index(e)
@@ -445,7 +445,7 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.jump_to_favorite_button:
             favorite_path = Path(self.config_dict["FavoriteDir"][0])
-            if favorite_path.is_dir():
+            if favorite_path.is_dir() and Path(self.current_directory_path) != favorite_path:
                 self._change_directory_path(favorite_path)
 
         if event.type == self.save_favorite_button.context_menu_button_types[self.save_favorite_button.context_menu_buttons.index('Clear favorite')]:  # 'Clear favorite' context menu button selected on either the save or jump to favorite button
@@ -465,15 +465,7 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
             if self.file_selection_list.get_single_selection() is not None and self.file_selection_list.get_single_selection().lower().endswith('.png'):
                 self.update_image_preview_size()
 
-            selected_item_text = self.file_selection_list.get_single_selection()
-            self._change_directory_path(Path(self.current_directory_path))
-
-            try:
-                if selected_item_text is not None:
-                    selected_index = next((i for i, item in enumerate(self.file_selection_list.item_list) if item['text'] == selected_item_text), None)
-                    self.file_selection_list.item_list[selected_index]['selected'] = True
-                    self.file_selection_list.item_list[selected_index]['button_element'].select()
-            except: pass
+            self.update_selection_list()
 
         return handled
 
@@ -546,6 +538,30 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
 
         return width, height
 
+    def update_selection_list(self):
+        selected_item_text = self.file_selection_list.get_single_selection()
+        try:
+            scroll_position = self.file_selection_list.scroll_bar.scroll_position
+            scrollable_height = self.file_selection_list.scroll_bar.scrollable_height
+            scroll_percentage = scroll_position / scrollable_height
+        except: pass
+
+        self._change_directory_path(Path(self.current_directory_path))
+
+        try:
+            if selected_item_text is not None:
+                selected_index = next((i for i, item in enumerate(self.file_selection_list.item_list) if item['text'] == selected_item_text), None)
+                self.file_selection_list.item_list[selected_index]['selected'] = True
+                self.file_selection_list.item_list[selected_index]['button_element'].select()
+        except: pass
+
+        try:
+            self.file_selection_list.scroll_bar.scroll_position = scroll_position
+            self.file_selection_list.scroll_bar.start_percentage = scroll_percentage
+            self.file_selection_list.scroll_bar.rebuild()
+            self.file_selection_list.scroll_bar.has_moved_recently = True
+        except: pass
+
     def _process_file_list_events(self, event):
         """
         Handle events coming from the file/folder list.
@@ -572,15 +588,18 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
                 self.delete_button.disable()
 
             self.update_file_selection_list_for_preview()
+            self.update_selection_list()
 
         if (event.type == pygame_gui.UI_SELECTION_LIST_DOUBLE_CLICKED_SELECTION
                 and event.ui_element == self.file_selection_list):
             new_directory_file_path = Path(self.current_directory_path) / event.text
             self._change_directory_path(new_directory_file_path)
             self.update_file_selection_list_for_preview()
+            self.update_selection_list()
 
         if event.type == pygame_gui.UI_SELECTION_LIST_DROPPED_SELECTION and event.ui_element == self.file_selection_list:
             self.update_file_selection_list_for_preview()
+            self.update_selection_list()
 
 class ChooseFileNameWindow(pygame_gui.elements.UIWindow):
     def __init__(self,
