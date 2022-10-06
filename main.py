@@ -19,7 +19,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.5.4'
+    version = '1.5.6'
 
     return version
 
@@ -142,7 +142,8 @@ def main():
         "Eraser": [EraseMode, False],
         "AutoAdjust": [AutoAdjust, False],
         "LoadThemesFromBoard": [True, False],
-        "LoadThemesFromQuickLoad": [True, False]
+        "LoadThemesFromQuickLoad": [True, False],
+        "FavoriteDir": ['', '']
     }
 
     helpers.initialConfigCheck(config_file_dir, config_file_path, config_dict)
@@ -381,7 +382,7 @@ def main():
                 HeldDownCells = []
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == save_button and helpers.anyAliveElements(save_load_windows) is False:
-                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick save location', initial_file_path=SavePath, allow_picking_directories=True, config_file_dir=config_file_dir, SavePath=SavePath)
+                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick save location', initial_file_path=SavePath, allow_picking_directories=True, config_file_dir=config_file_dir, SavePath=SavePath, config_dict=config_dict, right_clickable_elements=right_clickable_elements)
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == save_location and save_location.window_display_title == 'Pick save location':
                 save_path = event.text
@@ -392,7 +393,7 @@ def main():
                 helpers.savePNGWithBoardInfo(save_path, CurrentBoardSurf, step_stack[-1][0], step_stack[-1][1], themes)
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == load_button and helpers.anyAliveElements(save_load_windows) is False:
-                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=SavePath, allow_picking_directories=False, config_file_dir=config_file_dir, SavePath=SavePath)
+                save_location = PNGFilePicker(pygame.Rect((w / 2 - 80, h / 2 + 25), (420, 400)), manager=manager, window_title='Pick .PNG board file', initial_file_path=SavePath, allow_picking_directories=False, config_file_dir=config_file_dir, SavePath=SavePath, config_dict=config_dict, right_clickable_elements=right_clickable_elements)
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED and event.ui_element == save_location and save_location.window_display_title == 'Pick .PNG board file':
                 load_path = event.text

@@ -360,7 +360,9 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
                  allow_picking_directories: bool = False,
                  visible: int = 1,
                  config_file_dir: str = '',
-                 SavePath: str = ''
+                 SavePath: str = '',
+                 config_dict: {} = {},
+                 right_clickable_elements: [] = []
                  ):
 
         super().__init__(rect, manager,
@@ -372,6 +374,8 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
 
         self.config_file_dir = config_file_dir
         self.save_path = SavePath
+        self.config_dict = config_dict
+        self.right_clickable_elements = right_clickable_elements
 
         self.config_directory_button = UIButton(relative_rect=pygame.Rect(96, 10, 20, 20), text='⚙', tool_tip_text='Open the game\'s appdata directory which houses config files', manager=self.ui_manager, container=self, object_id='#config_directory_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
         self.jump_to_patterns_directory_button = UIButton(relative_rect=pygame.Rect(116, 10, 20, 20), text='⌆', tool_tip_text='Jump to the default patterns directory if it exists', manager=self.ui_manager, container=self, object_id='#jump_to_patterns_directory_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
@@ -381,10 +385,28 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
         self.jump_to_favorite_button = UIButton(relative_rect=pygame.Rect(-50, 10, 20, 20), text='⟿', tool_tip_text='Jump to the favorited directory', manager=self.ui_manager, container=self, object_id='#jump_to_favorite_button', anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top'})
         self.open_in_explorer_button = UIButton(relative_rect=pygame.Rect(-30, 10, 20, 20), text='↖', tool_tip_text='Open current path in explorer', manager=self.ui_manager, container=self, object_id='#open_in_explorer_button', anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top'})
 
+        favorite_context_menu_buttons = ['Clear favorite']
+        favorite_context_menu_button_types = helpers.create_context_menu_button_event_types(favorite_context_menu_buttons)
+
+        self.save_favorite_button.context_menu_buttons = self.jump_to_favorite_button.context_menu_buttons = favorite_context_menu_buttons
+        self.save_favorite_button.context_menu_button_types = self.jump_to_favorite_button.context_menu_button_types = favorite_context_menu_button_types
+
         self.previous_window_size = (self.get_abs_rect().width, self.get_abs_rect().height)
 
         if self.save_path.is_dir():
             self._change_directory_path(self.save_path)
+
+        favorite_path = Path(self.config_dict["FavoriteDir"][0])
+        if favorite_path.is_dir():
+            self._change_directory_path(favorite_path)
+            for e in [self.save_favorite_button, self.jump_to_favorite_button]:
+                try: self.right_clickable_elements.index(e)
+                except: self.right_clickable_elements.append(e)
+        else:
+            self.jump_to_favorite_button.disable()
+            try:
+                for e in [self.save_favorite_button, self.jump_to_favorite_button]: self.right_clickable_elements.remove(e)
+            except: pass
 
     def process_event(self, event: pygame.event.Event) -> bool:
         """
@@ -413,6 +435,25 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.jump_to_patterns_directory_button:
             if self.save_path.is_dir():
                 self._change_directory_path(self.save_path)
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.save_favorite_button:
+            self.config_dict["FavoriteDir"][0] = str(self.current_directory_path)
+            self.jump_to_favorite_button.enable()
+            for e in [self.save_favorite_button, self.jump_to_favorite_button]:
+                try: self.right_clickable_elements.index(e)
+                except: self.right_clickable_elements.append(e)
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.jump_to_favorite_button:
+            favorite_path = Path(self.config_dict["FavoriteDir"][0])
+            if favorite_path.is_dir():
+                self._change_directory_path(favorite_path)
+
+        if event.type == self.save_favorite_button.context_menu_button_types[self.save_favorite_button.context_menu_buttons.index('Clear favorite')]:  # 'Clear favorite' context menu button selected on either the save or jump to favorite button
+            self.config_dict["FavoriteDir"][0] = ''
+            self.jump_to_favorite_button.disable()
+            try:
+                for e in [self.save_favorite_button, self.jump_to_favorite_button]: self.right_clickable_elements.remove(e)
+            except: pass
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == self.open_in_explorer_button:
             try:

@@ -866,7 +866,10 @@ def initialConfigCheck(config_file_dir, config_file_path, config_dict):
                 try:
                     config_dict[key][0] = config.getboolean('main', key)
                 except:
-                    config.set('main', key, str(config_dict[key][0]))
+                    try:
+                        config_dict[key][0] = config.get('main', key)
+                    except:
+                        config.set('main', key, str(config_dict[key][0]))
 
     with open(config_file_path, 'w') as f:
         config.write(f)
