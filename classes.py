@@ -397,7 +397,7 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
             self._change_directory_path(self.save_path)
 
         favorite_path = Path(self.config_dict["FavoriteDir"][0])
-        if favorite_path.is_dir():
+        if favorite_path.is_dir() and str(favorite_path) != '.':
             self._change_directory_path(favorite_path)
             for e in [self.save_favorite_button, self.jump_to_favorite_button]:
                 try: self.right_clickable_elements.index(e)
