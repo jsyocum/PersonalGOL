@@ -465,18 +465,18 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
             width, height = self.calculate_preview_image_width_and_height()
             self.image_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, (-1 * height) - 10), (width, height)), image_surface=self.preview_image_surface, manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'bottom', 'bottom': 'bottom'})
 
-            self.file_selection_list.anchors = {'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom', 'bottom_target': self.image_preview}
-            self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30))
+            file_selection_list_height = min(self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30, self.get_container().get_size()[1] - 130)
+            self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, file_selection_list_height))
         else:
-            self.file_selection_list.anchors = {'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'}
             self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130))
 
     def update_image_preview_size(self):
         width, height = self.calculate_preview_image_width_and_height()
-
         self.image_preview.set_dimensions((width, height))
         self.image_preview.set_relative_position((10, (-1 * height) - 10))
-        self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30))
+
+        file_selection_list_height = min(self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30, self.get_container().get_size()[1] - 130)
+        self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, file_selection_list_height))
 
     def calculate_preview_image_width_and_height(self):
         image_width = self.preview_image_surface.get_width()
