@@ -461,10 +461,9 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
 
         if self.file_selection_list.get_single_selection() is not None and self.file_selection_list.get_single_selection().lower().endswith('.png'):
             self.preview_image_surface = pygame.image.load(self.current_file_path)
-            self.wh_ratio = self.preview_image_surface.get_width() / self.preview_image_surface.get_height()
-            height = self.get_abs_rect().height / 3
-            width = min(self.ok_button.get_abs_rect().left - self.file_selection_list.get_abs_rect().left - 10, height * self.wh_ratio)
-            self.image_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, (-1 * height) - 10), (width, height)), image_surface=self.preview_image_surface, manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'bottom', 'bottom': 'bottom', 'right_target': self.file_selection_list})
+
+            width, height = self.calculate_preview_image_width_and_height()
+            self.image_preview = pygame_gui.elements.UIImage(relative_rect=pygame.Rect((10, (-1 * height) - 10), (width, height)), image_surface=self.preview_image_surface, manager=self.ui_manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'bottom', 'bottom': 'bottom'})
 
             self.file_selection_list.anchors = {'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom', 'bottom_target': self.image_preview}
             self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30))
@@ -473,11 +472,34 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
             self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130))
 
     def update_image_preview_size(self):
-        height = self.get_abs_rect().height / 3
-        width = min(self.ok_button.get_abs_rect().left - self.file_selection_list.get_abs_rect().left - 10, height * self.wh_ratio)
+        width, height = self.calculate_preview_image_width_and_height()
+
         self.image_preview.set_dimensions((width, height))
         self.image_preview.set_relative_position((10, (-1 * height) - 10))
         self.file_selection_list.set_dimensions((self.get_container().get_size()[0] - 20, self.get_container().get_size()[1] - 130 - self.image_preview.get_relative_rect().height + 30))
+
+    def calculate_preview_image_width_and_height(self):
+        image_width = self.preview_image_surface.get_width()
+        image_height = self.preview_image_surface.get_height()
+        image_ratio = image_width / image_height
+
+        space_width = self.ok_button.get_abs_rect().left - self.file_selection_list.get_abs_rect().left - 10
+        space_height = self.get_abs_rect().height / 3
+        space_ratio = space_width / space_height
+
+        if space_ratio == image_ratio:
+            Scale = space_width / image_width
+
+        elif space_ratio > image_ratio:
+            Scale = space_height / image_height
+
+        else:
+            Scale = space_width / image_width
+
+        width = min(space_width, image_width * Scale)
+        height = min(space_height, image_height * Scale)
+
+        return width, height
 
     def _process_file_list_events(self, event):
         """
