@@ -375,7 +375,11 @@ class PNGFilePicker(pygame_gui.windows.ui_file_dialog.UIFileDialog):
 
         self.config_directory_button = UIButton(relative_rect=pygame.Rect(96, 10, 20, 20), text='⚙', tool_tip_text='Open the game\'s appdata directory which houses config files', manager=self.ui_manager, container=self, object_id='#config_directory_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
         self.jump_to_patterns_directory_button = UIButton(relative_rect=pygame.Rect(116, 10, 20, 20), text='⌆', tool_tip_text='Jump to the default patterns directory if it exists', manager=self.ui_manager, container=self, object_id='#jump_to_patterns_directory_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
-        self.open_in_explorer_button = UIButton(relative_rect=pygame.Rect(136, 10, 20, 20), text='↖', tool_tip_text='Open current path in explorer', manager=self.ui_manager, container=self, object_id='#open_in_explorer_button', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top'})
+
+
+        self.save_favorite_button = UIButton(relative_rect=pygame.Rect(-70, 10, 20, 20), text='★', tool_tip_text='Save current dirctory as the favorite', manager=self.ui_manager, container=self, object_id='#save_favorite_button', anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top'})
+        self.jump_to_favorite_button = UIButton(relative_rect=pygame.Rect(-50, 10, 20, 20), text='⟿', tool_tip_text='Jump to the favorited directory', manager=self.ui_manager, container=self, object_id='#jump_to_favorite_button', anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top'})
+        self.open_in_explorer_button = UIButton(relative_rect=pygame.Rect(-30, 10, 20, 20), text='↖', tool_tip_text='Open current path in explorer', manager=self.ui_manager, container=self, object_id='#open_in_explorer_button', anchors={'left': 'right', 'right': 'right', 'top': 'top', 'bottom': 'top'})
 
         self.previous_window_size = (self.get_abs_rect().width, self.get_abs_rect().height)
 

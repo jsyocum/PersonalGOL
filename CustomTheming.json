@@ -60,6 +60,38 @@
       }
     },
 
+    "#save_favorite_button":
+    {
+      "prototype": "#file_dialog_icon_buttons",
+      "images":
+      {
+        "normal_image":
+        {
+          "path": "data/icons/star_icon.png"
+        }
+      },
+      "misc":
+      {
+          "text_vert_alignment_padding": "0"
+      }
+    },
+
+    "#jump_to_favorite_button":
+    {
+      "prototype": "#file_dialog_icon_buttons",
+      "images":
+      {
+        "normal_image":
+        {
+          "path": "data/icons/load_icon.png"
+        }
+      },
+      "misc":
+      {
+          "text_vert_alignment_padding": "0"
+      }
+    },
+
     "#open_in_explorer_button":
     {
       "prototype": "#file_dialog_icon_buttons",
