@@ -320,12 +320,15 @@ def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black')):
         color_for_shape = theme[s + 1]
         color_for_shape = add_selection_to_color(color_for_shape, select_color)
 
-        if shape[1] == 'rectangle':
-            square = pygame.Rect(shape[0])
-            pygame.draw.rect(surf, color_for_shape, square)
-
-        elif shape[1] == 'polygon':
+        if shape[1] == 'polygon':
             pygame.draw.polygon(surf, color_for_shape, shape[0])
+
+        elif shape[1] == 'ellipse':
+            ellipse_rect = pygame.Rect(shape[0])
+            pygame.draw.ellipse(surf, color_for_shape, ellipse_rect)
+
+        elif shape[1] == 'rectangle':
+            pygame.draw.rect(surf, color_for_shape, shape[0])
 
     return surf
 
