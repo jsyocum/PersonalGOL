@@ -19,7 +19,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.5.7'
+    version = '1.6.0'
 
     return version
 

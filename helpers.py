@@ -14,7 +14,7 @@ from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
 from pathlib import Path
 from copy import deepcopy
-from get_shape_points import get_shape_points, get_max_patterns, get_max_shapes
+from get_shape_points import get_shape_points, get_pattern_types, get_max_patterns, get_max_shapes
 
 # Clears the console screen
 def cls():
@@ -268,7 +268,7 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                         draw_checker = True
 
                 if draw_checker is True:
-                    square = get_shape_points(0, top_left, Scale)[0][0]
+                    square = get_shape_points('Rectangles', 0, top_left, Scale)[0][0]
                     checkerboard_color_final = add_selection_to_color(checkerboard_color_final, final_select_color)
                     pygame.draw.polygon(boardSurf, checkerboard_color_final, square)
 
@@ -276,12 +276,12 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                 theme_index = max(min(theme_board[subi][i], len(themes) - 1), 0)
                 theme = themes[theme_index]
 
-                shapes = get_shape_points(theme[0], top_left, Scale)
+                shapes = get_shape_points(theme[0][0], theme[0][1], top_left, Scale)
                 boardSurf = draw_theme_shapes(shapes, theme, boardSurf, final_select_color)
 
     return boardSurf
 
-def get_example_themes(theme_for_colors=None):
+def get_example_themes(theme_for_colors=None, pattern_type='Rectangles'):
     colors_array = []
     if theme_for_colors is None:
         for c in range(get_max_shapes() + 1):
@@ -291,9 +291,9 @@ def get_example_themes(theme_for_colors=None):
             colors_array.append(color)
 
     example_themes = []
-    for int in range(get_max_patterns() + 1):
+    for int in range(get_max_patterns(pattern_type) + 1):
         example_themes.append(colors_array.copy())
-        example_themes[-1].insert(0, int)
+        example_themes[-1].insert(0, [pattern_type, int])
 
     return example_themes
 
@@ -301,7 +301,9 @@ def generate_random_color():
     return pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
 
 def generate_random_theme():
-    theme = [np.random.randint(0, get_max_patterns())]
+    pattern_types, max_pattern_types = get_pattern_types()
+    pattern_type = pattern_types[np.random.randint(0, max_pattern_types)]
+    theme = [[pattern_type, np.random.randint(0, get_max_patterns(pattern_type))]]
     for i in range(get_max_shapes()):
         theme.append(generate_random_color())
 
@@ -310,7 +312,7 @@ def generate_random_theme():
 def create_theme_surf(theme, diameter) -> pygame.surface:
     surf = pygame.Surface((diameter, diameter))
 
-    shapes = get_shape_points(theme[0], (0, 0), diameter)
+    shapes = get_shape_points(theme[0][0], theme[0][1], (0, 0), diameter)
     surf = draw_theme_shapes(shapes, theme, surf)
 
     return surf
@@ -912,15 +914,22 @@ def read_themes_file(themes_file_path):
 
         themes = []
         for section in themes_file.sections():
-            theme = []
+            theme = [[]]
 
             try:
-                theme.append(min(abs(themes_file.getint(section, 'Pattern')), get_max_patterns()))
+                theme[0].append(themes_file.get(section, 'patterntype'))
             except:
-                theme.append(np.randint(0, get_max_patterns()))
+                pattern_types, max_pattern_types = get_pattern_types()
+                pattern_type = pattern_types[np.random.randint(0, max_pattern_types)]
+                theme[0].append(pattern_type)
 
             try:
-                colors = themes_file.options(section)[1:]
+                theme[0].append(min(abs(themes_file.getint(section, 'pattern')), get_max_patterns(theme[0][0])))
+            except:
+                theme[0].append(np.randint(0, get_max_patterns(theme[0][0])))
+
+            try:
+                colors = themes_file.options(section)[2:]
                 for color in colors:
                     try:
                         theme.append(pygame.Color(ast.literal_eval(themes_file.get(section, color))))
@@ -959,7 +968,8 @@ def write_themes_file(config_file_dir, themes_file_path, themes):
     for t, theme in enumerate(themes):
         section_name = 'theme ' + str(t + 1)
         themes_file.add_section(section_name)
-        themes_file.set(section_name, 'pattern', str(theme[0]))
+        themes_file.set(section_name, 'patterntype', str(theme[0][0]))
+        themes_file.set(section_name, 'pattern', str(theme[0][1]))
         for i, color in enumerate(theme[1:]):
             friendly_color = (color.r, color.g, color.b)
             themes_file.set(section_name, 'color ' + str(i + 1), str(friendly_color))

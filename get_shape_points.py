@@ -69,164 +69,187 @@ def center_two_third_x():
 
 
 
-def get_shape_points(pattern_int, tl, s):
+def get_shape_points(pattern_type, pattern_int, tl, s):
     global top_l, Scale
     top_l, Scale = (round(tl[0]), round(tl[1])), round(s - 1)
 
     shape_points = []
 
-    match pattern_int:
-        case 0:
-            # Full square
-            shape_points.append(((top_left(), bottom_left(), bottom_right(), top_right()), 'polygon'))
+    match pattern_type:
 
-        case 1:
-            # 1/2 triangles, bases at bottom left and top right
-            shape_points.append(((top_left(), bottom_left(), bottom_right()), 'polygon'))
-            shape_points.append(((top_left(), top_right(), bottom_right()), 'polygon'))
+        case 'Rectangles':
+            match pattern_int:
+                case 0:
+                    # Full square
+                    shape_points.append(((top_left(), bottom_left(), bottom_right(), top_right()), 'polygon'))
 
-        case 2:
-            # 1/2 triangle, bases at top left and bottom right
-            shape_points.append(((top_left(), top_right(), bottom_left()), 'polygon'))
-            shape_points.append(((top_right(), bottom_left(), bottom_right()), 'polygon'))
+                case 1:
+                    # 1/2 rectangles, width > height
+                    shape_points.append(((top_left(), left_center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_right(), right_center()), 'polygon'))
 
-        case 3:
-            # 1/2 rectangles, width > height
-            shape_points.append(((top_left(), left_center(), right_center(), top_right()), 'polygon'))
-            shape_points.append(((left_center(), bottom_left(), bottom_right(), right_center()), 'polygon'))
+                case 2:
+                    # 1/2 rectangles, width < height
+                    shape_points.append(((top_left(), bottom_left(), bottom_center(), top_center()), 'polygon'))
+                    shape_points.append(((top_center(), bottom_center(), bottom_right(), top_right()), 'polygon'))
 
-        case 4:
-            # 1/2 rectangles, width < height
-            shape_points.append(((top_left(), bottom_left(), bottom_center(), top_center()), 'polygon'))
-            shape_points.append(((top_center(), bottom_center(), bottom_right(), top_right()), 'polygon'))
+                case 3:
+                    # 1/3 rectangles, equal sizes, width > height
+                    shape_points.append(((top_left(), left_one_third(), right_one_third(), top_right()), 'polygon'))
+                    shape_points.append(((left_one_third(), left_two_third(), right_two_third(), right_one_third()), 'polygon'))
+                    shape_points.append(((left_two_third(), bottom_left(), bottom_right(), right_two_third()), 'polygon'))
 
-        case 5:
-            # 1/3 triangles, 'teeth' down
-            shape_points.append(((top_left(), bottom_left(), top_center()), 'polygon'))
-            shape_points.append(((top_right(), bottom_right(), top_center()), 'polygon'))
-            shape_points.append(((bottom_left(), bottom_right(), top_center()), 'polygon'))
+                case 4:
+                    # 1/3 rectangles, equal sizes, width < height
+                    shape_points.append(((top_left(), bottom_left(), bottom_one_third(), top_one_third()), 'polygon'))
+                    shape_points.append(((top_one_third(), bottom_one_third(), bottom_two_third(), top_two_third()), 'polygon'))
+                    shape_points.append(((top_two_third(), bottom_two_third(), bottom_right(), top_right()), 'polygon'))
 
-        case 6:
-            # 1/3 triangles, 'teeth' up
-            shape_points.append(((top_right(), bottom_right(), bottom_center()), 'polygon'))
-            shape_points.append(((top_left(), bottom_left(), bottom_center()), 'polygon'))
-            shape_points.append(((top_left(), top_right(), bottom_center()), 'polygon'))
+                case 5:
+                    # 1/2 square at top, 1/4 squares at bottom
+                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
+                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((top_left(), left_center(), right_center(), top_right()), 'polygon'))
 
-        case 7:
-            # 1/3 triangles, 'teeth' left to right
-            shape_points.append(((bottom_left(), bottom_right(), left_center()), 'polygon'))
-            shape_points.append(((top_left(), top_right(), left_center()), 'polygon'))
-            shape_points.append(((top_right(), bottom_right(), left_center()), 'polygon'))
+                case 6:
+                    # 1/2 square at bottom, 1/4 squares at top
+                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_right(), right_center()), 'polygon'))
 
-        case 8:
-            # 1/3 triangles, 'teeth' right to left
-            shape_points.append(((top_left(), top_right(), right_center()), 'polygon'))
-            shape_points.append(((bottom_left(), bottom_right(), right_center()), 'polygon'))
-            shape_points.append(((top_left(), bottom_left(), right_center()), 'polygon'))
+                case 7:
+                    # 1/2 square at left, 1/4 squares at right
+                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((top_left(), bottom_left(), bottom_center(), top_center()), 'polygon'))
 
-        case 9:
-            # 1/4 triangles, meet in the middle
-            shape_points.append(((top_left(), top_right(), center()), 'polygon'))
-            shape_points.append(((bottom_left(), bottom_right(), center()), 'polygon'))
-            shape_points.append(((top_left(), bottom_left(), center()), 'polygon'))
-            shape_points.append(((top_right(), bottom_right(), center()), 'polygon'))
+                case 8:
+                    # 1/2 square at right, 1/4 squares at left
+                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
+                    shape_points.append(((top_center(), bottom_center(), bottom_right(), top_right()), 'polygon'))
 
-        case 10:
-            # 1/3 rectangles, equal sizes, width > height
-            shape_points.append(((top_left(), left_one_third(), right_one_third(), top_right()), 'polygon'))
-            shape_points.append(((left_one_third(), left_two_third(), right_two_third(), right_one_third()), 'polygon'))
-            shape_points.append(((left_two_third(), bottom_left(), bottom_right(), right_two_third()), 'polygon'))
+                case 9:
+                    # 1/3 rectangle at top, 2 rectangles at bottom
+                    shape_points.append(((left_one_third(), bottom_left(), bottom_center(), center_one_third_y()), 'polygon'))
+                    shape_points.append(((center_one_third_y(), bottom_center(), bottom_right(), right_one_third()), 'polygon'))
+                    shape_points.append(((top_left(), left_one_third(), right_one_third(), top_right()), 'polygon'))
 
-        case 11:
-            # 1/3 rectangles, equal sizes, width < height
-            shape_points.append(((top_left(), bottom_left(), bottom_one_third(), top_one_third()), 'polygon'))
-            shape_points.append(((top_one_third(), bottom_one_third(), bottom_two_third(), top_two_third()), 'polygon'))
-            shape_points.append(((top_two_third(), bottom_two_third(), bottom_right(), top_right()), 'polygon'))
+                case 10:
+                    # 1/3 rectangle at bottom, 2 rectangles at top
+                    shape_points.append(((top_center(), center_two_third_y(), right_two_third(), top_right()), 'polygon'))
+                    shape_points.append(((top_left(), left_two_third(), center_two_third_y(), top_center()), 'polygon'))
+                    shape_points.append(((left_two_third(), bottom_left(), bottom_right(), right_two_third()), 'polygon'))
 
-        case 12:
-            # 1/2 square at top, 1/4 squares at bottom
-            shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-            shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
-            shape_points.append(((top_left(), left_center(), right_center(), top_right()), 'polygon'))
+                case 11:
+                    # 1/3 rectangle at left, 2 rectangles at right
+                    shape_points.append(((center_one_third_x(), bottom_one_third(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((top_one_third(), center_one_third_x(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((top_left(), bottom_left(), bottom_one_third(), top_one_third()), 'polygon'))
 
-        case 13:
-            # 1/2 square at bottom, 1/4 squares at top
-            shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-            shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-            shape_points.append(((left_center(), bottom_left(), bottom_right(), right_center()), 'polygon'))
+                case 12:
+                    # 1/3 rectangle at right, 2 rectangles at left
+                    shape_points.append(((top_left(), left_center(), center_two_third_x(), top_two_third()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_two_third(), center_two_third_x()), 'polygon'))
+                    shape_points.append(((top_two_third(), bottom_two_third(), bottom_right(), top_right()), 'polygon'))
 
-        case 14:
-            # 1/2 square at left, 1/4 squares at right
-            shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
-            shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-            shape_points.append(((top_left(), bottom_left(), bottom_center(), top_center()), 'polygon'))
+                case 13:
+                    # Diamond in the middle with separately drawn corners
+                    shape_points.append(((top_left(), left_center(), top_center()), 'polygon'))
+                    shape_points.append(((top_center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_center()), 'polygon'))
+                    shape_points.append(((bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((top_center(), left_center(), bottom_center(), right_center()), 'polygon'))
 
-        case 15:
-            # 1/2 square at right, 1/4 squares at left
-            shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-            shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-            shape_points.append(((top_center(), bottom_center(), bottom_right(), top_right()), 'polygon'))
 
-        case 16:
-            # 1/3 rectangle at top, 2 rectangles at bottom
-            shape_points.append(((left_one_third(), bottom_left(), bottom_center(), center_one_third_y()), 'polygon'))
-            shape_points.append(((center_one_third_y(), bottom_center(), bottom_right(), right_one_third()), 'polygon'))
-            shape_points.append(((top_left(), left_one_third(), right_one_third(), top_right()), 'polygon'))
+        case 'Triangles':
+            match pattern_int:
+                case 0:
+                    # 1/2 triangles, bases at bottom left and top right
+                    shape_points.append(((top_left(), bottom_left(), bottom_right()), 'polygon'))
+                    shape_points.append(((top_left(), top_right(), bottom_right()), 'polygon'))
 
-        case 17:
-            # 1/3 rectangle at bottom, 2 rectangles at top
-            shape_points.append(((top_center(), center_two_third_y(), right_two_third(), top_right()), 'polygon'))
-            shape_points.append(((top_left(), left_two_third(), center_two_third_y(), top_center()), 'polygon'))
-            shape_points.append(((left_two_third(), bottom_left(), bottom_right(), right_two_third()), 'polygon'))
+                case 1:
+                    # 1/2 triangle, bases at top left and bottom right
+                    shape_points.append(((top_left(), top_right(), bottom_left()), 'polygon'))
+                    shape_points.append(((top_right(), bottom_left(), bottom_right()), 'polygon'))
 
-        case 18:
-            # 1/3 rectangle at left, 2 rectangles at right
-            shape_points.append(((center_one_third_x(), bottom_one_third(), bottom_right(), right_center()), 'polygon'))
-            shape_points.append(((top_one_third(), center_one_third_x(), right_center(), top_right()), 'polygon'))
-            shape_points.append(((top_left(), bottom_left(), bottom_one_third(), top_one_third()), 'polygon'))
+                case 2:
+                    # 1/3 triangles, 'teeth' down
+                    shape_points.append(((top_left(), bottom_left(), top_center()), 'polygon'))
+                    shape_points.append(((top_right(), bottom_right(), top_center()), 'polygon'))
+                    shape_points.append(((bottom_left(), bottom_right(), top_center()), 'polygon'))
 
-        case 19:
-            # 1/3 rectangle at right, 2 rectangles at left
-            shape_points.append(((top_left(), left_center(), center_two_third_x(), top_two_third()), 'polygon'))
-            shape_points.append(((left_center(), bottom_left(), bottom_two_third(), center_two_third_x()), 'polygon'))
-            shape_points.append(((top_two_third(), bottom_two_third(), bottom_right(), top_right()), 'polygon'))
+                case 3:
+                    # 1/3 triangles, 'teeth' up
+                    shape_points.append(((top_right(), bottom_right(), bottom_center()), 'polygon'))
+                    shape_points.append(((top_left(), bottom_left(), bottom_center()), 'polygon'))
+                    shape_points.append(((top_left(), top_right(), bottom_center()), 'polygon'))
 
-        case 20:
-            # Diamond in the middle with separately drawn corners
-            shape_points.append(((top_left(), left_center(), top_center()), 'polygon'))
-            shape_points.append(((top_center(), right_center(), top_right()), 'polygon'))
-            shape_points.append(((left_center(), bottom_left(), bottom_center()), 'polygon'))
-            shape_points.append(((bottom_center(), bottom_right(), right_center()), 'polygon'))
-            shape_points.append(((top_center(), left_center(), bottom_center(), right_center()), 'polygon'))
+                case 4:
+                    # 1/3 triangles, 'teeth' left to right
+                    shape_points.append(((bottom_left(), bottom_right(), left_center()), 'polygon'))
+                    shape_points.append(((top_left(), top_right(), left_center()), 'polygon'))
+                    shape_points.append(((top_right(), bottom_right(), left_center()), 'polygon'))
 
-        case 21:
-            # Circle with colorable corners
-            shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-            shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-            shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-            shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
-            shape_points.append(((top_left()[0], top_left()[1], Scale, Scale), 'ellipse'))
+                case 5:
+                    # 1/3 triangles, 'teeth' right to left
+                    shape_points.append(((top_left(), top_right(), right_center()), 'polygon'))
+                    shape_points.append(((bottom_left(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((top_left(), bottom_left(), right_center()), 'polygon'))
 
-        case 22:
-            # Horizontal ellipse with colorable corners
-            shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-            shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-            shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-            shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
-            shape_points.append(((left_one_third()[0], left_one_third()[1], Scale, Scale / 3), 'ellipse'))
+                case 6:
+                    # 1/4 triangles, meet in the middle
+                    shape_points.append(((top_left(), top_right(), center()), 'polygon'))
+                    shape_points.append(((bottom_left(), bottom_right(), center()), 'polygon'))
+                    shape_points.append(((top_left(), bottom_left(), center()), 'polygon'))
+                    shape_points.append(((top_right(), bottom_right(), center()), 'polygon'))
 
-        case 23:
-            # Vertical ellipse with colorable corners
-            shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-            shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-            shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-            shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
-            shape_points.append(((top_one_third()[0], top_one_third()[1], Scale / 3, Scale), 'ellipse'))
+
+        case 'Ellipses':
+            match pattern_int:
+                case 0:
+                    # Circle with colorable corners
+                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
+                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
+                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((top_left()[0], top_left()[1], Scale, Scale), 'ellipse'))
+
+                case 1:
+                    # Horizontal ellipse with colorable corners
+                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
+                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
+                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((left_one_third()[0], left_one_third()[1], Scale, Scale / 3), 'ellipse'))
+
+                case 2:
+                    # Vertical ellipse with colorable corners
+                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
+                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
+                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((top_one_third()[0], top_one_third()[1], Scale / 3, Scale), 'ellipse'))
+
 
     return shape_points
 
-def get_max_patterns():
-    return 23
+def get_pattern_types():
+    return ['Rectangles', 'Triangles', 'Ellipses'], 3
+
+def get_max_patterns(pattern_type):
+    match pattern_type:
+        case 'Rectangles':
+            return 13
+
+        case 'Triangles':
+            return 6
+
+        case 'Ellipses':
+            return 2
+
+    return 0
 
 def get_max_shapes():
     return 5

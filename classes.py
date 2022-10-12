@@ -924,9 +924,15 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
 
         self.choose_pattern_text = pygame_gui.elements.UILabel(text='Change pattern:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.header_text})
+
+        pattern_types = ['Rectangles', 'Triangles', 'Ellipses']
+        self.patterns_type_selection_list = pygame_gui.elements.UIDropDownMenu(options_list=pattern_types, starting_option='Rectangles', relative_rect=pygame.Rect(10, 5, 120, 30), manager=manager, container=self, object_id='#patterns_type_selection_list', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
+
         patterns = helpers.get_example_themes()
-        self.patterns_selection_list = theme_dropdown_list(options_list=[], themes=patterns, starting_option='', relative_rect=pygame.Rect(10, 5, 100, 30), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
+        self.patterns_selection_list = theme_dropdown_list(options_list=[], themes=patterns, starting_option='', relative_rect=pygame.Rect(10, 5, 120, 30), manager=manager, container=self, object_id='#theme_dropdown_list', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.patterns_type_selection_list})
         self.patterns_selection_list.disable()
+        self.theme_dropdown_expansion_height_limit = self.get_abs_rect().bottom - self.patterns_selection_list.current_state.selected_option_button.get_abs_rect().bottom - 50
+        self.patterns_selection_list.current_state.drop_down_menu_ui.expansion_height_limit = self.theme_dropdown_expansion_height_limit
 
         self.color_preview_context_menu_buttons = ['Copy', 'Paste', 'Move up', 'Move down', 'Move top', 'Move bottom', 'Randomize color']
         self.color_preview_context_menu_button_event_types = helpers.create_context_menu_button_event_types(self.color_preview_context_menu_buttons)
@@ -977,6 +983,11 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                 self.color_picker_killed = True
             except: pass
 
+        # Theme pattern type selection list stuff
+        if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_object_id == '#theme_manager_window.#patterns_type_selection_list.#drop_down_options_list' and self.theme_list.is_enabled:
+            patterns = helpers.get_example_themes(self.themes[self.theme_index], event.text)
+            self.patterns_selection_list.set_options_list(patterns)
+
         # Theme list stuff
         if (event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_element == self.theme_list) or self.selected is True:
             for button in self.all_theme_list_buttons[1:]: button.enable()
@@ -1001,7 +1012,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                 self.move_down_button.disable()
                 self.move_bottom_button.disable()
 
-            patterns = helpers.get_example_themes(self.themes[self.theme_index])
+            patterns = helpers.get_example_themes(self.themes[self.theme_index], self.patterns_type_selection_list.selected_option)
             self.patterns_selection_list.set_options_list(patterns)
 
             self.selected_index = self.theme_index
@@ -1198,6 +1209,9 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             # self.height_total = helpers.getHeightOfElements(self.all_height_references)
             # self.sc.set_scrollable_area_dimensions((self.get_real_width(), self.get_real_height()))
 
+            self.theme_dropdown_expansion_height_limit = self.get_abs_rect().bottom - self.patterns_selection_list.current_state.selected_option_button.get_abs_rect().bottom - 50
+            self.patterns_selection_list.current_state.drop_down_menu_ui.expansion_height_limit = self.theme_dropdown_expansion_height_limit
+
             self.theme_list.rebuild_themes(self.themes)
 
             self.previousWindowDimensions = (self.get_real_width(), self.get_real_height())
@@ -1243,7 +1257,8 @@ class theme_dropdown_list(pygame_gui.elements.UIDropDownMenu):
                          options_list=options_list,
                          starting_option=starting_option,
                          anchors=anchors,
-                         visible=visible)
+                         visible=visible,
+                         object_id=object_id)
 
         self._create_valid_ids(container=container,
                                parent_element=parent_element,
@@ -1339,7 +1354,7 @@ class theme_dropdown_list(pygame_gui.elements.UIDropDownMenu):
         if self.is_enabled:
             consumed_event = self.current_state.process_event(event)
 
-        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_object_id in ['#theme_manager_window.drop_down_menu.#selected_option', '#theme_manager_window.drop_down_menu.#expand_button'] and self.is_enabled is True:
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_object_id in ['#theme_manager_window.#theme_dropdown_list.#selected_option', '#theme_manager_window.#theme_dropdown_list.#expand_button'] and self.is_enabled is True:
             self.current_state.should_transition = True
 
         return consumed_event
@@ -1425,14 +1440,10 @@ class theme_expanded_dropdown_list(pygame_gui.elements.ui_drop_down_menu.UIExpan
                                                              object_id='#expand_button')
             self.drop_down_menu_ui.join_focus_sets(self.close_button)
             self.active_buttons.append(self.close_button)
-        # list_rect = pygame.Rect(self.drop_down_menu_ui.relative_rect.left,
-        #                         self.option_list_y_pos,
-        #                         (self.drop_down_menu_ui.relative_rect.width -
-        #                          self.close_button_width),
-        #                         self.options_list_height)
+
         list_rect = pygame.Rect(self.drop_down_menu_ui.relative_rect.left,
                                 self.option_list_y_pos,
-                                100,
+                                self.drop_down_menu_ui.relative_rect.width,
                                 self.options_list_height)
 
         self.options_selection_list = theme_selection_list(list_rect,
@@ -1445,8 +1456,8 @@ class theme_expanded_dropdown_list(pygame_gui.elements.ui_drop_down_menu.UIExpan
                                                            anchors=self.drop_down_menu_ui.anchors,
                                                            object_id='#drop_down_options_list',
                                                            themes=helpers.convert_strings_to_themes_array(self.options_list),
-                                                           diameter=50)
-        self.options_selection_list.set_list_item_height(70)
+                                                           diameter=list_rect.width)
+        self.options_selection_list.set_list_item_height(list_rect.width - 40)
         self.drop_down_menu_ui.join_focus_sets(self.options_selection_list)
 
         if should_rebuild:
