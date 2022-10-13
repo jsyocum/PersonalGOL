@@ -927,6 +927,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
         pattern_types = ['Rectangles', 'Triangles', 'Ellipses']
         self.patterns_type_selection_list = pygame_gui.elements.UIDropDownMenu(options_list=pattern_types, starting_option='Rectangles', relative_rect=pygame.Rect(10, 5, 120, 30), manager=manager, container=self, object_id='#patterns_type_selection_list', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
+        self.patterns_type_selection_list.current_state.is_enabled = True
 
         patterns = helpers.get_example_themes()
         self.patterns_selection_list = theme_dropdown_list(options_list=[], themes=patterns, starting_option='', relative_rect=pygame.Rect(10, 5, 120, 30), manager=manager, container=self, object_id='#theme_dropdown_list', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.patterns_type_selection_list})
@@ -984,7 +985,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
             except: pass
 
         # Theme pattern type selection list stuff
-        if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_object_id == '#theme_manager_window.#patterns_type_selection_list.#drop_down_options_list' and self.theme_list.is_enabled:
+        if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_object_id == '#theme_manager_window.#patterns_type_selection_list.#drop_down_options_list' and self.theme_list.is_enabled is True:
             patterns = helpers.get_example_themes(self.themes[self.theme_index], event.text)
             self.patterns_selection_list.set_options_list(patterns)
 
@@ -1398,6 +1399,23 @@ class theme_expanded_dropdown_list(pygame_gui.elements.ui_drop_down_menu.UIExpan
                                                                        list_object_ids)
 
         self._calculate_options_list_sizes(final_ids)
+
+        try:
+            list_shadow_width = int(
+                self.ui_manager.get_theme().get_misc_data('shadow_width', final_ids))
+        except (LookupError, ValueError):
+            list_shadow_width = 2
+        try:
+            list_border_width = int(
+                self.ui_manager.get_theme().get_misc_data('border_width', final_ids))
+        except (LookupError, ValueError):
+            list_border_width = 1
+
+        options_list_border_and_shadow = list_shadow_width + list_border_width
+        list_item_height = self.base_position_rect.width + (2 * options_list_border_and_shadow) - 20
+        list_height = ((list_item_height * len(self.options_list)) + (2 * options_list_border_and_shadow))
+        self.options_list_height = list_height
+
         if self.expand_direction is not None:
             if self.expand_direction == 'up':
                 expand_button_symbol = '▲'
@@ -1443,11 +1461,17 @@ class theme_expanded_dropdown_list(pygame_gui.elements.ui_drop_down_menu.UIExpan
 
         list_rect = pygame.Rect(self.drop_down_menu_ui.relative_rect.left,
                                 self.option_list_y_pos,
-                                self.drop_down_menu_ui.relative_rect.width,
+                                self.base_position_rect.width + (2 * options_list_border_and_shadow),
                                 self.options_list_height)
 
+        if list_height > self.options_list_height:
+            diameter = list_rect.width - 40
+        else:
+            diameter = list_rect.width - 20
+
+
         self.options_selection_list = theme_selection_list(list_rect,
-                                                           starting_height=3,
+                                                           starting_height=6,
                                                            item_list=[],
                                                            allow_double_clicks=False,
                                                            manager=self.ui_manager,
@@ -1456,8 +1480,8 @@ class theme_expanded_dropdown_list(pygame_gui.elements.ui_drop_down_menu.UIExpan
                                                            anchors=self.drop_down_menu_ui.anchors,
                                                            object_id='#drop_down_options_list',
                                                            themes=helpers.convert_strings_to_themes_array(self.options_list),
-                                                           diameter=list_rect.width)
-        self.options_selection_list.set_list_item_height(list_rect.width - 40)
+                                                           diameter=diameter)
+        self.options_selection_list.set_list_item_height(diameter)
         self.drop_down_menu_ui.join_focus_sets(self.options_selection_list)
 
         if should_rebuild:
