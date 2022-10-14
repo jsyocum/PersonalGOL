@@ -766,6 +766,16 @@ def setParametersValues(all_parameters_elements_matched, config_dict):
 
     return all_parameters_elements_matched, config_dict
 
+def get_elements_from_set_with_type(set, type_object):
+    elements = []
+    for element in set:
+        try:
+            if type(element) == type(type_object):
+                elements.append(element)
+        except: pass
+
+    return elements
+
 def getHeightOfElements(array):
     total_height = 0
     for element in array:

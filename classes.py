@@ -925,8 +925,8 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
 
         self.choose_pattern_text = pygame_gui.elements.UILabel(text='Change pattern:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.header_text})
 
-        pattern_types = ['Rectangles', 'Triangles', 'Ellipses']
-        self.patterns_type_selection_list = pygame_gui.elements.UIDropDownMenu(options_list=pattern_types, starting_option='Rectangles', relative_rect=pygame.Rect(10, 5, 120, 30), manager=manager, container=self, object_id='#patterns_type_selection_list', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
+        self.pattern_types = ['Rectangles', 'Triangles', 'Ellipses']
+        self.patterns_type_selection_list = pygame_gui.elements.UIDropDownMenu(options_list=self.pattern_types, starting_option='Rectangles', relative_rect=pygame.Rect(10, 5, 120, 30), manager=manager, container=self, object_id='#patterns_type_selection_list', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
         self.patterns_type_selection_list.current_state.is_enabled = True
 
         patterns = helpers.get_example_themes()
@@ -983,6 +983,10 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
                 self.theme_color_picker_dialog.kill()
                 self.color_picker_killed = True
             except: pass
+
+        if event.type == pygame.KEYUP and event.key == pygame.K_w:
+            pass
+
 
         # Theme pattern type selection list stuff
         if event.type == pygame_gui.UI_SELECTION_LIST_NEW_SELECTION and event.ui_object_id == '#theme_manager_window.#patterns_type_selection_list.#drop_down_options_list' and self.theme_list.is_enabled is True:
@@ -1076,6 +1080,29 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         # Drop down menu stuff
         if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.ui_element == self.patterns_selection_list:
             self.themes[self.theme_index][0] = event.theme[0]
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED and (event.ui_element == self.patterns_type_selection_list.menu_states['closed'].selected_option_button or event.ui_element == self.patterns_type_selection_list.menu_states['closed'].open_button):
+            container_list = []
+            try:
+                container_list.append(self.patterns_type_selection_list.menu_states['expanded'].options_selection_list.item_list_container)
+                container_list.append(self.patterns_type_selection_list.menu_states['expanded'].options_selection_list.list_and_scroll_bar_container)
+            except: pass
+
+            try:
+                container_list.append(self.patterns_selection_list.menu_states['expanded'].options_selection_list.item_list_container)
+                container_list.append(self.patterns_selection_list.menu_states['expanded'].options_selection_list.list_and_scroll_bar_container)
+            except: pass
+
+            try:
+                container_list.append(self.theme_list.item_list_container)
+                container_list.append(self.theme_list.list_and_scroll_bar_container)
+            except: pass
+
+            rogue_elements = helpers.get_elements_from_set_with_type(self.window_element_container.elements, self.ui_container)
+            for e in rogue_elements:
+                if e not in container_list:
+                    e.kill()
+
 
         # Color stuff
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element in self.pick_color_buttons:

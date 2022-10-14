@@ -19,7 +19,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.6.1'
+    version = '1.6.2'
 
     return version
 
@@ -233,6 +233,11 @@ def main():
             if event.type == pygame.QUIT:
                 helpers.writeDictToConfig(config_file_dir, config_file_path, config_dict)
                 running = False
+
+            if event.type == pygame.KEYUP and event.key == pygame.K_LALT:
+                manager.set_visual_debug_mode(False)
+                manager.set_visual_debug_mode(True)
+
 
             if MenuOpen is False:
                 if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
