@@ -56,18 +56,21 @@ def move_item_in_list(list, index, move_int, bottom_offset=0, top_offset=0, bott
         new_index = len(list) - top_offset
 
     if bottom_or_top != 'none':
-        if bottom_or_top != 'bottom' and bottom_or_top != 'top':
-            print(bottom_or_top, ' is not a valid argument for move_item_in_list function. Must be either bottom or top.')
-
-        elif bottom_or_top == 'bottom':
+        if bottom_or_top == 'bottom':
             new_index = 0 + bottom_offset
 
         elif bottom_or_top == 'top':
             new_index = len(list) - top_offset
 
+        else:
+            print(bottom_or_top, ' is not a valid argument for move_item_in_list function. Must be either bottom or top.')
+
     list.insert(new_index, index_item)
 
     return list, new_index
+
+def get_distance_between_points(point_a, point_b):
+    return math.sqrt((point_b[0] - point_a[0])**2 + (point_b[1] - point_a[1])**2)
 
 def determine_slider_button_text_and_limit(lower_limit, upper_limit, value):
     if value > lower_limit:
@@ -326,13 +329,66 @@ def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black')):
             pygame.draw.polygon(surf, color_for_shape, shape[0])
 
         elif shape[1] == 'ellipse':
-            ellipse_rect = pygame.Rect(shape[0])
-            pygame.draw.ellipse(surf, color_for_shape, ellipse_rect)
+            # ellipse_rect = pygame.Rect(shape[0])
+            # pygame.draw.ellipse(surf, color_for_shape, ellipse_rect)
+
+            size_of_ellipse_rect = get_size_of_rotated_rectangle(shape[0])
+            size_of_ellipse_rect_rounded_down = (math.floor(size_of_ellipse_rect[0]), math.floor(size_of_ellipse_rect[1]))
+            # temp_surf = pygame.Surface(size_of_ellipse_rect_rounded_down, pygame.SRCALPHA)
+            temp_surf = pygame.Surface(size_of_ellipse_rect_rounded_down)
+            unrotated_ellipse_rect = temp_surf.get_rect()
+            pygame.draw.ellipse(temp_surf, color_for_shape, unrotated_ellipse_rect)
+
+            rotation_degrees, r = get_rotation_of_rectangle(shape[0])
+            rotated_ellipse_surf = pygame.transform.rotate(temp_surf, rotation_degrees)
+
+            # https://math.stackexchange.com/questions/4136163/how-to-find-x-y-coordinates-on-rotated-ellipse-where-tangent-to-bounding-box
+            x = rotated_ellipse_surf.get_rect().centerx
+            y = rotated_ellipse_surf.get_rect().centery
+            a = size_of_ellipse_rect_rounded_down[0] / 2
+            b = size_of_ellipse_rect_rounded_down[1] / 2
+            rotated_ellipse_equation = ((x * math.cos(r) + y * math.sin(r))**2 / a**2) + ((x * math.sin(r) - y * math.cos(r))**2 / b**2)
+
+            x_l = -1 * math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2)
+            y_l = -1 * (((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2)))
+
+            x_b =
+            y_b =
+
+            x_r =
+            y_r =
+
+            x_t =
+            y_t =
+
+            rotated_rectangle_dimensions = get_dimensions_of_rotated_rectangle(shape[0])
+            scaled_rotated_ellipse_surf = pygame.transform.smoothscale(rotated_ellipse_surf, rotated_rectangle_dimensions)
+
+            top_left = get_top_left_of_rotated_rectangle(shape[0])
+            surf.blit(temp_surf, top_left)
+            print(size_of_ellipse_rect_rounded_down)
 
         elif shape[1] == 'rectangle':
             pygame.draw.rect(surf, color_for_shape, shape[0])
 
     return surf
+
+def get_dimensions_of_rotated_rectangle(rect_points):
+    return (max(rect_points[0][0], rect_points[1][0], rect_points[2][0], rect_points[3][0]) - min(rect_points[0][0], rect_points[1][0], rect_points[2][0], rect_points[3][0]), max(rect_points[0][1], rect_points[1][1], rect_points[2][1], rect_points[3][1]) - min(rect_points[0][1], rect_points[1][1], rect_points[2][1], rect_points[3][1]))
+
+def get_top_left_of_rotated_rectangle(rect_points):
+    return (min(rect_points[0][0], rect_points[1][0]), min(rect_points[0][1], rect_points[3][1]))
+
+def get_size_of_rotated_rectangle(rect_points):
+    width = get_distance_between_points(rect_points[1], rect_points[2])
+    height = get_distance_between_points(rect_points[0], rect_points[1])
+
+    return (width, height)
+
+def get_rotation_of_rectangle(rect_points):
+    rotation_radians = math.atan((rect_points[0][0] - rect_points[1][0]) / (rect_points[0][1] - rect_points[1][1]))
+    rotation_degrees = math.degrees(rotation_radians)
+    return rotation_degrees, rotation_radians
 
 def updateScreenWithBoard(Board, surf, EditMode, color=pygame.Color('White'), RandomColor=False, RandomColorByPixel=False, Saving=False, DefaultEditCheckerboardBrightness=15, SelectedCells=[], EvenOrOdd=0):
     if RandomColorByPixel is False:

@@ -238,6 +238,8 @@ def main():
                 manager.set_visual_debug_mode(False)
                 manager.set_visual_debug_mode(True)
 
+            if event.type == pygame.KEYUP and event.key == pygame.K_RALT:
+                print(helpers.get_distance_between_points((0, 0), (9, 3)))
 
             if MenuOpen is False:
                 if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
