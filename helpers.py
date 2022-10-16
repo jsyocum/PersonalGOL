@@ -329,44 +329,56 @@ def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black')):
             pygame.draw.polygon(surf, color_for_shape, shape[0])
 
         elif shape[1] == 'ellipse':
-            # ellipse_rect = pygame.Rect(shape[0])
-            # pygame.draw.ellipse(surf, color_for_shape, ellipse_rect)
-
             size_of_ellipse_rect = get_size_of_rotated_rectangle(shape[0])
             size_of_ellipse_rect_rounded_down = (math.floor(size_of_ellipse_rect[0]), math.floor(size_of_ellipse_rect[1]))
-            # temp_surf = pygame.Surface(size_of_ellipse_rect_rounded_down, pygame.SRCALPHA)
-            temp_surf = pygame.Surface(size_of_ellipse_rect_rounded_down)
+            temp_surf = pygame.Surface(size_of_ellipse_rect_rounded_down, pygame.SRCALPHA)
             unrotated_ellipse_rect = temp_surf.get_rect()
             pygame.draw.ellipse(temp_surf, color_for_shape, unrotated_ellipse_rect)
+
 
             rotation_degrees, r = get_rotation_of_rectangle(shape[0])
             rotated_ellipse_surf = pygame.transform.rotate(temp_surf, rotation_degrees)
 
-            # https://math.stackexchange.com/questions/4136163/how-to-find-x-y-coordinates-on-rotated-ellipse-where-tangent-to-bounding-box
             x = rotated_ellipse_surf.get_rect().centerx
             y = rotated_ellipse_surf.get_rect().centery
             a = size_of_ellipse_rect_rounded_down[0] / 2
             b = size_of_ellipse_rect_rounded_down[1] / 2
-            rotated_ellipse_equation = ((x * math.cos(r) + y * math.sin(r))**2 / a**2) + ((x * math.sin(r) - y * math.cos(r))**2 / b**2)
 
             x_l = -1 * math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2)
             y_l = -1 * (((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2)))
 
-            x_b =
-            y_b =
+            x_b = -1 * (((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.sin(r)**2 + b**2 * math.cos(r)**2)))
+            y_b = -1 * math.sqrt(a**2 * math.sin(r)**2 + b**2 * math.cos(r)**2)
 
-            x_r =
-            y_r =
+            x_r = math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2)
+            y_r = ((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2))
 
-            x_t =
-            y_t =
+            x_t = ((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.sin(r)**2 + b**2 * math.cos(r)**2))
+            y_t = math.sqrt(a**2 * math.sin(r)**2 + b**2 * math.cos(r)**2)
+
+            x_points = []
+            for point in [x_l, x_b, x_r, x_t]:
+                point = min(max(math.ceil(point) + x, 0), rotated_ellipse_surf.get_size()[0])
+                x_points.append(point)
+
+            y_points = []
+            for point in [y_l, y_b, y_r, y_t]:
+                point = min(max(math.ceil(point) + y, 0), rotated_ellipse_surf.get_size()[1])
+                y_points.append(point)
+
+            rotated_ellipse_top_left = (min(x_points), min(y_points))
+            rotated_ellipse_box_width = max(x_points) - rotated_ellipse_top_left[0]
+            rotated_ellipse_box_height = max(y_points) - rotated_ellipse_top_left[1]
+
+            rect = pygame.Rect(rotated_ellipse_top_left[0], rotated_ellipse_top_left[1], rotated_ellipse_box_width, rotated_ellipse_box_height)
+            rotated_ellipse_cropped_surf = rotated_ellipse_surf.subsurface(rect)
+
 
             rotated_rectangle_dimensions = get_dimensions_of_rotated_rectangle(shape[0])
-            scaled_rotated_ellipse_surf = pygame.transform.smoothscale(rotated_ellipse_surf, rotated_rectangle_dimensions)
+            scaled_rotated_ellipse_surf = pygame.transform.smoothscale(rotated_ellipse_cropped_surf, rotated_rectangle_dimensions)
 
             top_left = get_top_left_of_rotated_rectangle(shape[0])
-            surf.blit(temp_surf, top_left)
-            print(size_of_ellipse_rect_rounded_down)
+            surf.blit(scaled_rotated_ellipse_surf, top_left)
 
         elif shape[1] == 'rectangle':
             pygame.draw.rect(surf, color_for_shape, shape[0])
@@ -374,7 +386,9 @@ def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black')):
     return surf
 
 def get_dimensions_of_rotated_rectangle(rect_points):
-    return (max(rect_points[0][0], rect_points[1][0], rect_points[2][0], rect_points[3][0]) - min(rect_points[0][0], rect_points[1][0], rect_points[2][0], rect_points[3][0]), max(rect_points[0][1], rect_points[1][1], rect_points[2][1], rect_points[3][1]) - min(rect_points[0][1], rect_points[1][1], rect_points[2][1], rect_points[3][1]))
+    width = max(rect_points[0][0], rect_points[1][0], rect_points[2][0], rect_points[3][0]) - min(rect_points[0][0], rect_points[1][0], rect_points[2][0], rect_points[3][0])
+    height = max(rect_points[0][1], rect_points[1][1], rect_points[2][1], rect_points[3][1]) - min(rect_points[0][1], rect_points[1][1], rect_points[2][1], rect_points[3][1])
+    return (width + 1, height + 1)
 
 def get_top_left_of_rotated_rectangle(rect_points):
     return (min(rect_points[0][0], rect_points[1][0]), min(rect_points[0][1], rect_points[3][1]))

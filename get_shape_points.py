@@ -214,8 +214,7 @@ def get_shape_points(pattern_type, pattern_int, tl, s):
                     shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
                     shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
                     shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
-                    shape_points.append(((left_two_third(), bottom_one_third(), right_one_third(), top_two_third()), 'ellipse'))
-                    # shape_points.append(((top_left()[0], top_left()[1], Scale, Scale), 'ellipse'))
+                    shape_points.append(((top_left(), bottom_left(), bottom_right(), top_right()), 'ellipse'))
 
                 case 1:
                     # Horizontal ellipse with colorable corners
@@ -223,7 +222,7 @@ def get_shape_points(pattern_type, pattern_int, tl, s):
                     shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
                     shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
                     shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
-                    # shape_points.append(((left_one_third()[0], left_one_third()[1], Scale, Scale / 3), 'ellipse'))
+                    shape_points.append(((left_one_third(), left_two_third(), right_two_third(), right_one_third()), 'ellipse'))
 
                 case 2:
                     # Vertical ellipse with colorable corners
@@ -231,7 +230,23 @@ def get_shape_points(pattern_type, pattern_int, tl, s):
                     shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
                     shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
                     shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
-                    # shape_points.append(((top_one_third()[0], top_one_third()[1], Scale / 3, Scale), 'ellipse'))
+                    shape_points.append(((top_one_third(), bottom_one_third(), bottom_two_third(), top_two_third()), 'ellipse'))
+
+                case 3:
+                    # Bottom left to top right diagonal ellipse with colorable corners
+                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
+                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
+                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((left_two_third(), bottom_one_third(), right_one_third(), top_two_third()), 'ellipse'))
+
+                case 4:
+                    # Top left to bottom right diagonal ellipse with colorable corners
+                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
+                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
+                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
+                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    shape_points.append(((top_one_third(), left_one_third(), bottom_two_third(), right_two_third()), 'ellipse'))
 
 
     return shape_points
@@ -248,7 +263,7 @@ def get_max_patterns(pattern_type):
             return 6
 
         case 'Ellipses':
-            return 2
+            return 4
 
     return 0
 
