@@ -68,6 +68,19 @@ def center_two_third_x():
     return (round(top_left()[0] + Scale / 3 * 2), round(top_left()[1] + Scale / 2))
 
 
+def top_one_third_left_one_third():
+    return (round(top_left()[0] + Scale / 3), round(top_left()[1] + Scale / 3))
+
+def top_one_third_left_two_third():
+    return (round(top_left()[0] + Scale / 3), round(top_left()[1] + Scale / 3 * 2))
+
+def top_two_third_left_one_third():
+    return (round(top_left()[0] + Scale / 3 * 2), round(top_left()[1] + Scale / 3))
+
+def top_two_third_left_two_third():
+    return (round(top_left()[0] + Scale / 3 * 2), round(top_left()[1] + Scale / 3 * 2))
+
+
 
 def get_shape_points(pattern_type, pattern_int, tl, s):
     global top_l, Scale
@@ -154,11 +167,8 @@ def get_shape_points(pattern_type, pattern_int, tl, s):
                     shape_points.append(((top_two_third(), bottom_two_third(), bottom_right(), top_right()), 'polygon'))
 
                 case 13:
-                    # Diamond in the middle with separately drawn corners
-                    shape_points.append(((top_left(), left_center(), top_center()), 'polygon'))
-                    shape_points.append(((top_center(), right_center(), top_right()), 'polygon'))
-                    shape_points.append(((left_center(), bottom_left(), bottom_center()), 'polygon'))
-                    shape_points.append(((bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    # Diamond in the middle with colorable corners
+                    create_colorable_corners(shape_points)
                     shape_points.append(((top_center(), left_center(), bottom_center(), right_center()), 'polygon'))
 
 
@@ -210,46 +220,52 @@ def get_shape_points(pattern_type, pattern_int, tl, s):
             match pattern_int:
                 case 0:
                     # Circle with colorable corners
-                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    create_colorable_corners(shape_points)
                     shape_points.append(((top_left(), bottom_left(), bottom_right(), top_right()), 'ellipse'))
 
                 case 1:
                     # Horizontal ellipse with colorable corners
-                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    create_colorable_corners(shape_points)
                     shape_points.append(((left_one_third(), left_two_third(), right_two_third(), right_one_third()), 'ellipse'))
 
                 case 2:
                     # Vertical ellipse with colorable corners
-                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    create_colorable_corners(shape_points)
                     shape_points.append(((top_one_third(), bottom_one_third(), bottom_two_third(), top_two_third()), 'ellipse'))
 
                 case 3:
                     # Bottom left to top right diagonal ellipse with colorable corners
-                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    create_colorable_corners(shape_points)
                     shape_points.append(((left_two_third(), bottom_one_third(), right_one_third(), top_two_third()), 'ellipse'))
 
                 case 4:
                     # Top left to bottom right diagonal ellipse with colorable corners
-                    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
-                    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
-                    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
-                    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
+                    create_colorable_corners(shape_points)
                     shape_points.append(((top_one_third(), left_one_third(), bottom_two_third(), right_two_third()), 'ellipse'))
+
+                case 5:
+                    # Smaller centered circle with colorable corners
+                    create_colorable_corners(shape_points)
+                    shape_points.append(((top_one_third_left_one_third(), top_one_third_left_two_third(),
+                                          top_two_third_left_one_third(), top_two_third_left_two_third()), 'ellipse'))
+
+                case 6:
+                    # Four ellipses pointing to the center with colorable corners
+                    create_colorable_corners(shape_points)
+                    shape_points.append(((top_one_third(), center_one_third_x(), center_one_third_y(), top_two_third()), 'ellipse'))
+                    shape_points.append(((center_one_third_y(), center_two_third_y(), right_two_third(), right_one_third()), 'ellipse'))
+                    shape_points.append(((center_one_third_x(), bottom_one_third(), bottom_two_third(), center_two_third_x()), 'ellipse'))
+                    shape_points.append(((left_one_third(), left_two_third(), center_two_third_y(), center_one_third_y()), 'ellipse'))
 
 
     return shape_points
+
+# Adds four squares to a pattern
+def create_colorable_corners(shape_points):
+    shape_points.append(((top_left(), left_center(), center(), top_center()), 'polygon'))
+    shape_points.append(((top_center(), center(), right_center(), top_right()), 'polygon'))
+    shape_points.append(((left_center(), bottom_left(), bottom_center(), center()), 'polygon'))
+    shape_points.append(((center(), bottom_center(), bottom_right(), right_center()), 'polygon'))
 
 def get_pattern_types():
     return ['Rectangles', 'Triangles', 'Ellipses'], 3
@@ -263,9 +279,9 @@ def get_max_patterns(pattern_type):
             return 6
 
         case 'Ellipses':
-            return 4
+            return 6
 
     return 0
 
 def get_max_shapes():
-    return 5
+    return 8

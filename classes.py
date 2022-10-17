@@ -926,7 +926,7 @@ class ThemeManagerWindow(pygame_gui.elements.UIWindow):
         self.choose_pattern_text = pygame_gui.elements.UILabel(text='Change pattern:', relative_rect=pygame.Rect((10, 10), (-1, -1)), manager=manager, container=self, anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.header_text})
 
         self.pattern_types = ['Rectangles', 'Triangles', 'Ellipses']
-        self.patterns_type_selection_list = pygame_gui.elements.UIDropDownMenu(options_list=self.pattern_types, starting_option='Rectangles', relative_rect=pygame.Rect(10, 5, 120, 30), manager=manager, container=self, object_id='#patterns_type_selection_list', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
+        self.patterns_type_selection_list = pygame_gui.elements.UIDropDownMenu(options_list=self.pattern_types, starting_option=self.themes[0][0][0], relative_rect=pygame.Rect(10, 5, 120, 30), manager=manager, container=self, object_id='#patterns_type_selection_list', anchors={'left': 'left', 'right': 'left', 'top': 'top', 'bottom': 'top', 'left_target': self.theme_list, 'top_target': self.choose_pattern_text})
         self.patterns_type_selection_list.current_state.is_enabled = True
 
         patterns = helpers.get_example_themes()

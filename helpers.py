@@ -303,6 +303,38 @@ def get_example_themes(theme_for_colors=None, pattern_type='Rectangles'):
 def generate_random_color():
     return pygame.Color(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
 
+def clean_themes(themes):
+    try:
+        if themes == None or len(themes) == 0:
+            return [generate_random_theme()]
+    except: return [generate_random_theme()]
+
+    for theme in themes:
+        pattern_types = get_pattern_types()
+        if theme[0][0] not in pattern_types[0]:
+            theme[0][0] = pattern_types[np.random.randint(0, pattern_types[1] - 1)]
+
+        max_patterns = get_max_patterns(theme[0][0])
+        if theme[0][1] < 0 or theme[0][1] > max_patterns:
+            theme[0][1] = np.random.randint(0, max_patterns)
+
+        try:
+            for c, color in theme[1:]:
+                try: pygame.Color(color)
+                except: theme[c + 1] = generate_random_color()
+        except: pass
+
+        try:
+            colors_length = len(theme[1:])
+        except:
+            colors_length = 0
+        max_shapes = get_max_shapes()
+        if colors_length < max_shapes:
+            for c in range(max_shapes - colors_length):
+                theme.append(generate_random_color())
+
+    return themes
+
 def generate_random_theme():
     pattern_types, max_pattern_types = get_pattern_types()
     pattern_type = pattern_types[np.random.randint(0, max_pattern_types)]
@@ -908,6 +940,7 @@ def loadPNGWithBoardInfo(load_path, step_stack, themes, load_themes=True):
         try:
             themes_string = targetImage.text["ThemesArray"]
             themes = convert_string_themes_array_to_real_array(themes_string)
+            themes = clean_themes(themes)
         except:
             print('No themes found in board metadata.')
 
@@ -1006,7 +1039,7 @@ def read_themes_file(themes_file_path):
             try:
                 theme[0].append(min(abs(themes_file.getint(section, 'pattern')), get_max_patterns(theme[0][0])))
             except:
-                theme[0].append(np.randint(0, get_max_patterns(theme[0][0])))
+                theme[0].append(np.random.randint(0, get_max_patterns(theme[0][0])))
 
             try:
                 colors = themes_file.options(section)[2:]
@@ -1033,6 +1066,7 @@ def read_themes_file(themes_file_path):
     except:
         return default_theme
 
+    themes = clean_themes(themes)
     return themes
 
 def write_themes_file(config_file_dir, themes_file_path, themes):
@@ -1050,6 +1084,8 @@ def write_themes_file(config_file_dir, themes_file_path, themes):
         themes_file.add_section(section_name)
         themes_file.set(section_name, 'patterntype', str(theme[0][0]))
         themes_file.set(section_name, 'pattern', str(theme[0][1]))
+        # try: themes_file.set(section_name, 'pattern', str(theme[0][1]))
+        # except: themes_file.set(section_name, 'pattern', str(np.random.randint(0, get_max_patterns(theme[0][0]))))
         for i, color in enumerate(theme[1:]):
             friendly_color = (color.r, color.g, color.b)
             themes_file.set(section_name, 'color ' + str(i + 1), str(friendly_color))
