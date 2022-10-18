@@ -352,7 +352,7 @@ def create_theme_surf(theme, diameter) -> pygame.surface:
 
     return surf
 
-def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black')):
+def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black'), debug_theme_patterns=False):
     for s, shape in enumerate(shapes):
         color_for_shape = theme[s + 1]
         color_for_shape = add_selection_to_color(color_for_shape, select_color)
@@ -414,6 +414,10 @@ def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black')):
 
         elif shape[1] == 'rectangle':
             pygame.draw.rect(surf, color_for_shape, shape[0])
+
+        # if debug_theme_patterns is True:
+        #     for point in shape[0]:
+        #         pygame.draw.rect(surf, pygame.Color('orange'), )
 
     return surf
 

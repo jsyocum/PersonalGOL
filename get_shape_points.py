@@ -257,6 +257,14 @@ def get_shape_points(pattern_type, pattern_int, tl, s):
                     shape_points.append(((center_one_third_x(), bottom_one_third(), bottom_two_third(), center_two_third_x()), 'ellipse'))
                     shape_points.append(((left_one_third(), left_two_third(), center_two_third_y(), center_one_third_y()), 'ellipse'))
 
+                case 7:
+                    # Four diagonal ellipses pointing to the center with colorable corners
+                    create_colorable_corners(shape_points)
+                    shape_points.append(((left_one_third(), center_one_third_x(), center_one_third_y(), top_one_third()), 'ellipse'))
+                    shape_points.append(((center_one_third_y(), center_two_third_x(), right_one_third(), top_two_third()), 'ellipse'))
+                    shape_points.append(((center_two_third_y(), bottom_two_third(), right_two_third(), center_two_third_x()), 'ellipse'))
+                    shape_points.append(((left_two_third(), bottom_one_third(), center_two_third_y(), center_one_third_x()), 'ellipse'))
+
 
     return shape_points
 
@@ -279,7 +287,7 @@ def get_max_patterns(pattern_type):
             return 6
 
         case 'Ellipses':
-            return 6
+            return 7
 
     return 0
 
