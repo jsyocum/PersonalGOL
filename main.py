@@ -19,7 +19,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.7.2'
+    version = '1.7.5'
 
     return version
 
@@ -77,6 +77,9 @@ def main():
     Flip = False
     EvenOrOdd = 0
     time_delta_added = 0
+
+    DebugThemePatterns = 0
+    DebugThemePatterns_changed = False
 
     right_clickable_elements = []
 
@@ -241,6 +244,11 @@ def main():
             if event.type == pygame.KEYUP and event.key == pygame.K_RALT:
                 print(helpers.get_distance_between_points((0, 0), (9, 3)))
 
+            if event.type == pygame.KEYUP and event.key == pygame.K_END:
+                DebugThemePatterns += 1
+                if DebugThemePatterns > 2: DebugThemePatterns = 0
+                DebugThemePatterns_changed = True
+
             if MenuOpen is False:
                 if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                     Continuous = not Continuous
@@ -258,11 +266,11 @@ def main():
                 elif event.type == pygame.KEYUP and event.key == pygame.K_F6:
                     QuickLoad = True
                 elif event.type == pygame.KEYUP and event.key == pygame.K_LEFT:
-                    themes[0][0] = max(themes[0][0] - 1, 0)
-                    print('theme_int:', themes[0][0])
+                    themes[0][0][1] = themes[0][0][1] - 1
+                    if themes[0][0][1] < 0: themes[0][0][1] = get_max_patterns(themes[0][0][0])
                 elif event.type == pygame.KEYUP and event.key == pygame.K_RIGHT:
-                    themes[0][0] = min(themes[0][0] + 1, get_max_patterns())
-                    print('theme_int:', themes[0][0])
+                    themes[0][0][1] = themes[0][0][1] + 1
+                    if themes[0][0][1] > get_max_patterns(themes[0][0][0]): themes[0][0][1] = 0
                 elif event.type == pygame.KEYUP and event.key == pygame.K_e:
                     if EditMode is False:
                         EditMode = True
@@ -749,7 +757,7 @@ def main():
 
             Load = False
 
-        if helpers.should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells):
+        if helpers.should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells, DebugThemePatterns_changed):
             Appended = False
             edit_mode_changed = False
             edit_checkerboard_brightness_changed = False
@@ -759,7 +767,7 @@ def main():
             try: previous_HeldDownCells = deepcopy(HeldDownCells)
             except Exception: traceback.print_exc()
 
-            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells)
+            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells, DebugThemePatterns)
 
         helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
 

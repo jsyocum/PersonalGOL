@@ -222,8 +222,8 @@ def get_random_theme_board(board):
 
     return theme_board
 
-def should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells):
-    if Appended or edit_mode_changed or edit_checkerboard_brightness_changed:
+def should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells, DebugThemePatterns_changed):
+    if Appended or edit_mode_changed or edit_checkerboard_brightness_changed or DebugThemePatterns_changed:
         return True
 
     elif np.array_equal(HeldDownCells, previous_HeldDownCells) is False:
@@ -239,7 +239,7 @@ def should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edi
 # The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
-def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, select_color, EvenOrOdd, SelectedCells) -> pygame.surface:
+def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, select_color, EvenOrOdd, SelectedCells, debug_theme_patterns) -> pygame.surface:
     Scale = getScale(board, surf.get_width(), surf.get_height())[0]
     boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
     checkerboard_color = pygame.Color(EditCheckerboardBrightness, EditCheckerboardBrightness, EditCheckerboardBrightness)
@@ -280,7 +280,7 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                 theme = themes[theme_index]
 
                 shapes = get_shape_points(theme[0][0], theme[0][1], top_left, Scale)
-                boardSurf = draw_theme_shapes(shapes, theme, boardSurf, final_select_color)
+                boardSurf = draw_theme_shapes(shapes, theme, boardSurf, final_select_color, debug_theme_patterns)
 
     return boardSurf
 
@@ -367,44 +367,9 @@ def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black'), d
             unrotated_ellipse_rect = temp_surf.get_rect()
             pygame.draw.ellipse(temp_surf, color_for_shape, unrotated_ellipse_rect)
 
-
             rotation_degrees, r = get_rotation_of_rectangle(shape[0])
             rotated_ellipse_surf = pygame.transform.rotate(temp_surf, rotation_degrees)
-
-            x = rotated_ellipse_surf.get_rect().centerx
-            y = rotated_ellipse_surf.get_rect().centery
-            a = size_of_ellipse_rect_rounded_down[0] / 2
-            b = size_of_ellipse_rect_rounded_down[1] / 2
-
-            x_l = -1 * math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2)
-            y_l = -1 * (((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2)))
-
-            x_b = -1 * (((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.sin(r)**2 + b**2 * math.cos(r)**2)))
-            y_b = -1 * math.sqrt(a**2 * math.sin(r)**2 + b**2 * math.cos(r)**2)
-
-            x_r = math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2)
-            y_r = ((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.cos(r)**2 + b**2 * math.sin(r)**2))
-
-            x_t = ((b**2 - a**2) * math.sin(2 * r)) / (2 * math.sqrt(a**2 * math.sin(r)**2 + b**2 * math.cos(r)**2))
-            y_t = math.sqrt(a**2 * math.sin(r)**2 + b**2 * math.cos(r)**2)
-
-            x_points = []
-            for point in [x_l, x_b, x_r, x_t]:
-                point = min(max(math.ceil(point) + x, 0), rotated_ellipse_surf.get_size()[0])
-                x_points.append(point)
-
-            y_points = []
-            for point in [y_l, y_b, y_r, y_t]:
-                point = min(max(math.ceil(point) + y, 0), rotated_ellipse_surf.get_size()[1])
-                y_points.append(point)
-
-            rotated_ellipse_top_left = (min(x_points), min(y_points))
-            rotated_ellipse_box_width = max(x_points) - rotated_ellipse_top_left[0]
-            rotated_ellipse_box_height = max(y_points) - rotated_ellipse_top_left[1]
-
-            rect = pygame.Rect(rotated_ellipse_top_left[0], rotated_ellipse_top_left[1], rotated_ellipse_box_width, rotated_ellipse_box_height)
-            rotated_ellipse_cropped_surf = rotated_ellipse_surf.subsurface(rect)
-
+            rotated_ellipse_cropped_surf = rotated_ellipse_surf
 
             rotated_rectangle_dimensions = get_dimensions_of_rotated_rectangle(shape[0])
             scaled_rotated_ellipse_surf = pygame.transform.smoothscale(rotated_ellipse_cropped_surf, rotated_rectangle_dimensions)
@@ -415,9 +380,16 @@ def draw_theme_shapes(shapes, theme, surf, select_color=pygame.Color('Black'), d
         elif shape[1] == 'rectangle':
             pygame.draw.rect(surf, color_for_shape, shape[0])
 
-        # if debug_theme_patterns is True:
-        #     for point in shape[0]:
-        #         pygame.draw.rect(surf, pygame.Color('orange'), )
+
+    if debug_theme_patterns > 0:
+        for s, shape in enumerate(shapes):
+            for p, point in enumerate(shape[0]):
+                color_for_shape = theme[s + 1]
+                pygame.draw.rect(surf, pygame.Color('orange'), pygame.Rect(point[0] - 8, point[1] - 8, 16, 16))
+                pygame.draw.rect(surf, color_for_shape, pygame.Rect(point[0] - 4, point[1] - 4, 8, 8))
+
+                if debug_theme_patterns == 2:
+                    pygame.draw.aaline(surf, color_for_shape, shape[0][p - 1], point)
 
     return surf
 
