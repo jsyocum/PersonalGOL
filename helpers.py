@@ -163,6 +163,10 @@ def appendToStepStack(board, theme_board, step_stack):
     appended = False
     step = []
 
+    previous_boards = []
+    if len(step_stack) > 0:
+        previous_boards = deepcopy(step_stack[-1])
+
     if len(step_stack) == 0 or np.array_equal(board, step_stack[-1][0]) is False:
         step.append(board.copy())
         appended = True
@@ -181,7 +185,7 @@ def appendToStepStack(board, theme_board, step_stack):
     if totalsize.total_size(step_stack) > 1e+9:
         step_stack.popleft()
 
-    return appended
+    return appended, previous_boards
 
 def stepBack(step_stack):
     if len(step_stack) > 1:
@@ -235,16 +239,38 @@ def should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edi
 # The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
-def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, select_color, EvenOrOdd, SelectedCells, debug_theme_patterns) -> pygame.surface:
+def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, select_color, EvenOrOdd, SelectedCells, debug_theme_patterns, CurrentBoardSurf, previous_boards, edit_mode_changed, edit_checkerboard_brightness_changed) -> pygame.surface:
     Scale = getScale(board, surf.get_width(), surf.get_height())[0]
-    boardSurf = pygame.Surface((board.shape[0] * Scale, board.shape[1] * Scale))
+    surf_size = (board.shape[0] * Scale, board.shape[1] * Scale)
+
+    if CurrentBoardSurf is not None and CurrentBoardSurf.get_size() == surf_size and not edit_mode_changed and not edit_checkerboard_brightness_changed:
+        boardSurf = CurrentBoardSurf.copy()
+        same_surf = True
+    else:
+        boardSurf = pygame.Surface(surf_size)
+        same_surf = False
+
     checkerboard_color = pygame.Color(EditCheckerboardBrightness, EditCheckerboardBrightness, EditCheckerboardBrightness)
+    blank_color = pygame.Color('Black')
 
     for subi, SubArray in enumerate(board):
         for i, Square in enumerate(SubArray):
             top_left = (subi * Scale, i * Scale)
             final_select_color = pygame.Color('Black')
             draw_checker = False
+
+
+            if same_surf is False:
+                if Square == 1:
+                    draw_cell(subi, i, boardSurf, theme_board, themes, top_left, Scale, final_select_color, debug_theme_patterns)
+
+            else:
+                if Square != previous_boards[0][subi][i] or theme_board[subi][i] != previous_boards[1][subi][i]:
+                    if Square == 1:
+                        draw_cell(subi, i, boardSurf, theme_board, themes, top_left, Scale, final_select_color, debug_theme_patterns)
+                    else:
+                        pygame.draw.rect(boardSurf, blank_color, pygame.Rect(top_left[0], top_left[1], Scale, Scale))
+
 
             if EditMode is True and Square == 0:
                 checkerboard_color_final = pygame.Color('Black')
@@ -259,18 +285,16 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                         draw_checker = True
 
                 if draw_checker is True:
-                    square = get_shape_points('Rectangles', 0, top_left, Scale)[0][0]
-                    checkerboard_color_final = add_selection_to_color(checkerboard_color_final, final_select_color)
-                    pygame.draw.polygon(boardSurf, checkerboard_color_final, square)
-
-            if Square == 1:
-                theme_index = max(min(theme_board[subi][i], len(themes) - 1), 0)
-                theme = themes[theme_index]
-
-                shapes = get_shape_points(theme[0][0], theme[0][1], top_left, Scale)
-                boardSurf = draw_theme_shapes(shapes, theme, boardSurf, final_select_color, debug_theme_patterns)
+                    pygame.draw.rect(boardSurf, checkerboard_color_final, pygame.Rect(top_left[0], top_left[1], Scale, Scale))
 
     return boardSurf
+
+def draw_cell(subi, i, boardSurf, theme_board, themes, top_left, Scale, final_select_color, debug_theme_patterns):
+    theme_index = max(min(theme_board[subi][i], len(themes) - 1), 0)
+    theme = themes[theme_index]
+
+    shapes = get_shape_points(theme[0][0], theme[0][1], top_left, Scale)
+    boardSurf = draw_theme_shapes(shapes, theme, boardSurf, final_select_color, debug_theme_patterns)
 
 def draw_selection(board, surf, select_color, SelectedCells):
     if len(SelectedCells) == 2:
