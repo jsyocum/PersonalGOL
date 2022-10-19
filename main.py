@@ -6,6 +6,7 @@ import pygame_gui
 import os
 import traceback
 import appdirs
+import numpy as np
 from pathlib import Path
 from collections import deque
 from copy import deepcopy
@@ -19,7 +20,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.7.5'
+    version = '1.7.7'
 
     return version
 
@@ -53,6 +54,7 @@ def main():
     QuickLoad = False
     Load = False
     CurrentBoardSurf = None
+    surf_redrawn = False
     LeftClickHeldDown = [False, 0]
     SelectionBoxPresent = False
     SelMode = True
@@ -116,7 +118,7 @@ def main():
     DefaultMaxFps = 18
     DefaultLikelihood = 5
 
-    select_color = pygame.Color(27, 69, 109)
+    select_color = pygame.Color(27, 69, 109, 160)
 
     DefaultColorR = 255
     DefaultColorG = 255
@@ -622,9 +624,11 @@ def main():
         if Continuous is False and Step is True:
             Board = helpers.applyRules(step_stack[-1][0], step_stack)
             Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
+            HeldDownCells = []
             Step = False
         elif Continuous is False and StepBack is True:
             Appended = helpers.stepBack(step_stack)
+            HeldDownCells = []
             StepBack = False
         elif Continuous is True and Update is True:
             Board = helpers.applyRules(step_stack[-1][0], step_stack)
@@ -764,12 +768,20 @@ def main():
 
             try: previous_themes = deepcopy(themes)
             except Exception: traceback.print_exc()
+
+            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells, DebugThemePatterns)
+            CurrentBoardSurf_with_selection = CurrentBoardSurf.copy()
+
+            surf_redrawn = True
+
+        if np.array_equal(HeldDownCells, previous_HeldDownCells) is False or surf_redrawn is True:
             try: previous_HeldDownCells = deepcopy(HeldDownCells)
             except Exception: traceback.print_exc()
 
-            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells, DebugThemePatterns)
+            CurrentBoardSurf_with_selection = CurrentBoardSurf.copy()
+            helpers.draw_selection(step_stack[-1][0], CurrentBoardSurf_with_selection, select_color, HeldDownCells)
 
-        helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf, EditMode)
+        helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf_with_selection, EditMode)
 
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':

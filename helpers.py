@@ -88,9 +88,8 @@ def convert_themes_array_to_strings(array):
 
 def convert_string_themes_array_to_real_array(string_array):
     themes = ast.literal_eval(string_array)
-    themes[0] = ast.literal_eval(themes[0])
-    for theme in themes:
-        theme = convert_string_to_theme(theme)
+    for t, theme in enumerate(themes):
+        themes[t] = convert_string_to_theme(theme)
 
     return themes
 
@@ -226,9 +225,6 @@ def should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edi
     if Appended or edit_mode_changed or edit_checkerboard_brightness_changed or DebugThemePatterns_changed:
         return True
 
-    elif np.array_equal(HeldDownCells, previous_HeldDownCells) is False:
-        return True
-
     elif themes != previous_themes:
         return True
 
@@ -249,14 +245,6 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
             top_left = (subi * Scale, i * Scale)
             final_select_color = pygame.Color('Black')
             draw_checker = False
-
-            if len(SelectedCells) == 2:
-                x_1, y_1 = SelectedCells[0][0], SelectedCells[0][1]
-                x_2, y_2 = SelectedCells[1][0], SelectedCells[1][1]
-                if min(x_1, x_2) <= subi <= max(x_1, x_2):
-                    if min(y_1, y_2) <= i <= max(y_1, y_2):
-                        final_select_color = select_color
-                        draw_checker = True
 
             if EditMode is True and Square == 0:
                 checkerboard_color_final = pygame.Color('Black')
@@ -283,6 +271,22 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                 boardSurf = draw_theme_shapes(shapes, theme, boardSurf, final_select_color, debug_theme_patterns)
 
     return boardSurf
+
+def draw_selection(board, surf, select_color, SelectedCells):
+    if len(SelectedCells) == 2:
+        Scale = getScale(board, surf.get_width(), surf.get_height())[0]
+        SelectedCells_abs_pos = []
+        for cell in SelectedCells:
+            SelectedCells_abs_pos.append((cell[0] * Scale, cell[1] * Scale))
+
+        top_left = (min(SelectedCells_abs_pos[0][0], SelectedCells_abs_pos[1][0]), min(SelectedCells_abs_pos[0][1], SelectedCells_abs_pos[1][1]))
+        bottom_right = (max(SelectedCells_abs_pos[0][0], SelectedCells_abs_pos[1][0]) + Scale, max(SelectedCells_abs_pos[0][1], SelectedCells_abs_pos[1][1]) + Scale)
+        selection_rect = pygame.Rect(top_left[0], top_left[1], bottom_right[0] - top_left[0], bottom_right[1] - top_left[1])
+
+        temp_surf = pygame.Surface(selection_rect.size, pygame.SRCALPHA)
+        temp_surf.fill(select_color)
+
+        surf.blit(temp_surf, selection_rect.topleft)
 
 def get_example_themes(theme_for_colors=None, pattern_type='Rectangles'):
     colors_array = []
@@ -913,11 +917,13 @@ def loadPNGWithBoardInfo(load_path, step_stack, themes, load_themes=True):
         theme_board = np.zeros(board.shape, dtype=int)
 
     if load_themes is True:
+        old_themes = deepcopy(themes)
         try:
             themes_string = targetImage.text["ThemesArray"]
             themes = convert_string_themes_array_to_real_array(themes_string)
             themes = clean_themes(themes)
         except:
+            themes = old_themes
             print('No themes found in board metadata.')
 
     Appended = appendToStepStack(board, theme_board, step_stack)
