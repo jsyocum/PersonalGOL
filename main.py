@@ -57,6 +57,9 @@ def main():
     surf_redrawn = False
     LeftClickHeldDown = [False, 0]
     SelectionBoxPresent = False
+    selection_box_changed = False
+    boardsurf_context_menu_buttons = ['Zoom', 'Cut', 'Copy', 'Paste', 'Apply auto adjustments', 'Clear auto adjustments', 'Open settings', 'Open theme manager', 'Open action window']
+    boardsurf_context_menu_button_types = helpers.create_context_menu_button_event_types(boardsurf_context_menu_buttons)
     SelMode = True
     EraseMode = False
     AutoAdjust = False
@@ -303,7 +306,7 @@ def main():
                     elif EditMode is True and action_window.alive():
                         action_window.kill()
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not helpers.isMouseCollidingWithActionWindow(action_window, pygame.mouse.get_pos()):
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not helpers.isMouseCollidingWithElement(action_window, pygame.mouse.get_pos()):
                     LeftClickHeldDown = True
 
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
@@ -430,7 +433,7 @@ def main():
                     elif event.button == 5:
                         config_dict["MaxFps"][0] = max(current_max_fps - 1, max_fps_slider_range[0])
 
-                elif event.button == 1 and len(HeldDownCells) < 2 and EditMode is True and SelectionBoxPresent is False and config_dict["SelectionMode"][0] is True:
+                elif event.button == 1 and len(HeldDownCells) < 2 and EditMode is True and SelectionBoxPresent is False and config_dict["SelectionMode"][0] is True and (context_menu is None or context_menu.alive() is False):
                     mouse_pos = pygame.mouse.get_pos()
                     IsColliding, IsCollidingWithActionWindow, rel_mouse_pos = helpers.isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h)
                     if IsColliding and not IsCollidingWithActionWindow:
@@ -447,9 +450,11 @@ def main():
 
                 elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is False:
                     SelectionBoxPresent = True
-                elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is True and not helpers.isMouseCollidingWithActionWindow(action_window, pygame.mouse.get_pos()):
+                    selection_box_changed = True
+                elif event.button == 1 and len(HeldDownCells) == 2 and SelectionBoxPresent is True and not helpers.isMouseCollidingWithElement(action_window, pygame.mouse.get_pos()) and (context_menu is None or context_menu.alive() is False):
                     HeldDownCells = []
                     SelectionBoxPresent = False
+                    selection_box_changed = True
 
             if LeftClickHeldDown is True and EditMode is True and MenuOpen is False and SelectionBoxPresent is False:
                 mouse_pos = pygame.mouse.get_pos()
@@ -457,7 +462,7 @@ def main():
                 if IsColliding and not IsCollidingWithActionWindow:
                     board_pos = helpers.getBoardPosition(step_stack[-1][0], rel_mouse_pos, w, h)
 
-                    if config_dict["SelectionMode"][0] is True and Continuous is False:
+                    if config_dict["SelectionMode"][0] is True and Continuous is False and (context_menu is None or context_menu.alive() is False):
                         if len(HeldDownCells) < 2 and board_pos not in HeldDownCells:
                             HeldDownCells.append(board_pos)
                         elif len(HeldDownCells) == 2 and board_pos == HeldDownCells[0]:
@@ -763,12 +768,11 @@ def main():
             Load = False
 
         if helpers.should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edit_checkerboard_brightness_changed, HeldDownCells, previous_HeldDownCells, DebugThemePatterns_changed):
-            try: previous_themes = deepcopy(themes)
-            except Exception: traceback.print_exc()
-
-            CurrentBoardSurf, previous_boards = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells, DebugThemePatterns, DebugThemePatterns_changed, CurrentBoardSurf, previous_boards, edit_mode_changed, edit_checkerboard_brightness_changed)
+            CurrentBoardSurf, previous_boards = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, previous_themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells, DebugThemePatterns, DebugThemePatterns_changed, CurrentBoardSurf, previous_boards, edit_mode_changed, edit_checkerboard_brightness_changed)
             CurrentBoardSurf_with_selection = CurrentBoardSurf.copy()
 
+            try: previous_themes = deepcopy(themes)
+            except: pass
             Appended = False
             edit_mode_changed = False
             edit_checkerboard_brightness_changed = False
@@ -781,9 +785,16 @@ def main():
             except Exception: traceback.print_exc()
 
             CurrentBoardSurf_with_selection = CurrentBoardSurf.copy()
-            helpers.draw_selection(step_stack[-1][0], CurrentBoardSurf_with_selection, select_color, HeldDownCells)
+            selection_rect = helpers.draw_selection(step_stack[-1][0], CurrentBoardSurf_with_selection, select_color, HeldDownCells)
 
-        helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf_with_selection, EditMode)
+        board_surf_top_left = helpers.blitBoardOnScreenEvenly(surf, CurrentBoardSurf_with_selection, EditMode)
+
+        if EditMode is True and MenuOpen is False and helpers.isMouseCollidingWithElement(action_window, pygame.mouse.get_pos()) is False:
+            abs_CurrentBoardSurf_rect = pygame.Rect(board_surf_top_left[0], board_surf_top_left[1], CurrentBoardSurf_with_selection.get_width(), CurrentBoardSurf_with_selection.get_height())
+            helpers.create_right_clickable_element_and_append('CurrentBoardSurf', abs_CurrentBoardSurf_rect, boardsurf_context_menu_buttons, boardsurf_context_menu_button_types, right_clickable_elements)
+
+        else:
+            helpers.kill_right_clickable_element('CurrentBoardSurf', right_clickable_elements)
 
         if MenuOpen is True:
             if show_controls_button.text == 'Hide controls':

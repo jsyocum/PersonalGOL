@@ -8,7 +8,7 @@ import pygame_gui
 import totalsize
 import math
 import sys
-from classes import ContextMenu
+from classes import ContextMenu, RightClickableElement
 from scipy import signal
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from configparser import ConfigParser
@@ -235,7 +235,7 @@ def should_redraw_surf(Appended, themes, previous_themes, edit_mode_changed, edi
 # The themes array contains tuples of information that defines the theme for its index. So at index 0, it describes the shape as being a square with a solid color.
 # The user can create as many themes as they want, each with different shape and/or color.
 # This function takes the information from the board and theme_board to bring them together into a properly scaled surface.
-def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerboardBrightness, select_color, EvenOrOdd, SelectedCells, DebugThemePatterns, DebugThemePatterns_changed, CurrentBoardSurf, previous_boards, edit_mode_changed, edit_checkerboard_brightness_changed) -> pygame.surface:
+def complex_blit_array(board, theme_board, themes, previous_themes, surf, EditMode, EditCheckerboardBrightness, select_color, EvenOrOdd, SelectedCells, DebugThemePatterns, DebugThemePatterns_changed, CurrentBoardSurf, previous_boards, edit_mode_changed, edit_checkerboard_brightness_changed) -> pygame.surface:
     Scale = getScale(board, surf.get_width(), surf.get_height())[0]
     surf_size = (board.shape[0] * Scale, board.shape[1] * Scale)
 
@@ -273,7 +273,7 @@ def complex_blit_array(board, theme_board, themes, surf, EditMode, EditCheckerbo
                     draw_cell(subi, i, boardSurf, theme_board, themes, top_left, Scale, final_select_color, DebugThemePatterns)
 
             else:
-                if Square != previous_boards[0][subi][i] or theme_board[subi][i] != previous_boards[1][subi][i]:
+                if Square != previous_boards[0][subi][i] or theme_board[subi][i] != previous_boards[1][subi][i] or themes[theme_board[subi][i]] != previous_themes[theme_board[subi][i]]:
                     if Square == 1:
                         draw_cell(subi, i, boardSurf, theme_board, themes, top_left, Scale, final_select_color, DebugThemePatterns)
                     elif checker_drawn is False:
@@ -317,6 +317,8 @@ def draw_selection(board, surf, select_color, SelectedCells):
         temp_surf.fill(select_color)
 
         surf.blit(temp_surf, selection_rect.topleft)
+
+        return selection_rect
 
 def get_example_themes(theme_for_colors=None, pattern_type='Rectangles'):
     colors_array = []
@@ -524,7 +526,7 @@ def getScale(board, w, h):
 
 def isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window, mouse_pos, w, h):
     IsCollidingWithBoardSurf = False
-    IsCollidingWithActionWindow = isMouseCollidingWithActionWindow(action_window, mouse_pos)
+    IsCollidingWithActionWindow = isMouseCollidingWithElement(action_window, mouse_pos)
     rel_mouse_pos = None
 
     x_start = w / 2 - CurrentBoardSurf.get_width() / 2
@@ -538,13 +540,18 @@ def isMouseCollidingWithBoardSurfOrActionWindow(CurrentBoardSurf, action_window,
 
     return IsCollidingWithBoardSurf, IsCollidingWithActionWindow, rel_mouse_pos
 
-def isMouseCollidingWithActionWindow(action_window, mouse_pos):
-    IsCollidingWithActionWindow = False
+def isMouseCollidingWithElement(elements, mouse_pos):
+    if not isinstance(elements, list):
+        elements = [elements]
 
-    if action_window is not None and action_window.alive():
-        IsCollidingWithActionWindow = action_window.get_relative_rect().collidepoint(mouse_pos)
+    for element in elements:
+        try:
+            if element is not None and element.alive():
+                if element.get_relative_rect().collidepoint(mouse_pos) is True:
+                    return True
+        except: pass
 
-    return IsCollidingWithActionWindow
+    return False
 
 def getBoardPosition(board, mouse_pos, w, h):
     scale, which = getScale(board, w, h)
@@ -814,13 +821,16 @@ def autoAdjustBoardDimensions(board, theme_board, w, h, HeldDownCells, EvenOrOdd
 
     return board, theme_board, EvenOrOdd, AutoAdjustments
 
-def blitBoardOnScreenEvenly(surf, boardSurf, EditMode):
+def blitBoardOnScreenEvenly(surf: pygame.Surface, boardSurf, EditMode):
     if EditMode is False:
         surf.fill((0, 0, 0))
     else:
         surf.fill((30, 30, 30))
 
-    surf.blit(boardSurf, (surf.get_width() / 2 - boardSurf.get_width() / 2, surf.get_height() / 2 - boardSurf.get_height() / 2))
+    top_left = (surf.get_width() / 2 - boardSurf.get_width() / 2, surf.get_height() / 2 - boardSurf.get_height() / 2)
+    surf.blit(boardSurf, top_left)
+
+    return top_left
 
 def printLinesOfText(surf, left, top, spacing, lines):
     for i, line in enumerate(lines):
@@ -1155,6 +1165,18 @@ def set_scroll_container_min_h(self):
         size = self.get_relative_rect().size
         self.set_dimensions((size[0], size[1] + 1))
         self.rebuild()
+
+def kill_right_clickable_element(name, right_clickable_elements):
+    for e in right_clickable_elements:
+        try:
+            if e.name == name:
+                right_clickable_elements.remove(e)
+        except: pass
+
+def create_right_clickable_element_and_append(name, rect, context_menu_buttons, context_menu_button_types, right_clickable_elements):
+    kill_right_clickable_element(name, right_clickable_elements)
+    element = RightClickableElement(name, rect, context_menu_buttons, context_menu_button_types)
+    right_clickable_elements.append(element)
 
 def get_right_clicked_element(mouse_pos, right_clickable_elements):
     if len(right_clickable_elements) == 0:

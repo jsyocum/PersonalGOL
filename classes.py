@@ -2254,3 +2254,22 @@ class ContextMenu(pygame_gui.elements.UISelectionList):
                 item_y_height += self.list_item_height
             else:
                 break
+
+
+class RightClickableElement():
+    def __init__(self,
+                 name: str,
+                 rect: pygame.Rect,
+                 context_menu_buttons: [] = [],
+                 context_menu_button_types: [] = []):
+
+        self.name = name
+        self.rect = rect
+        self.context_menu_buttons = context_menu_buttons
+        self.context_menu_button_types = context_menu_button_types
+
+    def get_abs_rect(self):
+        return self.rect
+
+    def alive(self):
+        return True
