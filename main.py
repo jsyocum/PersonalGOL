@@ -20,7 +20,7 @@ def get_version_number():
     # major: major changes, like a rewrite of the project
     # minor: new functionality
     # patch: small changes or bug fixes
-    version = '1.7.8'
+    version = '1.7.9'
 
     return version
 
@@ -211,7 +211,8 @@ def main():
     else:
         Board, theme_board = helpers.generateArray(config_dict["CustomBoardSizeHeight"][0], config_dict["CustomBoardSizeWidth"][0], config_dict["Likelihood"][0])
 
-    Appended, previous_boards = helpers.appendToStepStack(Board, theme_board, step_stack)
+    previous_boards = None
+    Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
     while running:
         if Scale != helpers.getScale(Board, w, h):
@@ -440,7 +441,7 @@ def main():
                         else:
                             Board[board_pos] = 0
 
-                        Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+                        Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
                     HeldDownCells = []
 
@@ -471,7 +472,7 @@ def main():
                         else:
                             Board[board_pos] = 0
 
-                        Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+                        Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             if event.type == SETTINGSAPPLIED and event.ui_element == settings_window:
                 config_dict = event.config_dict
@@ -548,7 +549,7 @@ def main():
                 if IsColliding and not IsCollidingWithActionWindow:
                     board_pos = helpers.getBoardPosition(step_stack[-1][0], rel_mouse_pos, w, h)
                     Board = helpers.paste(step_stack[-1][0].copy(), [board_pos, [board_pos[0] + 1, board_pos[1] + 1]], CopiedBoard)
-                    Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+                    Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == action_window.fill_button) or (event.type == pygame.KEYUP and event.key == pygame.K_BACKSPACE and SelectionBoxPresent is True):
                 Fill = True
@@ -619,11 +620,11 @@ def main():
         if config_dict["AutoAdjust"][0] is True:
             if Continuous is True or (Continuous is False and Step is True):
                 Board, theme_board, EvenOrOdd, AutoAdjustments = helpers.autoAdjustBoardDimensions(step_stack[-1][0].copy(), step_stack[-1][1].copy(), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
-                Appended, previous_boards = helpers.appendToStepStack(Board, theme_board, step_stack)
+                Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
         if Continuous is False and Step is True:
             Board = helpers.applyRules(step_stack[-1][0], step_stack)
-            Appended, previous_boards = helpers.appendToStepStack(Board, theme_board, step_stack)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
             HeldDownCells = []
             Step = False
         elif Continuous is False and StepBack is True:
@@ -632,7 +633,7 @@ def main():
             StepBack = False
         elif Continuous is True and Update is True:
             Board = helpers.applyRules(step_stack[-1][0], step_stack)
-            Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
             Step = False
             StepBack = False
             Update = False
@@ -640,7 +641,7 @@ def main():
         if NewBoard is True:
             width, height = helpers.determineWidthAndHeight(config_dict, w, h)
             Board, theme_board = helpers.generateArray(height, width, config_dict["Likelihood"][0])
-            Appended, previous_boards = helpers.appendToStepStack(Board, theme_board, step_stack)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
             if len(HeldDownCells) == 2:
                 HeldDownCells, SelectionBoxPresent = helpers.fixSelectionBoxAfterLoad(step_stack[-1][0], HeldDownCells)
@@ -649,7 +650,7 @@ def main():
 
         if Zoom is True:
             Board, theme_board = helpers.zoom(step_stack[-1][0], step_stack[-1][1], HeldDownCells)
-            Appended, previous_boards = helpers.appendToStepStack(Board, theme_board, step_stack)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
             HeldDownCells = []
 
             Zoom = False
@@ -657,7 +658,7 @@ def main():
         if Cut is True:
             CopiedBoard, none = helpers.zoom(step_stack[-1][0], step_stack[-1][1], HeldDownCells)
             Board = helpers.cut(step_stack[-1][0].copy(), HeldDownCells)
-            Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Cut = False
 
@@ -668,37 +669,37 @@ def main():
 
         if Paste is True:
             Board = helpers.paste(step_stack[-1][0].copy(), HeldDownCells, CopiedBoard)
-            Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Paste = False
 
         if Fill is True:
             Board = helpers.cut(step_stack[-1][0].copy(), HeldDownCells, Fill=Fill)
-            Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Fill = False
 
         if Clear is True:
             Board = helpers.cut(step_stack[-1][0].copy(), HeldDownCells)
-            Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Clear = False
 
         if Rotate is True:
             Board = helpers.rotate(step_stack[-1][0].copy(), HeldDownCells)
-            Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Rotate = False
 
         if Flip is True:
             Board = helpers.flip(step_stack[-1][0].copy(), HeldDownCells)
-            Appended, previous_boards = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
+            Appended = helpers.appendToStepStack(Board, step_stack[-1][1], step_stack)
 
             Flip = False
 
         if AdjustBoard is True:
             Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1][0].copy(), step_stack[-1][1].copy(), AdjustBoardTuple, w, h, HeldDownCells, EvenOrOdd)
-            Appended, previous_boards = helpers.appendToStepStack(Board, theme_board, step_stack)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
             AdjustBoard = False
 
@@ -711,7 +712,7 @@ def main():
 
         if ApplyAdjustments is True:
             Board, theme_board, EvenOrOdd, adjustments_made = helpers.adjustBoardDimensions(step_stack[-1][0].copy(), step_stack[-1][1].copy(), (None, None), w, h, HeldDownCells, EvenOrOdd, AutoAdjustments)
-            Appended, previous_boards = helpers.appendToStepStack(Board, theme_board, step_stack)
+            Appended = helpers.appendToStepStack(Board, theme_board, step_stack)
 
             ApplyAdjustments = False
 
@@ -765,12 +766,13 @@ def main():
             try: previous_themes = deepcopy(themes)
             except Exception: traceback.print_exc()
 
-            CurrentBoardSurf = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells, DebugThemePatterns, CurrentBoardSurf, previous_boards, edit_mode_changed, edit_checkerboard_brightness_changed)
+            CurrentBoardSurf, previous_boards = helpers.complex_blit_array(step_stack[-1][0], step_stack[-1][1], themes, surf, EditMode, config_dict["EditCheckerboardBrightness"][0], select_color, EvenOrOdd, HeldDownCells, DebugThemePatterns, DebugThemePatterns_changed, CurrentBoardSurf, previous_boards, edit_mode_changed, edit_checkerboard_brightness_changed)
             CurrentBoardSurf_with_selection = CurrentBoardSurf.copy()
 
             Appended = False
             edit_mode_changed = False
             edit_checkerboard_brightness_changed = False
+            DebugThemePatterns_changed = False
 
             surf_redrawn = True
 
