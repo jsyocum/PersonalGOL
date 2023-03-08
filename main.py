@@ -36,7 +36,6 @@ def main():
     manager = pygame_gui.UIManager((w, h), helpers.resource_path('CustomTheming.json'))
 
     clock = pygame.time.Clock()
-    time_delta_stack = deque([])
     step_stack = deque([])
     running = True
 
@@ -222,9 +221,6 @@ def main():
             Scale, Which = helpers.getScale(Board, w, h)
 
         time_delta = clock.tick() / 1000.0
-        time_delta_stack.append(time_delta)
-        if len(time_delta_stack) > 2000:
-            time_delta_stack.popleft()
 
         if len(HeldDownCells) < 2:
             SelectionBoxPresent = False
