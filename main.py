@@ -221,7 +221,7 @@ def main():
         if Scale != helpers.getScale(Board, w, h):
             Scale, Which = helpers.getScale(Board, w, h)
 
-        time_delta = clock.tick(120) / 1000.0
+        time_delta = clock.tick() / 1000.0
         time_delta_stack.append(time_delta)
         if len(time_delta_stack) > 2000:
             time_delta_stack.popleft()
